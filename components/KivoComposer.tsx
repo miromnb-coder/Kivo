@@ -1,7 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowUp, MessageCircleMore, Mic, Plus } from 'lucide-react';
+
+type KivoComposerProps = {
+  onFocusChange?: (focused: boolean) => void;
+};
 
 function KivoToolsIcon() {
   return (
@@ -9,7 +13,6 @@ function KivoToolsIcon() {
       <path d="M7 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <path d="M12 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <path d="M17 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-
       <circle cx="7" cy="9" r="1.8" fill="currentColor" />
       <circle cx="12" cy="15" r="1.8" fill="currentColor" />
       <circle cx="17" cy="8" r="1.8" fill="currentColor" />
@@ -30,15 +33,40 @@ function CircleButton({ children, muted = false }: { children: React.ReactNode; 
   );
 }
 
-export function KivoComposer() {
+export function KivoComposer({ onFocusChange }: KivoComposerProps) {
   const [value, setValue] = useState('');
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canSend = value.trim().length > 0;
+
+  useEffect(() => {
+    function updateKeyboardOffset() {
+      const viewport = window.visualViewport;
+      if (!viewport) {
+        setKeyboardOffset(0);
+        return;
+      }
+
+      const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      setKeyboardOffset(offset > 80 ? offset : 0);
+    }
+
+    updateKeyboardOffset();
+    window.visualViewport?.addEventListener('resize', updateKeyboardOffset);
+    window.visualViewport?.addEventListener('scroll', updateKeyboardOffset);
+    window.addEventListener('resize', updateKeyboardOffset);
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', updateKeyboardOffset);
+      window.visualViewport?.removeEventListener('scroll', updateKeyboardOffset);
+      window.removeEventListener('resize', updateKeyboardOffset);
+    };
+  }, []);
 
   function resizeTextarea() {
     const textarea = textareaRef.current;
     if (!textarea) return;
-
     textarea.style.height = '24px';
     textarea.style.height = `${Math.min(textarea.scrollHeight, 96)}px`;
   }
@@ -58,13 +86,23 @@ export function KivoComposer() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 px-[16px] pb-[18px]">
+    <div
+      className="fixed inset-x-0 bottom-0 z-40 px-[16px] pb-[18px] transition-transform duration-300 ease-out"
+      style={{ transform: `translate3d(0, -${keyboardOffset}px, 0)` }}
+    >
       <div className="mx-auto w-full max-w-[430px] rounded-[34px] border border-[#eeeeF1] bg-[#f9f9fa] px-[16px] pt-[14px] pb-[12px] shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
         <textarea
           ref={textareaRef}
           value={value}
           rows={1}
           placeholder="Ask anything or assign a task"
+          onFocus={() => {
+            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+            onFocusChange?.(true);
+          }}
+          onBlur={() => {
+            blurTimeoutRef.current = setTimeout(() => onFocusChange?.(false), 120);
+          }}
           onChange={(event) => {
             setValue(event.target.value);
             requestAnimationFrame(resizeTextarea);
