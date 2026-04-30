@@ -282,7 +282,7 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
                   <span className="flex h-[34px] w-[34px] items-center justify-center">
                     <Icon size={29} strokeWidth={2} />
                   </span>
-                  <span className="flex min-w-0 flex-1 items-center gap-[10px] text-[24px] font-normal leading-none tracking-[-0.045em]">
+                  <span className="flex min-w-0 flex-1 items-center gap-[10px] text-[20px] font-normal leading-[1.1] tracking-[-0.03em]">
                     <span>{action.label}</span>
                     {action.badge ? (
                       <span className="inline-flex h-[32px] items-center gap-[6px] rounded-[11px] bg-[#f1f1f2] px-[10px] text-[16px] tracking-[-0.03em] text-[#333438]">
