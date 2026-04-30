@@ -23,7 +23,7 @@ export function KivoVoiceRecorderBar({ open, seconds, onCancel, onConfirm }: Kiv
   if (!open) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[70] px-[16px] pb-[calc(env(safe-area-inset-bottom)+18px)] pointer-events-none">
+    <div className="fixed inset-x-0 bottom-0 z-[70] px-[16px] pb-[18px] pointer-events-none">
       <div className="mx-auto flex h-[92px] w-full max-w-[430px] items-center rounded-[32px] border border-[#eeeeF1] bg-white/95 px-[14px] shadow-[0_12px_36px_rgba(0,0,0,0.06)] backdrop-blur-[18px] pointer-events-auto">
         <button type="button" aria-label="Cancel recording" onClick={onCancel} className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-[#ececef] bg-[#f8f8f9] text-[#1f2023]">
           <X size={23} strokeWidth={1.9} />
