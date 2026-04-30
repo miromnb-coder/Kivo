@@ -19,34 +19,18 @@ const connectors = [
   { name: 'Meta Ads Manager', icon: 'meta', control: 'connect', badge: 'Beta' },
 ];
 
-function BrowserIcon() {
-  return (
-    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" aria-hidden="true">
-      <circle cx="12.5" cy="12.5" r="10.5" stroke="#333" strokeWidth="2.5" />
-      <path d="M12.5 2.4c3.1 4.1 3.1 15.9 0 20.2" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-      <path d="M4.2 8.4h16.6M4.2 16.6h16.6" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function BrandIcon({ icon }: { icon: string }) {
   if (icon === 'github') return <Github size={25} fill="currentColor" strokeWidth={0} />;
-  if (icon === 'browser') return <BrowserIcon />;
+  if (icon === 'browser') return <span className="text-[27px] leading-none">◎</span>;
+  if (icon === 'gmail') return <span className="text-[26px] font-bold leading-none text-[#ea4335]">M</span>;
+  if (icon === 'google-calendar') return <span className="text-[21px] font-bold leading-none text-[#4285f4]">31</span>;
+  if (icon === 'drive') return <span className="text-[28px] leading-none text-[#34a853]">▲</span>;
+  if (icon === 'outlook-mail') return <span className="block h-[22px] w-[26px] rounded-[5px] bg-[#1a8bdc]" />;
+  if (icon === 'outlook-calendar') return <span className="block h-[24px] w-[24px] rounded-[5px] bg-[#26a7df]" />;
+  if (icon === 'instagram') return <span className="block h-[25px] w-[25px] rounded-[7px] bg-gradient-to-br from-[#feda75] via-[#d62976] to-[#4f5bd5]" />;
+  if (icon === 'meta') return <span className="text-[28px] font-semibold leading-none text-[#1684ff]">∞</span>;
 
-  const brandMap: Record<string, string> = {
-    gmail: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png',
-    'google-calendar': 'https://www.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png',
-    drive: 'https://ssl.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png',
-    'outlook-mail': 'https://res.cdn.office.net/assets/mail/file-icon/png/outlook_64x64.png',
-    'outlook-calendar': 'https://res.cdn.office.net/assets/calendar/file-icon/png/calendar_64x64.png',
-    instagram: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/64px-Instagram_icon.png',
-    meta: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Meta-Logo.png/128px-Meta-Logo.png',
-  };
-
-  const src = brandMap[icon];
-  if (!src) return null;
-
-  return <img src={src} alt="" className="h-[25px] w-[25px] object-contain" draggable={false} />;
+  return null;
 }
 
 export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps) {
