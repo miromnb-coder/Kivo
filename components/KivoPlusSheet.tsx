@@ -49,14 +49,16 @@ const photoItems = [
 
 const MEDIUM_HEIGHT = 0.62;
 const FULL_HEIGHT = 0.92;
+const CLOSED_OFFSET = 110;
 const CLOSE_THRESHOLD = 130;
 const VELOCITY_CLOSE_THRESHOLD = 0.65;
 const VELOCITY_OPEN_THRESHOLD = -0.65;
 
 export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
   const [heightRatio, setHeightRatio] = useState(MEDIUM_HEIGHT);
-  const [dragOffset, setDragOffset] = useState(0);
+  const [dragOffset, setDragOffset] = useState(CLOSED_OFFSET);
   const [isDragging, setIsDragging] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const dragStartYRef = useRef(0);
   const dragStartHeightRef = useRef(MEDIUM_HEIGHT);
   const dragStartTimeRef = useRef(0);
@@ -67,8 +69,14 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
   useEffect(() => {
     if (!open) return;
     setHeightRatio(MEDIUM_HEIGHT);
-    setDragOffset(0);
+    setDragOffset(CLOSED_OFFSET);
     setIsDragging(false);
+    setIsVisible(false);
+
+    const frame = requestAnimationFrame(() => {
+      setIsVisible(true);
+      setDragOffset(0);
+    });
 
     const originalOverflow = document.body.style.overflow;
     const originalTouchAction = document.body.style.touchAction;
@@ -76,12 +84,19 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
     document.body.style.touchAction = 'none';
 
     return () => {
+      cancelAnimationFrame(frame);
       document.body.style.overflow = originalOverflow;
       document.body.style.touchAction = originalTouchAction;
     };
   }, [open]);
 
   if (!open) return null;
+
+  function closeWithAnimation() {
+    setIsVisible(false);
+    setDragOffset(CLOSED_OFFSET);
+    window.setTimeout(onClose, 180);
+  }
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -109,7 +124,7 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
     const nextHeight = Math.min(FULL_HEIGHT, Math.max(MEDIUM_HEIGHT, dragStartHeightRef.current + heightDelta));
 
     if (delta > 0 && dragStartHeightRef.current <= MEDIUM_HEIGHT + 0.02) {
-      setDragOffset(Math.min(delta, 190));
+      setDragOffset(Math.min(delta * 0.92, 210));
       setHeightRatio(MEDIUM_HEIGHT);
       return;
     }
@@ -128,8 +143,7 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
     const velocity = velocityRef.current;
 
     if (totalDelta > CLOSE_THRESHOLD || velocity > VELOCITY_CLOSE_THRESHOLD) {
-      setDragOffset(240);
-      window.setTimeout(onClose, 120);
+      closeWithAnimation();
       return;
     }
 
@@ -152,13 +166,15 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
       <button
         type="button"
         aria-label="Close actions"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/20 transition-opacity duration-200"
+        onClick={closeWithAnimation}
+        className={`absolute inset-0 bg-black/20 backdrop-blur-[3px] transition-opacity duration-300 ${
+          isVisible ? 'opacity-100' : 'opacity-0'
+        }`}
       />
 
       <div
         className={`absolute inset-x-0 bottom-0 mx-auto w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-16px_40px_rgba(0,0,0,0.12)] ${
-          isDragging ? '' : 'transition-[height,transform] duration-300 ease-out'
+          isDragging ? '' : 'transition-[height,transform] duration-[420ms] ease-[cubic-bezier(0.22,1.25,0.36,1)]'
         }`}
         style={{
           height: `${heightRatio * 100}vh`,
