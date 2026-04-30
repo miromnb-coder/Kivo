@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronRight, HelpCircle, Inbox, Sparkles, X } from 'lucide-react';
 
 type Props = {
@@ -8,10 +10,16 @@ type Props = {
 };
 
 export function KivoCreditsSheet({ open, onClose }: Props) {
-  if (!open) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
-    <div className="fixed inset-0 z-[90]">
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!open || !mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999]">
       <button type="button" aria-label="Close credits" onClick={onClose} className="absolute inset-0 bg-black/10 backdrop-blur-[2px]" />
 
       <div className="absolute inset-x-0 bottom-0 mx-auto h-[86vh] w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-16px_40px_rgba(0,0,0,0.10)]">
@@ -94,6 +102,7 @@ export function KivoCreditsSheet({ open, onClose }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
