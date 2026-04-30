@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, Github, Globe2, Plus, SlidersHorizontal, X } from 'lucide-react';
 
 type KivoConnectorsSheetProps = {
@@ -18,6 +19,13 @@ const connectors = [
   { name: 'Instagram', icon: 'instagram', control: 'connect', badge: 'Beta' },
   { name: 'Meta Ads Manager', icon: 'meta', control: 'connect', badge: 'Beta' },
 ];
+
+const MEDIUM_HEIGHT = 0.78;
+const FULL_HEIGHT = 0.92;
+const CLOSED_OFFSET = 110;
+const CLOSE_THRESHOLD = 130;
+const VELOCITY_CLOSE_THRESHOLD = 0.65;
+const VELOCITY_OPEN_THRESHOLD = -0.65;
 
 function GmailIcon() {
   return (
@@ -124,23 +132,173 @@ function BrandIcon({ icon }: { icon: string }) {
 }
 
 export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps) {
+  const [heightRatio, setHeightRatio] = useState(MEDIUM_HEIGHT);
+  const [dragOffset, setDragOffset] = useState(CLOSED_OFFSET);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const liveHeightRatioRef = useRef(MEDIUM_HEIGHT);
+  const liveDragOffsetRef = useRef(CLOSED_OFFSET);
+  const dragStartYRef = useRef(0);
+  const dragStartHeightRef = useRef(MEDIUM_HEIGHT);
+  const lastYRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const velocityRef = useRef(0);
+
+  function applySheetStyle(height: number, offset: number, animated: boolean) {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    sheet.style.transition = animated ? 'height 300ms cubic-bezier(0.16,1,0.3,1), transform 300ms cubic-bezier(0.16,1,0.3,1)' : 'none';
+    sheet.style.height = `${height * 100}vh`;
+    sheet.style.transform = `translate3d(0, ${offset}px, 0)`;
+  }
+
+  function scheduleSheetStyle(height: number, offset: number) {
+    liveHeightRatioRef.current = height;
+    liveDragOffsetRef.current = offset;
+
+    if (frameRef.current !== null) return;
+
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      applySheetStyle(liveHeightRatioRef.current, liveDragOffsetRef.current, false);
+    });
+  }
+
+  useEffect(() => {
+    if (!open) return;
+
+    liveHeightRatioRef.current = MEDIUM_HEIGHT;
+    liveDragOffsetRef.current = CLOSED_OFFSET;
+    setHeightRatio(MEDIUM_HEIGHT);
+    setDragOffset(CLOSED_OFFSET);
+    setIsDragging(false);
+    setIsVisible(false);
+
+    const frame = requestAnimationFrame(() => {
+      setIsVisible(true);
+      liveDragOffsetRef.current = 0;
+      setDragOffset(0);
+      applySheetStyle(MEDIUM_HEIGHT, 0, true);
+    });
+
+    const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    return () => {
+      cancelAnimationFrame(frame);
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
+    };
+  }, [open]);
+
   if (!open) return null;
+
+  function closeWithAnimation() {
+    setIsVisible(false);
+    liveDragOffsetRef.current = CLOSED_OFFSET;
+    setDragOffset(CLOSED_OFFSET);
+    applySheetStyle(liveHeightRatioRef.current, CLOSED_OFFSET, true);
+    window.setTimeout(onClose, 180);
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragStartYRef.current = event.clientY;
+    dragStartHeightRef.current = liveHeightRatioRef.current;
+    lastYRef.current = event.clientY;
+    lastTimeRef.current = performance.now();
+    velocityRef.current = 0;
+    setIsDragging(true);
+    applySheetStyle(liveHeightRatioRef.current, liveDragOffsetRef.current, false);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging) return;
+
+    const now = performance.now();
+    const delta = event.clientY - dragStartYRef.current;
+    const deltaTime = Math.max(1, now - lastTimeRef.current);
+    velocityRef.current = (event.clientY - lastYRef.current) / deltaTime;
+    lastYRef.current = event.clientY;
+    lastTimeRef.current = now;
+
+    const viewportHeight = window.innerHeight || 800;
+    const heightDelta = -delta / viewportHeight;
+    const nextHeight = Math.min(FULL_HEIGHT, Math.max(MEDIUM_HEIGHT, dragStartHeightRef.current + heightDelta));
+
+    if (delta > 0 && dragStartHeightRef.current <= MEDIUM_HEIGHT + 0.02) {
+      scheduleSheetStyle(MEDIUM_HEIGHT, Math.min(delta * 0.92, 210));
+      return;
+    }
+
+    scheduleSheetStyle(nextHeight, 0);
+  }
+
+  function handlePointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging) return;
+
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    setIsDragging(false);
+
+    const totalDelta = event.clientY - dragStartYRef.current;
+    const velocity = velocityRef.current;
+
+    if (totalDelta > CLOSE_THRESHOLD || velocity > VELOCITY_CLOSE_THRESHOLD) {
+      closeWithAnimation();
+      return;
+    }
+
+    let targetHeight = MEDIUM_HEIGHT;
+
+    if (velocity < VELOCITY_OPEN_THRESHOLD) {
+      targetHeight = FULL_HEIGHT;
+    } else if (liveHeightRatioRef.current > (MEDIUM_HEIGHT + FULL_HEIGHT) / 2) {
+      targetHeight = FULL_HEIGHT;
+    }
+
+    liveHeightRatioRef.current = targetHeight;
+    liveDragOffsetRef.current = 0;
+    setHeightRatio(targetHeight);
+    setDragOffset(0);
+    applySheetStyle(targetHeight, 0, true);
+  }
 
   return (
     <div className="fixed inset-0 z-[95]">
-      <button type="button" aria-label="Close connectors" onClick={onClose} className="absolute inset-0 bg-black/20 backdrop-blur-[3px]" />
+      <button type="button" aria-label="Close connectors" onClick={closeWithAnimation} className={`absolute inset-0 bg-black/20 backdrop-blur-[3px] transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />
 
-      <div className="absolute inset-x-0 bottom-0 mx-auto h-[78vh] w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-16px_40px_rgba(0,0,0,0.12)]">
-        <div className="mx-auto mt-[8px] h-[5px] w-[40px] rounded-full bg-[#c5c5ca]" />
+      <div
+        ref={sheetRef}
+        className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-16px_40px_rgba(0,0,0,0.12)] will-change-transform"
+        style={{ height: `${heightRatio * 100}vh`, transform: `translate3d(0, ${dragOffset}px, 0)` }}
+      >
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Drag connectors sheet"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="flex h-[32px] cursor-grab touch-none items-center justify-center active:cursor-grabbing"
+        >
+          <div className="h-[5px] w-[40px] rounded-full bg-[#c5c5ca]" />
+        </div>
 
         <div className="relative flex h-[56px] items-center justify-center px-[18px]">
-          <button type="button" onClick={onClose} aria-label="Close" className="absolute left-[18px] flex h-[42px] w-[42px] items-center justify-center text-[#1f2023]">
+          <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute left-[18px] flex h-[42px] w-[42px] items-center justify-center text-[#1f2023]">
             <X size={27} strokeWidth={2} />
           </button>
           <h2 className="text-[22px] font-semibold tracking-[-0.035em] text-[#111]">Connectors</h2>
         </div>
 
-        <div className="h-[calc(100%-69px)] overflow-y-auto px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[22px] overscroll-contain">
+        <div className="h-[calc(100%-88px)] overflow-y-auto px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[22px] overscroll-contain">
           <div className="overflow-hidden rounded-[24px] bg-[#f4f4f5] px-[18px]">
             <button type="button" className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]">
               <Plus size={24} strokeWidth={2} />
