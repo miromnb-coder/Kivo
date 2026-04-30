@@ -3,8 +3,8 @@ import { ArrowUp, MessageCircleMore, Mic, Plus, SlidersVertical } from 'lucide-r
 function CircleButton({ children, muted = false }: { children: React.ReactNode; muted?: boolean }) {
   return (
     <button
-      className={`flex h-11 w-11 items-center justify-center rounded-full border ${
-        muted ? 'border-transparent bg-[#e9e9eb] text-[#b9b9bc]' : 'border-[#e2e2e5] bg-[#f6f6f7] text-[#1f1f22]'
+      className={`flex h-[56px] w-[56px] items-center justify-center rounded-full border ${
+        muted ? 'border-transparent bg-[#e8e8ea] text-[#c0c0c4]' : 'border-[#dddddf] bg-[#f7f7f8] text-[#202024]'
       }`}
     >
       {children}
@@ -14,29 +14,29 @@ function CircleButton({ children, muted = false }: { children: React.ReactNode; 
 
 export function KivoComposer() {
   return (
-    <div className="fixed inset-x-0 bottom-0 px-3 pb-3">
-      <div className="mx-auto w-full max-w-md rounded-[2.15rem] border border-[#ececef] bg-[#f5f5f6]/95 px-4 pt-5 pb-6 shadow-[0_8px_40px_rgba(0,0,0,0.08)] backdrop-blur-sm">
-        <p className="px-2 text-[22px] font-normal tracking-[-0.01em] text-[#a2a2a6]">Ask anything or assign a task</p>
+    <div className="fixed inset-x-0 bottom-0 px-4 pb-5">
+      <div className="mx-auto w-full max-w-[430px] rounded-[42px] border border-[#ececef] bg-[#f8f8f9] px-6 pt-7 pb-6 shadow-[0_20px_60px_rgba(0,0,0,0.08)] backdrop-blur-sm">
+        <p className="px-1 text-[18px] font-normal tracking-[-0.01em] text-[#a3a3a8]">Ask anything or assign a task</p>
 
         <div className="mt-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <CircleButton>
-              <Plus size={31} strokeWidth={1.6} />
+              <Plus size={34} strokeWidth={1.6} />
             </CircleButton>
             <CircleButton>
-              <SlidersVertical size={25} strokeWidth={1.9} />
+              <SlidersVertical size={28} strokeWidth={1.9} />
             </CircleButton>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <CircleButton>
-              <MessageCircleMore size={22} strokeWidth={1.9} />
+              <MessageCircleMore size={24} strokeWidth={1.9} />
             </CircleButton>
             <CircleButton>
-              <Mic size={23} strokeWidth={2} />
+              <Mic size={24} strokeWidth={2} />
             </CircleButton>
             <CircleButton muted>
-              <ArrowUp size={28} strokeWidth={2.2} />
+              <ArrowUp size={29} strokeWidth={2.2} />
             </CircleButton>
           </div>
         </div>
