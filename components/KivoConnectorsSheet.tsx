@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, Github, Plus, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronRight, Github, Globe2, Plus, SlidersHorizontal, X } from 'lucide-react';
 
 type KivoConnectorsSheetProps = {
   open: boolean;
@@ -19,16 +19,106 @@ const connectors = [
   { name: 'Meta Ads Manager', icon: 'meta', control: 'connect', badge: 'Beta' },
 ];
 
+function GmailIcon() {
+  return (
+    <svg width="27" height="22" viewBox="0 0 27 22" fill="none" aria-hidden="true">
+      <path d="M3.2 4.3v13.4c0 .9.7 1.6 1.6 1.6h3.7V9.1L3.2 4.3Z" fill="#34A853" />
+      <path d="M18.5 19.3h3.7c.9 0 1.6-.7 1.6-1.6V4.3l-5.3 4.8v10.2Z" fill="#4285F4" />
+      <path d="M8.5 9.1v10.2h10V9.1L13.5 13 8.5 9.1Z" fill="#EA4335" />
+      <path d="M3.2 4.3 13.5 13 23.8 4.3c-.1-.9-.8-1.6-1.6-1.6H21L13.5 9 6 2.7H4.8c-.8 0-1.5.7-1.6 1.6Z" fill="#FBBC04" />
+      <path d="M3.2 4.3 13.5 13l2-1.7L6 2.7H4.8c-.8 0-1.5.7-1.6 1.6Z" fill="#EA4335" />
+    </svg>
+  );
+}
+
+function GoogleCalendarIcon() {
+  return (
+    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" aria-hidden="true">
+      <rect x="3" y="3" width="19" height="19" rx="2.6" fill="#fff" />
+      <path d="M5.6 3h13.8A2.6 2.6 0 0 1 22 5.6v3.6H3V5.6A2.6 2.6 0 0 1 5.6 3Z" fill="#4285F4" />
+      <path d="M3 9.2h4.8V22H5.6A2.6 2.6 0 0 1 3 19.4V9.2Z" fill="#34A853" />
+      <path d="M17.2 9.2H22v10.2a2.6 2.6 0 0 1-2.6 2.6h-2.2V9.2Z" fill="#FBBC04" />
+      <path d="M7.8 9.2h9.4V22H7.8V9.2Z" fill="#fff" />
+      <text x="12.5" y="17.4" textAnchor="middle" fontSize="7.8" fontWeight="700" fill="#4285F4">31</text>
+    </svg>
+  );
+}
+
+function DriveIcon() {
+  return (
+    <svg width="28" height="25" viewBox="0 0 28 25" fill="none" aria-hidden="true">
+      <path d="M10.7 2h6.6L27 18.8h-6.6L10.7 2Z" fill="#FBBC04" />
+      <path d="M10.7 2 1 18.8l3.3 5.7L14 7.7 10.7 2Z" fill="#34A853" />
+      <path d="M4.3 24.5h19.4l3.3-5.7H7.6l-3.3 5.7Z" fill="#4285F4" />
+    </svg>
+  );
+}
+
+function OutlookMailIcon() {
+  return (
+    <svg width="28" height="25" viewBox="0 0 28 25" fill="none" aria-hidden="true">
+      <rect x="8" y="5" width="18" height="15" rx="2.4" fill="#0A5BD3" />
+      <path d="M10.2 7.3h13.6v2.1L17 13.7l-6.8-4.3V7.3Z" fill="#42A5F5" />
+      <path d="M10.2 19.7 17 14.4l6.8 5.3H10.2Z" fill="#063B8C" opacity="0.45" />
+      <rect x="2" y="3" width="14" height="19" rx="2.8" fill="#0078D4" />
+      <circle cx="9" cy="12.5" r="4.3" fill="#fff" />
+      <circle cx="9" cy="12.5" r="2.5" fill="#0078D4" />
+    </svg>
+  );
+}
+
+function OutlookCalendarIcon() {
+  return (
+    <svg width="27" height="27" viewBox="0 0 27 27" fill="none" aria-hidden="true">
+      <rect x="3" y="4" width="21" height="20" rx="4" fill="#fff" />
+      <path d="M7 4h13a4 4 0 0 1 4 4v3H3V8a4 4 0 0 1 4-4Z" fill="#0078D4" />
+      <path d="M3 11h21v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-9Z" fill="#2AB5E8" />
+      <rect x="7" y="14" width="3" height="3" rx="0.7" fill="#fff" />
+      <rect x="12" y="14" width="3" height="3" rx="0.7" fill="#fff" />
+      <rect x="17" y="14" width="3" height="3" rx="0.7" fill="#fff" />
+      <rect x="7" y="19" width="3" height="3" rx="0.7" fill="#fff" />
+      <rect x="12" y="19" width="3" height="3" rx="0.7" fill="#fff" />
+    </svg>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg width="27" height="27" viewBox="0 0 27 27" fill="none" aria-hidden="true">
+      <rect x="2" y="2" width="23" height="23" rx="6.5" fill="url(#igGradient)" />
+      <circle cx="13.5" cy="13.5" r="5" stroke="white" strokeWidth="2" />
+      <circle cx="19.1" cy="7.9" r="1.45" fill="white" />
+      <defs>
+        <linearGradient id="igGradient" x1="3" y1="24" x2="24" y2="3" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFDC80" />
+          <stop offset="0.26" stopColor="#F77737" />
+          <stop offset="0.52" stopColor="#E1306C" />
+          <stop offset="0.78" stopColor="#833AB4" />
+          <stop offset="1" stopColor="#405DE6" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function MetaIcon() {
+  return (
+    <svg width="32" height="22" viewBox="0 0 32 22" fill="none" aria-hidden="true">
+      <path d="M2.5 13.1C2.5 8.3 5 4.2 8.35 4.2c2.35 0 4.2 1.8 6.05 4.45l1.6 2.35 1.6-2.35c1.85-2.65 3.7-4.45 6.05-4.45 3.35 0 5.85 4.1 5.85 8.9 0 3.25-1.45 5.4-3.85 5.4-2.05 0-3.55-1.4-5.65-4.45l-4-5.85-4 5.85c-2.1 3.05-3.6 4.45-5.65 4.45-2.4 0-3.85-2.15-3.85-5.4Z" stroke="#1684FF" strokeWidth="3.1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function BrandIcon({ icon }: { icon: string }) {
   if (icon === 'github') return <Github size={25} fill="currentColor" strokeWidth={0} />;
-  if (icon === 'browser') return <span className="text-[27px] leading-none">◎</span>;
-  if (icon === 'gmail') return <span className="text-[26px] font-bold leading-none text-[#ea4335]">M</span>;
-  if (icon === 'google-calendar') return <span className="text-[21px] font-bold leading-none text-[#4285f4]">31</span>;
-  if (icon === 'drive') return <span className="text-[28px] leading-none text-[#34a853]">▲</span>;
-  if (icon === 'outlook-mail') return <span className="block h-[22px] w-[26px] rounded-[5px] bg-[#1a8bdc]" />;
-  if (icon === 'outlook-calendar') return <span className="block h-[24px] w-[24px] rounded-[5px] bg-[#26a7df]" />;
-  if (icon === 'instagram') return <span className="block h-[25px] w-[25px] rounded-[7px] bg-gradient-to-br from-[#feda75] via-[#d62976] to-[#4f5bd5]" />;
-  if (icon === 'meta') return <span className="text-[28px] font-semibold leading-none text-[#1684ff]">∞</span>;
+  if (icon === 'browser') return <Globe2 size={25} strokeWidth={2.4} />;
+  if (icon === 'gmail') return <GmailIcon />;
+  if (icon === 'google-calendar') return <GoogleCalendarIcon />;
+  if (icon === 'drive') return <DriveIcon />;
+  if (icon === 'outlook-mail') return <OutlookMailIcon />;
+  if (icon === 'outlook-calendar') return <OutlookCalendarIcon />;
+  if (icon === 'instagram') return <InstagramIcon />;
+  if (icon === 'meta') return <MetaIcon />;
 
   return null;
 }
