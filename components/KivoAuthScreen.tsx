@@ -32,7 +32,7 @@ export function KivoAuthScreen() {
     <main className="relative h-[100dvh] overflow-hidden bg-[#f4f4f6] text-[#202024]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_31%,#ffffff_0%,#f7f7f8_54%,#f0f0f2_100%)]" />
 
-      <div className="relative z-10 mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col px-[41px] pt-[calc(env(safe-area-inset-top)+31px)] pb-[calc(env(safe-area-inset-bottom)+18px)]">
+      <div className="relative z-10 mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col px-[41px] pt-[calc(env(safe-area-inset-top)+31px)] pb-[calc(env(safe-area-inset-bottom)+58px)]">
         <button className="absolute left-[24px] top-[calc(env(safe-area-inset-top)+22px)] flex h-[42px] w-[42px] items-center justify-center text-[#202024]" aria-label="Back">
           <ChevronLeft size={25} strokeWidth={2.1} />
         </button>
@@ -73,7 +73,7 @@ export function KivoAuthScreen() {
           </button>
         </section>
 
-        <div className="mt-[32px] flex items-center justify-center gap-[14px] text-[15px] tracking-[-0.025em]">
+        <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+24px)] flex items-center justify-center gap-[14px] text-[15px] tracking-[-0.025em]">
           <span className="text-[#a4a5ab]">Already have an account?</span>
           <button className="font-medium text-[#17181b]">Log in</button>
         </div>
