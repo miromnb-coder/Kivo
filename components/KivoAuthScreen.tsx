@@ -32,37 +32,37 @@ export function KivoAuthScreen() {
     <main className="relative h-[100dvh] overflow-hidden bg-[#f4f4f6] text-[#202024]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_31%,#ffffff_0%,#f7f7f8_54%,#f0f0f2_100%)]" />
 
-      <div className="relative z-10 mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col px-[41px] pt-[calc(env(safe-area-inset-top)+31px)] pb-[calc(env(safe-area-inset-bottom)+58px)]">
+      <div className="relative z-10 mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col px-[41px] pt-[calc(env(safe-area-inset-top)+31px)] pb-[calc(env(safe-area-inset-bottom)+20px)]">
         <button className="absolute left-[24px] top-[calc(env(safe-area-inset-top)+22px)] flex h-[42px] w-[42px] items-center justify-center text-[#202024]" aria-label="Back">
           <ChevronLeft size={25} strokeWidth={2.1} />
         </button>
 
-        <section className="pt-[112px] text-center">
+        <section className="pt-[92px] text-center">
           <h1 className="text-[33px] font-normal leading-[1.08] tracking-[-0.055em] text-[#17181b]">Create your account</h1>
-          <p className="mx-auto mt-[19px] max-w-[250px] text-[17px] leading-[1.45] tracking-[-0.03em] text-[#9d9ea5]">
+          <p className="mx-auto mt-[18px] max-w-[250px] text-[17px] leading-[1.45] tracking-[-0.03em] text-[#9d9ea5]">
             Join Kivo and get your<br />personal AI assistant.
           </p>
         </section>
 
-        <section className="mt-[50px] space-y-[10px]">
+        <section className="mt-[44px] space-y-[10px]">
           <AuthInput icon={<UserRound size={19} strokeWidth={1.9} />} placeholder="Full name" />
           <AuthInput icon={<Mail size={19} strokeWidth={1.9} />} placeholder="Email" />
           <AuthInput icon={<Lock size={18} strokeWidth={2} />} placeholder="Password" rightIcon={<Eye size={21} strokeWidth={1.9} />} />
           <AuthInput icon={<Lock size={18} strokeWidth={2} />} placeholder="Confirm password" rightIcon={<Eye size={21} strokeWidth={1.9} />} />
         </section>
 
-        <button className="mt-[20px] flex h-[60px] items-center justify-center rounded-[27px] bg-[#111113] px-[22px] text-[18px] font-medium tracking-[-0.03em] text-white shadow-[0_16px_34px_rgba(0,0,0,0.12)]">
+        <button className="mt-[18px] flex h-[58px] items-center justify-center rounded-[27px] bg-[#111113] px-[22px] text-[18px] font-medium tracking-[-0.03em] text-white shadow-[0_16px_34px_rgba(0,0,0,0.12)]">
           <span className="flex-1 text-center">Create account</span>
           <ArrowRight size={24} strokeWidth={1.8} />
         </button>
 
-        <div className="mt-[25px] flex items-center gap-[18px] px-[14px]">
+        <div className="mt-[23px] flex items-center gap-[18px] px-[14px]">
           <div className="h-px flex-1 bg-[#e7e7ea]" />
           <span className="text-[15px] tracking-[-0.025em] text-[#aeb0b6]">Or continue with</span>
           <div className="h-px flex-1 bg-[#e7e7ea]" />
         </div>
 
-        <section className="mt-[16px] space-y-[12px]">
+        <section className="mt-[15px] space-y-[11px]">
           <button className="flex h-[54px] w-full items-center justify-center rounded-[27px] border border-[#ededf0] bg-white/50 text-[17px] font-medium tracking-[-0.03em] text-[#202024] shadow-[0_4px_14px_rgba(15,23,42,0.015)] backdrop-blur-[14px]">
             <span className="mr-[22px] flex h-[20px] w-[20px] items-center justify-center"><GoogleIcon /></span>
             Continue with Google
@@ -73,7 +73,7 @@ export function KivoAuthScreen() {
           </button>
         </section>
 
-        <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+24px)] flex items-center justify-center gap-[14px] text-[15px] tracking-[-0.025em]">
+        <div className="mt-[26px] flex items-center justify-center gap-[14px] text-[15px] tracking-[-0.025em]">
           <span className="text-[#a4a5ab]">Already have an account?</span>
           <button className="font-medium text-[#17181b]">Log in</button>
         </div>
