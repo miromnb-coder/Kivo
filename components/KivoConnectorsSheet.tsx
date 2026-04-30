@@ -8,9 +8,9 @@ type KivoConnectorsSheetProps = {
 };
 
 const connectors = [
-  { name: 'Gmail', icon: 'M', color: 'text-[#ea4335]', control: 'toggle' },
-  { name: 'Google Calendar', icon: '31', color: 'text-[#4285f4]', control: 'toggle' },
-  { name: 'GitHub', icon: 'github', control: 'toggle' },
+  { name: 'Gmail', icon: 'gmail', control: 'connect' },
+  { name: 'Google Calendar', icon: 'google-calendar', control: 'connect' },
+  { name: 'GitHub', icon: 'github', control: 'connect' },
   { name: 'My browser', icon: 'browser', control: 'connect' },
   { name: 'Google Drive', icon: 'drive', control: 'connect' },
   { name: 'Outlook Mail', icon: 'outlook', control: 'connect' },
@@ -19,24 +19,53 @@ const connectors = [
   { name: 'Meta Ads Manager', icon: 'meta', control: 'connect', badge: 'Beta' },
 ];
 
-function ConnectorIcon({ icon, color }: { icon: string; color?: string }) {
-  if (icon === 'github') return <Github size={23} fill="currentColor" strokeWidth={0} />;
-  if (icon === 'browser') return <div className="h-[24px] w-[24px] rounded-full border-[3px] border-[#333]" />;
-  if (icon === 'drive') return <div className="h-0 w-0 border-l-[13px] border-r-[13px] border-b-[23px] border-l-transparent border-r-transparent border-b-[#34a853]" />;
-  if (icon === 'outlook') return <div className="h-[21px] w-[25px] rounded-[5px] bg-[#1473c8]" />;
-  if (icon === 'calendar') return <div className="h-[24px] w-[24px] rounded-[5px] bg-[#2da7df]" />;
-  if (icon === 'instagram') return <div className="h-[24px] w-[24px] rounded-[7px] bg-gradient-to-br from-[#feda75] via-[#d62976] to-[#4f5bd5]" />;
-  if (icon === 'meta') return <div className="text-[28px] font-semibold leading-none text-[#1684ff]">∞</div>;
-
-  return <span className={`text-[19px] font-bold leading-none ${color ?? 'text-[#333]'}`}>{icon}</span>;
+function GmailIcon() {
+  return (
+    <svg width="26" height="20" viewBox="0 0 26 20" fill="none" aria-hidden="true">
+      <path d="M2 3.5v13A1.5 1.5 0 0 0 3.5 18H7V8.2L2 4.45v-.95Z" fill="#34A853" />
+      <path d="M19 18h3.5A1.5 1.5 0 0 0 24 16.5v-13l-5 4.7V18Z" fill="#4285F4" />
+      <path d="M7 8.2V18h12V8.2l-6 4.45L7 8.2Z" fill="#EA4335" />
+      <path d="M2 3.5 13 11.7 24 3.5A1.5 1.5 0 0 0 22.5 2h-1.1L13 8.25 4.6 2H3.5A1.5 1.5 0 0 0 2 3.5Z" fill="#FBBC04" />
+      <path d="M2 3.5 13 11.7l2.15-1.6L4.6 2H3.5A1.5 1.5 0 0 0 2 3.5Z" fill="#EA4335" />
+    </svg>
+  );
 }
 
-function ToggleMock() {
+function GoogleCalendarIcon() {
   return (
-    <span className="relative h-[32px] w-[56px] rounded-full bg-[#dedee1]">
-      <span className="absolute left-[2px] top-[2px] h-[28px] w-[28px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.16)]" />
-    </span>
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2" y="3" width="20" height="19" rx="3" fill="#fff" />
+      <path d="M5 3h14a3 3 0 0 1 3 3v3H2V6a3 3 0 0 1 3-3Z" fill="#4285F4" />
+      <path d="M2 9h5v13H5a3 3 0 0 1-3-3V9Z" fill="#34A853" />
+      <path d="M17 9h5v10a3 3 0 0 1-3 3h-2V9Z" fill="#FBBC04" />
+      <path d="M7 9h10v13H7V9Z" fill="#fff" />
+      <text x="12" y="17" textAnchor="middle" fontSize="7.5" fontWeight="700" fill="#4285F4">31</text>
+    </svg>
   );
+}
+
+function DriveIcon() {
+  return (
+    <svg width="27" height="24" viewBox="0 0 27 24" fill="none" aria-hidden="true">
+      <path d="M10.2 2h6.6L26 18h-6.7L10.2 2Z" fill="#FABB05" />
+      <path d="M10.2 2 1 18l3.35 5.8L13.5 7.85 10.2 2Z" fill="#34A853" />
+      <path d="M4.35 23.8h18.3L26 18H7.7l-3.35 5.8Z" fill="#4285F4" />
+    </svg>
+  );
+}
+
+function ConnectorIcon({ icon }: { icon: string }) {
+  if (icon === 'gmail') return <GmailIcon />;
+  if (icon === 'google-calendar') return <GoogleCalendarIcon />;
+  if (icon === 'github') return <Github size={25} fill="currentColor" strokeWidth={0} />;
+  if (icon === 'browser') return <div className="h-[25px] w-[25px] rounded-full border-[3px] border-[#333]" />;
+  if (icon === 'drive') return <DriveIcon />;
+  if (icon === 'outlook') return <div className="h-[22px] w-[26px] rounded-[5px] bg-gradient-to-br from-[#42a5f5] to-[#0067b8]" />;
+  if (icon === 'calendar') return <div className="h-[24px] w-[24px] rounded-[5px] bg-gradient-to-br from-[#47c7f4] to-[#1684d8]" />;
+  if (icon === 'instagram') return <div className="h-[25px] w-[25px] rounded-[7px] bg-gradient-to-br from-[#feda75] via-[#d62976] to-[#4f5bd5]" />;
+  if (icon === 'meta') return <div className="text-[30px] font-semibold leading-none text-[#1684ff]">∞</div>;
+
+  return null;
 }
 
 export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps) {
@@ -81,7 +110,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
               <div key={connector.name}>
                 <button type="button" className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]">
                   <span className="flex h-[28px] w-[28px] items-center justify-center">
-                    <ConnectorIcon icon={connector.icon} color={connector.color} />
+                    <ConnectorIcon icon={connector.icon} />
                   </span>
                   <span className="flex min-w-0 flex-1 items-center gap-[10px] text-[21px] tracking-[-0.035em]">
                     <span className="truncate">{connector.name}</span>
@@ -91,7 +120,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
                       </span>
                     ) : null}
                   </span>
-                  {connector.control === 'toggle' ? <ToggleMock /> : <span className="text-[20px] tracking-[-0.03em] text-[#7e7e84]">Connect</span>}
+                  <span className="text-[20px] tracking-[-0.03em] text-[#7e7e84]">Connect</span>
                 </button>
                 {index < connectors.length - 1 ? <div className="ml-[46px] h-px bg-[#dddddf]" /> : null}
               </div>
