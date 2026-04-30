@@ -1,5 +1,5 @@
-import { KivoStartScreen } from '@/components/KivoStartScreen';
+import { KivoAuthScreen } from '@/components/KivoAuthScreen';
 
 export default function Page() {
-  return <KivoStartScreen />;
+  return <KivoAuthScreen />;
 }
