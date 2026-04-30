@@ -32,7 +32,7 @@ export function KivoAuthScreen() {
     <main className="relative h-[100dvh] overflow-hidden bg-[#f4f4f6] text-[#202024]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_31%,#ffffff_0%,#f7f7f8_54%,#f0f0f2_100%)]" />
 
-      <div className="relative z-10 mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col px-[41px] pt-[calc(env(safe-area-inset-top)+31px)] pb-[calc(env(safe-area-inset-bottom)+30px)]">
+      <div className="relative z-10 mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col px-[41px] pt-[calc(env(safe-area-inset-top)+31px)] pb-[calc(env(safe-area-inset-bottom)+18px)]">
         <button className="absolute left-[24px] top-[calc(env(safe-area-inset-top)+22px)] flex h-[42px] w-[42px] items-center justify-center text-[#202024]" aria-label="Back">
           <ChevronLeft size={25} strokeWidth={2.1} />
         </button>
@@ -57,25 +57,25 @@ export function KivoAuthScreen() {
         </button>
 
         <div className="mt-[25px] flex items-center gap-[18px] px-[14px]">
-          <div className="h-px flex-1 bg-[#e3e3e6]" />
-          <span className="text-[15px] tracking-[-0.025em] text-[#a0a1a7]">Or continue with</span>
-          <div className="h-px flex-1 bg-[#e3e3e6]" />
+          <div className="h-px flex-1 bg-[#e7e7ea]" />
+          <span className="text-[15px] tracking-[-0.025em] text-[#aeb0b6]">Or continue with</span>
+          <div className="h-px flex-1 bg-[#e7e7ea]" />
         </div>
 
         <section className="mt-[16px] space-y-[12px]">
-          <button className="flex h-[54px] w-full items-center justify-center rounded-[27px] border border-[#ececef] bg-white/40 text-[17px] font-medium tracking-[-0.03em] text-[#202024] shadow-[0_8px_24px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
+          <button className="flex h-[54px] w-full items-center justify-center rounded-[27px] border border-[#ededf0] bg-white/50 text-[17px] font-medium tracking-[-0.03em] text-[#202024] shadow-[0_4px_14px_rgba(15,23,42,0.015)] backdrop-blur-[14px]">
             <span className="mr-[22px] flex h-[20px] w-[20px] items-center justify-center"><GoogleIcon /></span>
             Continue with Google
           </button>
-          <button className="flex h-[54px] w-full items-center justify-center rounded-[27px] border border-[#ececef] bg-white/40 text-[17px] font-medium tracking-[-0.03em] text-[#202024] shadow-[0_8px_24px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
+          <button className="flex h-[54px] w-full items-center justify-center rounded-[27px] border border-[#ededf0] bg-white/50 text-[17px] font-medium tracking-[-0.03em] text-[#202024] shadow-[0_4px_14px_rgba(15,23,42,0.015)] backdrop-blur-[14px]">
             <span className="mr-[22px] text-[24px] leading-none"></span>
             Continue with Apple
           </button>
         </section>
 
-        <div className="mt-[34px] flex items-center justify-center gap-[18px] text-[16px] tracking-[-0.025em]">
-          <span className="text-[#a2a3a9]">Already have an account?</span>
-          <button className="text-[#17181b]">Log in</button>
+        <div className="mt-[32px] flex items-center justify-center gap-[14px] text-[15px] tracking-[-0.025em]">
+          <span className="text-[#a4a5ab]">Already have an account?</span>
+          <button className="font-medium text-[#17181b]">Log in</button>
         </div>
       </div>
     </main>
