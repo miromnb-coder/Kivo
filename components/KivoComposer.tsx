@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUp, MessageCircleMore, Mic, Plus } from 'lucide-react';
 
 type KivoComposerProps = {
@@ -40,18 +40,27 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canSend = value.trim().length > 0;
 
-  useEffect(() => {
-    function updateKeyboardOffset() {
-      const viewport = window.visualViewport;
-      if (!viewport) {
-        setKeyboardOffset(0);
-        return;
-      }
-
-      const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      setKeyboardOffset(offset > 80 ? offset : 0);
+  const updateKeyboardOffset = useCallback(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) {
+      setKeyboardOffset(0);
+      return;
     }
 
+    const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+    setKeyboardOffset(offset > 80 ? offset : 0);
+  }, []);
+
+  const syncKeyboardPosition = useCallback(() => {
+    window.scrollTo(0, 0);
+    updateKeyboardOffset();
+    requestAnimationFrame(updateKeyboardOffset);
+    window.setTimeout(updateKeyboardOffset, 60);
+    window.setTimeout(updateKeyboardOffset, 140);
+    window.setTimeout(updateKeyboardOffset, 280);
+  }, [updateKeyboardOffset]);
+
+  useEffect(() => {
     updateKeyboardOffset();
     window.visualViewport?.addEventListener('resize', updateKeyboardOffset);
     window.visualViewport?.addEventListener('scroll', updateKeyboardOffset);
@@ -62,7 +71,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
       window.visualViewport?.removeEventListener('scroll', updateKeyboardOffset);
       window.removeEventListener('resize', updateKeyboardOffset);
     };
-  }, []);
+  }, [updateKeyboardOffset]);
 
   function resizeTextarea() {
     const textarea = textareaRef.current;
@@ -87,7 +96,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 px-[16px] pb-[18px] transition-transform duration-300 ease-out"
+      className="fixed inset-x-0 bottom-0 z-40 px-[16px] pb-[18px] transition-transform duration-300 ease-out will-change-transform"
       style={{ transform: `translate3d(0, -${keyboardOffset}px, 0)` }}
     >
       <div className="mx-auto w-full max-w-[430px] rounded-[34px] border border-[#eeeeF1] bg-[#f9f9fa] px-[16px] pt-[14px] pb-[12px] shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
@@ -99,13 +108,18 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
           onFocus={() => {
             if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
             onFocusChange?.(true);
+            syncKeyboardPosition();
           }}
           onBlur={() => {
-            blurTimeoutRef.current = setTimeout(() => onFocusChange?.(false), 120);
+            blurTimeoutRef.current = setTimeout(() => {
+              onFocusChange?.(false);
+              updateKeyboardOffset();
+            }, 120);
           }}
           onChange={(event) => {
             setValue(event.target.value);
             requestAnimationFrame(resizeTextarea);
+            requestAnimationFrame(updateKeyboardOffset);
           }}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
