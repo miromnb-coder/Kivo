@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUp, MessageCircleMore, Mic, Plus } from 'lucide-react';
 import { KivoPlusSheet } from './KivoPlusSheet';
 import { KivoConnectorsSheet } from './KivoConnectorsSheet';
+import { KivoModePopover } from './KivoModePopover';
 
 type KivoComposerProps = {
   onFocusChange?: (focused: boolean) => void;
@@ -45,6 +46,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
   const [value, setValue] = useState('');
   const [isPlusOpen, setIsPlusOpen] = useState(false);
   const [isConnectorsOpen, setIsConnectorsOpen] = useState(false);
+  const [isModeOpen, setIsModeOpen] = useState(false);
   const [visualViewportState, setVisualViewportState] = useState<VisualViewportState>({
     height: 0,
     offsetTop: 0,
@@ -157,7 +159,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
               </div>
 
               <div className="flex items-center gap-[8px]">
-                <CircleButton>
+                <CircleButton onClick={() => setIsModeOpen(true)}>
                   <MessageCircleMore size={20} strokeWidth={1.6} />
                 </CircleButton>
                 <CircleButton>
@@ -182,6 +184,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
 
       <KivoPlusSheet open={isPlusOpen} onClose={() => setIsPlusOpen(false)} />
       <KivoConnectorsSheet open={isConnectorsOpen} onClose={() => setIsConnectorsOpen(false)} />
+      <KivoModePopover open={isModeOpen} onClose={() => setIsModeOpen(false)} />
     </>
   );
 }
