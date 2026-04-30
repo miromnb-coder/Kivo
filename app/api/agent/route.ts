@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { runKivoModel } from '@/lib/ai/model-router';
-import type { KivoAgentId, KivoContextId, KivoModeId, KivoModelMessage } from '@/lib/ai/models';
+import { runKivoAgent } from '@/lib/agent/run-agent';
+import type { KivoAgentId, KivoContextId, KivoModeId } from '@/lib/ai/models';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,6 @@ type AgentRequest = {
   agent?: KivoAgentId;
   mode?: KivoModeId;
   context?: KivoContextId;
-  history?: KivoModelMessage[];
 };
 
 function encoderLine(event: string, data: unknown) {
@@ -37,38 +36,41 @@ export async function POST(req: Request) {
 
         try {
           send('step', { label: 'Understanding request', status: 'done' });
-          send('step', { label: `Using ${agent} agent`, status: 'done' });
-          send('step', { label: mode === 'deep' ? 'Preparing deeper reasoning' : 'Preparing response', status: 'active' });
 
-          const messages: KivoModelMessage[] = [
-            {
-              role: 'system',
-              content: `You are Kivo, a personal AI agent. Agent: ${agent}. Mode: ${mode}. Context: ${context}. Be useful, concise, and personal.`,
-            },
-            ...(body.history ?? []).slice(-8),
-            { role: 'user', content: message },
-          ];
-
-          const result = await runKivoModel({
+          const result = await runKivoAgent({
+            message,
             agent,
             mode,
             context,
-            messages,
-            complexity: mode === 'deep' ? 'high' : 'low',
+            userId: 'demo-user',
           });
+
+          // send steps
+          for (const step of result.steps) {
+            send('step', step);
+            await new Promise((r) => setTimeout(r, 120));
+          }
 
           send('meta', { model: result.model, provider: result.provider });
 
-          const tokens = result.content.match(/\S+\s*/g) ?? [];
+          // stream tokens
+          const tokens = result.answer.match(/\S+\s*/g) ?? [];
           for (const token of tokens) {
             send('token', { token });
-            await new Promise((resolve) => setTimeout(resolve, 8));
+            await new Promise((r) => setTimeout(r, 12));
           }
 
-          send('done', { content: result.content, model: result.model, provider: result.provider });
+          send('done', {
+            content: result.answer,
+            model: result.model,
+            provider: result.provider,
+          });
+
           controller.close();
         } catch (error) {
-          send('error', { message: error instanceof Error ? error.message : 'Agent failed' });
+          send('error', {
+            message: error instanceof Error ? error.message : 'Agent failed',
+          });
           controller.close();
         }
       },
