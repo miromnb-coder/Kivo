@@ -2,20 +2,20 @@ import { ChevronDown, ChevronLeft, Sparkles } from 'lucide-react';
 
 export function KivoTopBar() {
   return (
-    <header className="relative flex items-center justify-between px-8 pt-12 pb-6">
-      <button aria-label="Go back" className="flex h-9 w-9 items-center justify-center text-[#26262a]">
-        <ChevronLeft size={30} strokeWidth={1.6} />
+    <header className="relative z-20 flex h-[104px] items-start justify-between px-[28px] pt-[54px]">
+      <button aria-label="Go back" className="flex h-9 w-9 items-center justify-center text-[#202124]">
+        <ChevronLeft size={30} strokeWidth={1.75} />
       </button>
 
-      <button className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2 text-[24px] font-semibold tracking-[-0.02em] text-[#222225]">
+      <button className="absolute left-1/2 top-[58px] flex -translate-x-1/2 items-center gap-[9px] text-[23px] font-semibold leading-none tracking-[-0.035em] text-[#1f2023]">
         <span>Kivo</span>
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ececef]">
-          <ChevronDown size={16} strokeWidth={2.4} />
+        <span className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[#ececef] text-[#232428]">
+          <ChevronDown size={16} strokeWidth={2.35} />
         </span>
       </button>
 
-      <button className="ml-auto flex h-16 items-center gap-2.5 rounded-full border-[1.5px] border-[#d8d8dc] bg-[#f7f7f8] px-6 text-[19px] font-medium tracking-[-0.01em] text-[#303034]">
-        <Sparkles size={20} strokeWidth={2} />
+      <button className="flex h-[58px] items-center gap-[10px] rounded-full border border-[#dedee2] bg-[#f8f8f9]/85 px-[18px] text-[22px] font-medium leading-none tracking-[-0.035em] text-[#292a2e] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+        <Sparkles size={23} strokeWidth={1.9} />
         <span>397</span>
       </button>
     </header>
