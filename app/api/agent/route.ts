@@ -35,9 +35,7 @@ export async function POST(req: Request) {
         const send = (event: string, data: unknown) => controller.enqueue(encoder.encode(encoderLine(event, data)));
 
         try {
-          send('step', { label: 'Understanding request', status: 'done' });
-
-          const result = await runKivoAgent({
+          const agentPromise = runKivoAgent({
             message,
             agent,
             mode,
@@ -45,19 +43,28 @@ export async function POST(req: Request) {
             userId: 'demo-user',
           });
 
-          // send steps
+          // early steps (feels instant)
+          send('step', { label: 'Understanding your request', status: 'active' });
+          await new Promise((r) => setTimeout(r, 180));
+
+          send('step', { label: 'Checking your context', status: 'active' });
+          await new Promise((r) => setTimeout(r, 200));
+
+          const result = await agentPromise;
+
+          // real steps (completed)
           for (const step of result.steps) {
-            send('step', step);
+            send('step', { ...step, status: 'done' });
             await new Promise((r) => setTimeout(r, 120));
           }
 
           send('meta', { model: result.model, provider: result.provider });
 
-          // stream tokens
+          // streaming answer
           const tokens = result.answer.match(/\S+\s*/g) ?? [];
           for (const token of tokens) {
             send('token', { token });
-            await new Promise((r) => setTimeout(r, 12));
+            await new Promise((r) => setTimeout(r, 10));
           }
 
           send('done', {
