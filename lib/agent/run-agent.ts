@@ -1,6 +1,6 @@
 import { runKivoModel } from '@/lib/ai/model-router';
 import { createPlan } from './planner';
-import { getMemoryContext } from './memory';
+import { getMemoryContext, saveAgentRun } from './memory';
 import { routeIntent } from './router';
 import { verifyAnswer } from './verifier';
 import type { AgentRequest, AgentResult } from './types';
@@ -20,12 +20,10 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
         role: 'system',
         content: [
           'You are Kivo, a personal AI agent.',
-          `Selected agent: ${req.agent}.`,
-          `Mode: ${req.mode}. Context: ${req.context}.`,
           `Intent: ${intent}.`,
-          `Memory: ${memory.profileSummary}.`,
-          `Preferences: ${memory.preferences.join(', ') || 'none'}.`,
-          'Answer clearly, personally, and concisely.',
+          `User: ${memory.profileSummary}.`,
+          `Preferences: ${memory.preferences.join(', ')}`,
+          'Be helpful and personal.',
         ].join('\n'),
       },
       { role: 'user', content: req.message },
@@ -33,6 +31,10 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   });
 
   const final = verifyAnswer(response.content);
+
+  if (req.userId) {
+    await saveAgentRun(req.userId, req.message, final);
+  }
 
   return {
     answer: final,
