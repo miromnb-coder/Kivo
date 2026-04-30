@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronLeft, Sparkles } from 'lucide-react';
 import { KivoCreditsSheet } from './KivoCreditsSheet';
+import { KivoAgentSelector } from './KivoAgentSelector';
 
 export function KivoTopBar() {
   const [open, setOpen] = useState(false);
+  const [agentOpen, setAgentOpen] = useState(false);
 
   return (
     <>
@@ -14,7 +16,10 @@ export function KivoTopBar() {
           <ChevronLeft size={22} strokeWidth={2} />
         </button>
 
-        <button className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+14px)] flex -translate-x-1/2 items-center gap-[6px] text-[20px] font-semibold tracking-[-0.03em] text-[#1f2023]">
+        <button
+          onClick={() => setAgentOpen(true)}
+          className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+14px)] flex -translate-x-1/2 items-center gap-[6px] text-[20px] font-semibold tracking-[-0.03em] text-[#1f2023]"
+        >
           <span>Kivo</span>
           <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#ececef]">
             <ChevronDown size={14} strokeWidth={2.4} />
@@ -31,6 +36,7 @@ export function KivoTopBar() {
       </header>
 
       <KivoCreditsSheet open={open} onClose={() => setOpen(false)} />
+      <KivoAgentSelector open={agentOpen} onClose={() => setAgentOpen(false)} />
     </>
   );
 }
