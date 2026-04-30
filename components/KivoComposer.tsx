@@ -1,4 +1,18 @@
-import { ArrowUp, MessageCircleMore, Mic, Plus, SlidersVertical } from 'lucide-react';
+import { ArrowUp, MessageCircleMore, Mic, Plus } from 'lucide-react';
+
+function KivoToolsIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M12 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M17 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+
+      <circle cx="7" cy="9" r="1.8" fill="currentColor" />
+      <circle cx="12" cy="15" r="1.8" fill="currentColor" />
+      <circle cx="17" cy="8" r="1.8" fill="currentColor" />
+    </svg>
+  );
+}
 
 function CircleButton({ children, muted = false }: { children: React.ReactNode; muted?: boolean }) {
   return (
@@ -26,7 +40,7 @@ export function KivoComposer() {
               <Plus size={22} strokeWidth={1.6} />
             </CircleButton>
             <CircleButton>
-              <SlidersVertical size={21} strokeWidth={1.6} />
+              <KivoToolsIcon />
             </CircleButton>
           </div>
 
