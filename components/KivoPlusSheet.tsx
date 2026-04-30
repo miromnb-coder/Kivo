@@ -1,8 +1,10 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
 import {
   Briefcase,
   CalendarDays,
   Camera,
-  FileText,
   ImageIcon,
   Mic2,
   Monitor,
@@ -45,8 +47,105 @@ const photoItems = [
   { title: 'Ask anything or assign a task' },
 ];
 
+const MEDIUM_HEIGHT = 0.62;
+const FULL_HEIGHT = 0.92;
+const CLOSE_THRESHOLD = 130;
+const VELOCITY_CLOSE_THRESHOLD = 0.65;
+const VELOCITY_OPEN_THRESHOLD = -0.65;
+
 export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
+  const [heightRatio, setHeightRatio] = useState(MEDIUM_HEIGHT);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartYRef = useRef(0);
+  const dragStartHeightRef = useRef(MEDIUM_HEIGHT);
+  const dragStartTimeRef = useRef(0);
+  const lastYRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const velocityRef = useRef(0);
+
+  useEffect(() => {
+    if (!open) return;
+    setHeightRatio(MEDIUM_HEIGHT);
+    setDragOffset(0);
+    setIsDragging(false);
+
+    const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
+    };
+  }, [open]);
+
   if (!open) return null;
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragStartYRef.current = event.clientY;
+    dragStartHeightRef.current = heightRatio;
+    dragStartTimeRef.current = performance.now();
+    lastYRef.current = event.clientY;
+    lastTimeRef.current = dragStartTimeRef.current;
+    velocityRef.current = 0;
+    setIsDragging(true);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging) return;
+
+    const now = performance.now();
+    const delta = event.clientY - dragStartYRef.current;
+    const deltaTime = Math.max(1, now - lastTimeRef.current);
+    velocityRef.current = (event.clientY - lastYRef.current) / deltaTime;
+    lastYRef.current = event.clientY;
+    lastTimeRef.current = now;
+
+    const viewportHeight = window.innerHeight || 800;
+    const heightDelta = -delta / viewportHeight;
+    const nextHeight = Math.min(FULL_HEIGHT, Math.max(MEDIUM_HEIGHT, dragStartHeightRef.current + heightDelta));
+
+    if (delta > 0 && dragStartHeightRef.current <= MEDIUM_HEIGHT + 0.02) {
+      setDragOffset(Math.min(delta, 190));
+      setHeightRatio(MEDIUM_HEIGHT);
+      return;
+    }
+
+    setDragOffset(0);
+    setHeightRatio(nextHeight);
+  }
+
+  function handlePointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging) return;
+
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    setIsDragging(false);
+
+    const totalDelta = event.clientY - dragStartYRef.current;
+    const velocity = velocityRef.current;
+
+    if (totalDelta > CLOSE_THRESHOLD || velocity > VELOCITY_CLOSE_THRESHOLD) {
+      setDragOffset(240);
+      window.setTimeout(onClose, 120);
+      return;
+    }
+
+    setDragOffset(0);
+
+    if (velocity < VELOCITY_OPEN_THRESHOLD) {
+      setHeightRatio(FULL_HEIGHT);
+      return;
+    }
+
+    if (heightRatio > (MEDIUM_HEIGHT + FULL_HEIGHT) / 2) {
+      setHeightRatio(FULL_HEIGHT);
+    } else {
+      setHeightRatio(MEDIUM_HEIGHT);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[90]">
@@ -54,13 +153,32 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
         type="button"
         aria-label="Close actions"
         onClick={onClose}
-        className="absolute inset-0 bg-black/20"
+        className="absolute inset-0 bg-black/20 transition-opacity duration-200"
       />
 
-      <div className="absolute inset-x-0 bottom-0 mx-auto max-h-[78vh] w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-16px_40px_rgba(0,0,0,0.12)]">
-        <div className="mx-auto mt-[8px] h-[5px] w-[40px] rounded-full bg-[#c5c5ca]" />
+      <div
+        className={`absolute inset-x-0 bottom-0 mx-auto w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-16px_40px_rgba(0,0,0,0.12)] ${
+          isDragging ? '' : 'transition-[height,transform] duration-300 ease-out'
+        }`}
+        style={{
+          height: `${heightRatio * 100}vh`,
+          transform: `translate3d(0, ${dragOffset}px, 0)`,
+        }}
+      >
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Drag actions sheet"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="flex h-[32px] cursor-grab touch-none items-center justify-center active:cursor-grabbing"
+        >
+          <div className="h-[5px] w-[40px] rounded-full bg-[#c5c5ca]" />
+        </div>
 
-        <div className="max-h-[calc(78vh-12px)] overflow-y-auto px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[24px]">
+        <div className="h-[calc(100%-32px)] overflow-y-auto px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[0px] overscroll-contain">
           <div className="mb-[18px] flex items-center justify-between">
             <h2 className="text-[28px] font-semibold leading-none tracking-[-0.035em] text-[#25262a]">Photos</h2>
             <button type="button" className="text-[22px] font-semibold tracking-[-0.03em] text-[#0a84ff]">
