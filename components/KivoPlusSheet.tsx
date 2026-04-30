@@ -59,15 +59,42 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
   const [dragOffset, setDragOffset] = useState(CLOSED_OFFSET);
   const [isDragging, setIsDragging] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const liveHeightRatioRef = useRef(MEDIUM_HEIGHT);
+  const liveDragOffsetRef = useRef(CLOSED_OFFSET);
   const dragStartYRef = useRef(0);
   const dragStartHeightRef = useRef(MEDIUM_HEIGHT);
-  const dragStartTimeRef = useRef(0);
   const lastYRef = useRef(0);
   const lastTimeRef = useRef(0);
   const velocityRef = useRef(0);
 
+  function applySheetStyle(height: number, offset: number, animated: boolean) {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    sheet.style.transition = animated ? 'height 300ms cubic-bezier(0.16,1,0.3,1), transform 300ms cubic-bezier(0.16,1,0.3,1)' : 'none';
+    sheet.style.height = `${height * 100}vh`;
+    sheet.style.transform = `translate3d(0, ${offset}px, 0)`;
+  }
+
+  function scheduleSheetStyle(height: number, offset: number) {
+    liveHeightRatioRef.current = height;
+    liveDragOffsetRef.current = offset;
+
+    if (frameRef.current !== null) return;
+
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      applySheetStyle(liveHeightRatioRef.current, liveDragOffsetRef.current, false);
+    });
+  }
+
   useEffect(() => {
     if (!open) return;
+
+    liveHeightRatioRef.current = MEDIUM_HEIGHT;
+    liveDragOffsetRef.current = CLOSED_OFFSET;
     setHeightRatio(MEDIUM_HEIGHT);
     setDragOffset(CLOSED_OFFSET);
     setIsDragging(false);
@@ -75,7 +102,9 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
 
     const frame = requestAnimationFrame(() => {
       setIsVisible(true);
+      liveDragOffsetRef.current = 0;
       setDragOffset(0);
+      applySheetStyle(MEDIUM_HEIGHT, 0, true);
     });
 
     const originalOverflow = document.body.style.overflow;
@@ -85,6 +114,7 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
 
     return () => {
       cancelAnimationFrame(frame);
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
       document.body.style.overflow = originalOverflow;
       document.body.style.touchAction = originalTouchAction;
     };
@@ -94,19 +124,21 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
 
   function closeWithAnimation() {
     setIsVisible(false);
+    liveDragOffsetRef.current = CLOSED_OFFSET;
     setDragOffset(CLOSED_OFFSET);
+    applySheetStyle(liveHeightRatioRef.current, CLOSED_OFFSET, true);
     window.setTimeout(onClose, 180);
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStartYRef.current = event.clientY;
-    dragStartHeightRef.current = heightRatio;
-    dragStartTimeRef.current = performance.now();
+    dragStartHeightRef.current = liveHeightRatioRef.current;
     lastYRef.current = event.clientY;
-    lastTimeRef.current = dragStartTimeRef.current;
+    lastTimeRef.current = performance.now();
     velocityRef.current = 0;
     setIsDragging(true);
+    applySheetStyle(liveHeightRatioRef.current, liveDragOffsetRef.current, false);
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -124,13 +156,11 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
     const nextHeight = Math.min(FULL_HEIGHT, Math.max(MEDIUM_HEIGHT, dragStartHeightRef.current + heightDelta));
 
     if (delta > 0 && dragStartHeightRef.current <= MEDIUM_HEIGHT + 0.02) {
-      setDragOffset(Math.min(delta * 0.92, 210));
-      setHeightRatio(MEDIUM_HEIGHT);
+      scheduleSheetStyle(MEDIUM_HEIGHT, Math.min(delta * 0.92, 210));
       return;
     }
 
-    setDragOffset(0);
-    setHeightRatio(nextHeight);
+    scheduleSheetStyle(nextHeight, 0);
   }
 
   function handlePointerUp(event: React.PointerEvent<HTMLDivElement>) {
@@ -147,18 +177,19 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
       return;
     }
 
-    setDragOffset(0);
+    let targetHeight = MEDIUM_HEIGHT;
 
     if (velocity < VELOCITY_OPEN_THRESHOLD) {
-      setHeightRatio(FULL_HEIGHT);
-      return;
+      targetHeight = FULL_HEIGHT;
+    } else if (liveHeightRatioRef.current > (MEDIUM_HEIGHT + FULL_HEIGHT) / 2) {
+      targetHeight = FULL_HEIGHT;
     }
 
-    if (heightRatio > (MEDIUM_HEIGHT + FULL_HEIGHT) / 2) {
-      setHeightRatio(FULL_HEIGHT);
-    } else {
-      setHeightRatio(MEDIUM_HEIGHT);
-    }
+    liveHeightRatioRef.current = targetHeight;
+    liveDragOffsetRef.current = 0;
+    setHeightRatio(targetHeight);
+    setDragOffset(0);
+    applySheetStyle(targetHeight, 0, true);
   }
 
   return (
@@ -173,9 +204,8 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
       />
 
       <div
-        className={`absolute inset-x-0 bottom-0 mx-auto w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-16px_40px_rgba(0,0,0,0.12)] ${
-          isDragging ? '' : 'transition-[height,transform] duration-[420ms] ease-[cubic-bezier(0.22,1.25,0.36,1)]'
-        }`}
+        ref={sheetRef}
+        className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-white shadow-[0_-16px_40px_rgba(0,0,0,0.12)] will-change-transform"
         style={{
           height: `${heightRatio * 100}vh`,
           transform: `translate3d(0, ${dragOffset}px, 0)`,
