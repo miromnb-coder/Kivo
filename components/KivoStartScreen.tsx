@@ -32,66 +32,118 @@ export function KivoStartScreen() {
 
     setLoading(true);
 
-    const res = await fetch('/api/agent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
-    });
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
 
-    const reader = res.body?.getReader();
-    const decoder = new TextDecoder();
+      if (!res.ok) {
+        throw new Error(`Agent request failed (${res.status})`);
+      }
 
-    if (!reader) return;
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
 
-    let buffer = '';
+      if (!reader) {
+        throw new Error('Agent stream did not start');
+      }
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+      let buffer = '';
 
-      buffer += decoder.decode(value, { stream: true });
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const parts = buffer.split('\n\n');
-      buffer = parts.pop() || '';
+        buffer += decoder.decode(value, { stream: true });
 
-      for (const part of parts) {
-        if (!part.startsWith('event:')) continue;
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() || '';
 
-        const [, eventLine, dataLine] = part.split('\n');
-        const event = eventLine.replace('event: ', '');
-        const data = JSON.parse(dataLine.replace('data: ', ''));
+        for (const part of parts) {
+          if (!part.startsWith('event:')) continue;
 
-        if (event === 'token') {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, content: m.content + data.token }
-                : m,
-            ),
-          );
-        }
+          const lines = part.split('\n');
+          const eventLine = lines.find((line) => line.startsWith('event: '));
+          const dataLine = lines.find((line) => line.startsWith('data: '));
+          if (!eventLine || !dataLine) continue;
 
-        if (event === 'meta') {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, model: data.model, provider: data.provider }
-                : m,
-            ),
-          );
-        }
+          const event = eventLine.replace('event: ', '');
+          const data = JSON.parse(dataLine.replace('data: ', ''));
 
-        if (event === 'done') {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, steps: undefined }
-                : m,
-            ),
-          );
-          setLoading(false);
+          if (event === 'token') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, content: m.content + data.token }
+                  : m,
+              ),
+            );
+          }
+
+          if (event === 'step') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, steps: [...(m.steps ?? []), data] }
+                  : m,
+              ),
+            );
+          }
+
+          if (event === 'meta') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, model: data.model, provider: data.provider }
+                  : m,
+              ),
+            );
+          }
+
+          if (event === 'error') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? {
+                      ...m,
+                      steps: undefined,
+                      content: '',
+                      error: data.message ?? 'Kivo could not answer right now.',
+                    }
+                  : m,
+              ),
+            );
+            setLoading(false);
+          }
+
+          if (event === 'done') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, steps: undefined }
+                  : m,
+              ),
+            );
+            setLoading(false);
+          }
         }
       }
+    } catch (error) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? {
+                ...m,
+                steps: undefined,
+                content: '',
+                error: error instanceof Error ? error.message : 'Kivo could not answer right now.',
+              }
+            : m,
+        ),
+      );
+      setLoading(false);
     }
   }
 
