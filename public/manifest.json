@@ -1,0 +1,16 @@
+{
+  "name": "Kivo",
+  "short_name": "Kivo",
+  "description": "Your personal AI assistant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f3f5",
+  "theme_color": "#f3f3f5",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
