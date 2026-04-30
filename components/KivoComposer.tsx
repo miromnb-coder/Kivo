@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUp, MessageCircleMore, Mic, Plus } from 'lucide-react';
 import { KivoPlusSheet } from './KivoPlusSheet';
+import { KivoConnectorsSheet } from './KivoConnectorsSheet';
 
 type KivoComposerProps = {
   onFocusChange?: (focused: boolean) => void;
@@ -43,6 +44,7 @@ function CircleButton({ children, muted = false, onClick }: { children: React.Re
 export function KivoComposer({ onFocusChange }: KivoComposerProps) {
   const [value, setValue] = useState('');
   const [isPlusOpen, setIsPlusOpen] = useState(false);
+  const [isConnectorsOpen, setIsConnectorsOpen] = useState(false);
   const [visualViewportState, setVisualViewportState] = useState<VisualViewportState>({
     height: 0,
     offsetTop: 0,
@@ -149,7 +151,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
                 <CircleButton onClick={() => setIsPlusOpen(true)}>
                   <Plus size={22} strokeWidth={1.6} />
                 </CircleButton>
-                <CircleButton>
+                <CircleButton onClick={() => setIsConnectorsOpen(true)}>
                   <KivoToolsIcon />
                 </CircleButton>
               </div>
@@ -179,6 +181,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
       </div>
 
       <KivoPlusSheet open={isPlusOpen} onClose={() => setIsPlusOpen(false)} />
+      <KivoConnectorsSheet open={isConnectorsOpen} onClose={() => setIsConnectorsOpen(false)} />
     </>
   );
 }
