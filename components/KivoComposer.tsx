@@ -38,7 +38,17 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const baseViewportHeightRef = useRef<number>(0);
   const canSend = value.trim().length > 0;
+
+  const captureBaseViewportHeight = useCallback(() => {
+    const viewport = window.visualViewport;
+    const currentHeight = viewport?.height ?? window.innerHeight;
+
+    if (!baseViewportHeightRef.current || currentHeight > baseViewportHeightRef.current) {
+      baseViewportHeightRef.current = currentHeight;
+    }
+  }, []);
 
   const updateKeyboardOffset = useCallback(() => {
     const viewport = window.visualViewport;
@@ -47,31 +57,35 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
       return;
     }
 
-    const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+    const baseHeight = baseViewportHeightRef.current || window.innerHeight;
+    const offset = Math.max(0, baseHeight - viewport.height - viewport.offsetTop);
     setKeyboardOffset(offset > 80 ? offset : 0);
   }, []);
 
   const syncKeyboardPosition = useCallback(() => {
-    window.scrollTo(0, 0);
+    captureBaseViewportHeight();
     updateKeyboardOffset();
     requestAnimationFrame(updateKeyboardOffset);
     window.setTimeout(updateKeyboardOffset, 60);
     window.setTimeout(updateKeyboardOffset, 140);
     window.setTimeout(updateKeyboardOffset, 280);
-  }, [updateKeyboardOffset]);
+  }, [captureBaseViewportHeight, updateKeyboardOffset]);
 
   useEffect(() => {
+    captureBaseViewportHeight();
     updateKeyboardOffset();
     window.visualViewport?.addEventListener('resize', updateKeyboardOffset);
     window.visualViewport?.addEventListener('scroll', updateKeyboardOffset);
+    window.addEventListener('resize', captureBaseViewportHeight);
     window.addEventListener('resize', updateKeyboardOffset);
 
     return () => {
       window.visualViewport?.removeEventListener('resize', updateKeyboardOffset);
       window.visualViewport?.removeEventListener('scroll', updateKeyboardOffset);
+      window.removeEventListener('resize', captureBaseViewportHeight);
       window.removeEventListener('resize', updateKeyboardOffset);
     };
-  }, [updateKeyboardOffset]);
+  }, [captureBaseViewportHeight, updateKeyboardOffset]);
 
   function resizeTextarea() {
     const textarea = textareaRef.current;
