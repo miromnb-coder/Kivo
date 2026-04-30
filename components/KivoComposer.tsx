@@ -9,6 +9,8 @@ import { KivoVoiceRecorderBar } from './KivoVoiceRecorderBar';
 
 type KivoComposerProps = {
   onFocusChange?: (focused: boolean) => void;
+  onSubmitMessage?: (message: string) => Promise<void> | void;
+  disabled?: boolean;
 };
 
 type VisualViewportState = {
@@ -43,7 +45,7 @@ function CircleButton({ children, muted = false, onClick }: { children: React.Re
   );
 }
 
-export function KivoComposer({ onFocusChange }: KivoComposerProps) {
+export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false }: KivoComposerProps) {
   const [value, setValue] = useState('');
   const [isPlusOpen, setIsPlusOpen] = useState(false);
   const [isConnectorsOpen, setIsConnectorsOpen] = useState(false);
@@ -56,7 +58,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
   });
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const canSend = value.trim().length > 0;
+  const canSend = value.trim().length > 0 && !disabled;
 
   const updateVisualViewportState = useCallback(() => {
     const viewport = window.visualViewport;
@@ -106,10 +108,10 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
 
   function handleSubmit() {
     const message = value.trim();
-    if (!message) return;
+    if (!message || disabled) return;
 
-    console.log('Kivo composer submit:', message);
     setValue('');
+    onSubmitMessage?.(message);
 
     requestAnimationFrame(() => {
       const textarea = textareaRef.current;
@@ -150,6 +152,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
                 value={value}
                 rows={1}
                 placeholder="Ask anything or assign a task"
+                disabled={disabled}
                 onFocus={() => {
                   if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
                   onFocusChange?.(true);
@@ -172,7 +175,7 @@ export function KivoComposer({ onFocusChange }: KivoComposerProps) {
                     handleSubmit();
                   }
                 }}
-                className="block h-[24px] max-h-[96px] w-full resize-none overflow-y-auto bg-transparent px-[4px] text-[17px] leading-[24px] tracking-[-0.02em] text-[#202024] outline-none placeholder:text-[#a7a7ad]"
+                className="block h-[24px] max-h-[96px] w-full resize-none overflow-y-auto bg-transparent px-[4px] text-[17px] leading-[24px] tracking-[-0.02em] text-[#202024] outline-none placeholder:text-[#a7a7ad] disabled:opacity-70"
               />
 
               <div className="mt-[14px] flex items-center justify-between">
