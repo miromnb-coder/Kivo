@@ -19,18 +19,28 @@ const connectors = [
   { name: 'Meta Ads Manager', icon: 'meta', control: 'connect', badge: 'Beta' },
 ];
 
+function BrowserIcon() {
+  return (
+    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" aria-hidden="true">
+      <circle cx="12.5" cy="12.5" r="10.5" stroke="#333" strokeWidth="2.5" />
+      <path d="M12.5 2.4c3.1 4.1 3.1 15.9 0 20.2" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4.2 8.4h16.6M4.2 16.6h16.6" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function BrandIcon({ icon }: { icon: string }) {
   if (icon === 'github') return <Github size={25} fill="currentColor" strokeWidth={0} />;
-  if (icon === 'browser') return <div className="h-[25px] w-[25px] rounded-full border-[3px] border-[#333]" />;
+  if (icon === 'browser') return <BrowserIcon />;
 
   const brandMap: Record<string, string> = {
-    gmail: 'https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png',
+    gmail: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png',
     'google-calendar': 'https://www.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png',
-    drive: 'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png',
-    'outlook-mail': 'https://res.cdn.office.net/assets/mail/file-icon/png/outlook_32x32.png',
-    'outlook-calendar': 'https://res.cdn.office.net/assets/calendar/file-icon/png/calendar_32x32.png',
-    instagram: 'https://static.cdninstagram.com/rsrc.php/v4/yI/r/VsNE-OHk_8a.png',
-    meta: 'https://static.xx.fbcdn.net/rsrc.php/y9/r/tL_v571NdZ0.svg',
+    drive: 'https://ssl.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png',
+    'outlook-mail': 'https://res.cdn.office.net/assets/mail/file-icon/png/outlook_64x64.png',
+    'outlook-calendar': 'https://res.cdn.office.net/assets/calendar/file-icon/png/calendar_64x64.png',
+    instagram: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/64px-Instagram_icon.png',
+    meta: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Meta-Logo.png/128px-Meta-Logo.png',
   };
 
   const src = brandMap[icon];
