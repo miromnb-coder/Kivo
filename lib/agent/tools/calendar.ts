@@ -57,7 +57,7 @@ function shouldRefresh(expiresAt: string | null) {
   return new Date(expiresAt).getTime() < Date.now() + 60_000;
 }
 
-async function refreshCalendarAccess(integration: CalendarIntegration) {
+async function refreshCalendarAccess(integration: CalendarIntegration): Promise<string | null> {
   if (!integration.refresh_token) return integration.access_token;
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -92,7 +92,7 @@ async function refreshCalendarAccess(integration: CalendarIntegration) {
     })
     .eq('id', integration.id);
 
-  return data.access_token as string;
+  return String(data.access_token);
 }
 
 export async function runCalendarTodayTool(userId?: string): Promise<CalendarTodayToolResult> {
@@ -107,9 +107,13 @@ export async function runCalendarTodayTool(userId?: string): Promise<CalendarTod
   }
 
   try {
-    let access = shouldRefresh(integration.expires_at)
+    let access: string | null = shouldRefresh(integration.expires_at)
       ? await refreshCalendarAccess(integration)
       : integration.access_token;
+
+    if (!access) {
+      return { connected: true, events: [], error: 'Google Calendar token is missing.' };
+    }
 
     try {
       const events = await listGoogleCalendarToday(access);
@@ -118,6 +122,9 @@ export async function runCalendarTodayTool(userId?: string): Promise<CalendarTod
       const message = error instanceof Error ? error.message : '';
       if (message.includes('(401)')) {
         access = await refreshCalendarAccess(integration);
+        if (!access) {
+          return { connected: true, events: [], error: 'Google Calendar token refresh failed.' };
+        }
         const events = await listGoogleCalendarToday(access);
         return { connected: true, events };
       }
