@@ -1,13 +1,14 @@
 import { runKivoModel } from '@/lib/ai/model-router';
 import { createPlan } from './planner';
-import { getMemoryContext, saveAgentRun } from './memory';
+import { getMemoryContext, saveAgentRun, saveMemory } from './memory';
+import { extractMemoryCandidates } from './memory-extraction';
 import { routeIntent } from './router';
 import { verifyAnswer } from './verifier';
 import type { AgentRequest, AgentResult } from './types';
 
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
-  const memory = await getMemoryContext(req.userId);
+  const memory = await getMemoryContext(req.userId, req.message);
   const plan = createPlan(intent, req.message);
 
   const response = await runKivoModel({
@@ -23,7 +24,7 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
           `Intent: ${intent}.`,
           `User: ${memory.profileSummary}.`,
           `Preferences: ${memory.preferences.join(', ')}`,
-          'Be helpful and personal.',
+          'Use memory naturally. Be personal and proactive.',
         ].join('\n'),
       },
       { role: 'user', content: req.message },
@@ -34,6 +35,17 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
 
   if (req.userId) {
     await saveAgentRun(req.userId, req.message, final);
+
+    // 🔥 Intelligent memory extraction
+    try {
+      const candidates = await extractMemoryCandidates(req.message, final);
+
+      for (const memoryItem of candidates) {
+        await saveMemory(req.userId, memoryItem.content, memoryItem.type, memoryItem.importance);
+      }
+    } catch {
+      // silent fail (never break main flow)
+    }
   }
 
   return {
