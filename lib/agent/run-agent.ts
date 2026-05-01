@@ -3,6 +3,7 @@ import { createPlan } from './planner';
 import { getMemoryContext, saveAgentRun, saveMemory } from './memory';
 import { extractMemoryCandidates } from './memory-extraction';
 import { buildMemoryBrief, shouldUseMemory } from './memory-policy';
+import { buildProactiveSuggestions, buildProactivePrompt } from './proactive';
 import { routeIntent } from './router';
 import { verifyAnswer } from './verifier';
 import type { AgentRequest, AgentResult } from './types';
@@ -14,6 +15,9 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
 
   const useMemory = shouldUseMemory(memory);
   const memoryBrief = useMemory ? buildMemoryBrief(memory, intent) : '';
+
+  const proactiveSuggestions = buildProactiveSuggestions(memory, intent);
+  const proactivePrompt = buildProactivePrompt(proactiveSuggestions);
 
   const response = await runKivoModel({
     agent: req.agent,
@@ -27,7 +31,8 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
           'You are Kivo, a high-end personal AI operator.',
           `Intent: ${intent}.`,
           useMemory ? memoryBrief : 'No memory available. Stay neutral.',
-          'Use memory intelligently. Be proactive but accurate.',
+          proactivePrompt,
+          'Be proactive, but not annoying. Always stay relevant.',
         ].join('\n\n'),
       },
       { role: 'user', content: req.message },
@@ -54,5 +59,8 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     intent,
     model: response.model,
     provider: response.provider,
+    structuredData: {
+      proactiveSuggestions,
+    },
   };
 }
