@@ -1,45 +1,66 @@
 import { runKivoModel } from '@/lib/ai/model-router';
 import { createPlan } from './planner';
-import { getMemoryContext, saveAgentRun, saveMemory } from './memory';
-import { extractMemoryCandidates } from './memory-extraction';
-import { buildMemoryBrief, shouldUseMemory } from './memory-policy';
+import { getMemoryContext } from './memory';
 import { buildProactiveSuggestions, buildProactivePrompt } from './proactive';
 import {
-  formatCalendarTodayForPrompt,
   runCalendarTodayTool,
   shouldRunCalendarTodayTool,
 } from './tools/calendar';
 import { runGmailTool, shouldRunGmailTool } from './tools/gmail';
 import { routeIntent } from './router';
-import { verifyAnswer } from './verifier';
 import type { AgentRequest, AgentResult } from './types';
 
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
-  const memory = await getMemoryContext(req.userId, req.message);
   const plan = createPlan(intent, req.message);
 
-  const calendarResult = await runCalendarTodayTool(req.userId);
-  const gmailResult = await runGmailTool(req.userId);
+  const calendar = await runCalendarTodayTool(req.userId);
+  const gmail = await runGmailTool(req.userId);
 
+  // 🔥 Gmail intelligence
   if (shouldRunGmailTool(req.message)) {
-    if (!gmailResult.connected) {
+    if (!gmail.connected) {
       return { answer: 'Gmail ei ole yhdistetty.', steps: [], intent };
     }
 
-    if (gmailResult.error) {
-      return { answer: `Gmail virhe: ${gmailResult.error}`, steps: [], intent };
+    if (gmail.error) {
+      return { answer: `Gmail virhe: ${gmail.error}`, steps: [], intent };
     }
 
-    const text = gmailResult.messages
-      .map((m) => `• ${m.subject} (${m.from})`)
-      .join('\n');
+    if (gmail.bills.length > 0) {
+      return {
+        answer: `Sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia:\n${gmail.bills
+          .map((m) => `• ${m.subject}`)
+          .join('\n')}`,
+        steps: [],
+        intent,
+      };
+    }
+
+    if (gmail.important.length > 0) {
+      return {
+        answer: `Tärkeät sähköpostit:\n${gmail.important.map((m) => `• ${m.subject}`).join('\n')}`,
+        steps: [],
+        intent,
+      };
+    }
 
     return {
-      answer: text || 'Ei sähköposteja.',
+      answer: gmail.messages.map((m) => `• ${m.subject}`).join('\n') || 'Ei sähköposteja.',
       steps: [],
       intent,
     };
+  }
+
+  // 🔥 Combined intelligence
+  if (calendar.connected && gmail.connected) {
+    if (calendar.events.length === 0 && gmail.bills.length > 0) {
+      return {
+        answer: `Sinulla ei ole tapahtumia tänään, mutta sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia. Haluatko että muistutan sinua?`,
+        steps: [],
+        intent,
+      };
+    }
   }
 
   const response = await runKivoModel({
@@ -49,14 +70,14 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     messages: [
       {
         role: 'system',
-        content: `You are Kivo AI.`,
+        content: 'You are Kivo AI. Be proactive and smart.',
       },
       { role: 'user', content: req.message },
     ],
   });
 
   return {
-    answer: verifyAnswer(response.content),
+    answer: response.content,
     steps: plan.steps.map((s) => ({ ...s, status: 'done' })),
     intent,
   };
