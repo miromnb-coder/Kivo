@@ -14,8 +14,10 @@ export async function GET(req: Request) {
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
 
+  const baseUrl = getBaseUrl(req);
+
   if (!code || !state) {
-    return NextResponse.redirect('/chat');
+    return NextResponse.redirect(`${baseUrl}/chat`);
   }
 
   const { userId } = JSON.parse(Buffer.from(state, 'base64url').toString());
@@ -23,7 +25,6 @@ export async function GET(req: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID!;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 
-  const baseUrl = getBaseUrl(req);
   const redirectUri = `${baseUrl}/api/integrations/google/calendar/callback`;
 
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -51,5 +52,5 @@ export async function GET(req: Request) {
     expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
   });
 
-  return NextResponse.redirect('/chat?connected=calendar');
+  return NextResponse.redirect(`${baseUrl}/chat?connected=calendar`);
 }
