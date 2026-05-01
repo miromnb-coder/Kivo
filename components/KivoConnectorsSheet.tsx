@@ -38,20 +38,20 @@ function GmailIcon() {
 function GoogleCalendarIcon() {
   return (
     <svg width="26" height="26" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path fill="#fff" d="M13 13h22v22H13z" />
-      <path fill="#1A73E8" d="M35 6H13c-3.86 0-7 3.14-7 7v22c0 3.86 3.14 7 7 7h22c3.86 0 7-3.14 7-7V13c0-3.86-3.14-7-7-7Zm0 29H13V18h22v17Z" />
-      <path fill="#EA4335" d="M35 6H13c-3.86 0-7 3.14-7 7v5h36v-5c0-3.86-3.14-7-7-7Z" />
-      <path fill="#FBBC04" d="M35 42h7V18h-7v24Z" />
-      <path fill="#34A853" d="M6 18v17c0 3.86 3.14 7 7 7h5V18H6Z" />
-      <path fill="#4285F4" d="M18 42h17v-7H18v7Z" />
-      <text x="24" y="31.5" textAnchor="middle" fontSize="12" fontWeight="700" fill="#1A73E8" fontFamily="Arial, Helvetica, sans-serif">31</text>
+      <rect x="8" y="6" width="32" height="36" rx="3" fill="#fff" />
+      <path fill="#EA4335" d="M11 6h26a3 3 0 0 1 3 3v7H8V9a3 3 0 0 1 3-3Z" />
+      <path fill="#4285F4" d="M8 16h8v26h-5a3 3 0 0 1-3-3V16Z" />
+      <path fill="#34A853" d="M32 16h8v23a3 3 0 0 1-3 3h-5V16Z" />
+      <path fill="#FBBC04" d="M16 34h16v8H16v-8Z" />
+      <path fill="#fff" d="M16 16h16v18H16V16Z" />
+      <text x="24" y="29.5" textAnchor="middle" fontSize="12" fontWeight="700" fill="#4285F4" fontFamily="Arial, Helvetica, sans-serif">31</text>
     </svg>
   );
 }
 
 function GitHubIcon() {
   return (
-    <svg width="26" height="26" viewBox="0 0 98 96" fill="#24292F" aria-hidden="true">
+    <svg width="26" height="26" viewBox="0 0 98 96" fill="#000" aria-hidden="true">
       <path fillRule="evenodd" clipRule="evenodd" d="M48.85 0C21.9 0 0 21.9 0 48.85c0 21.57 13.98 39.86 33.37 46.31 2.44.45 3.34-1.06 3.34-2.35 0-1.16-.04-5.01-.07-9.09-13.58 2.95-16.45-5.76-16.45-5.76-2.22-5.64-5.42-7.14-5.42-7.14-4.43-3.03.34-2.97.34-2.97 4.9.35 7.48 5.03 7.48 5.03 4.35 7.46 11.42 5.3 14.2 4.05.44-3.15 1.7-5.3 3.1-6.52-10.84-1.23-22.24-5.42-22.24-24.13 0-5.33 1.9-9.69 5.03-13.1-.51-1.23-2.18-6.19.48-12.92 0 0 4.1-1.31 13.43 5.01a46.65 46.65 0 0 1 12.23-1.64c4.15.02 8.34.56 12.23 1.64 9.33-6.32 13.42-5.01 13.42-5.01 2.67 6.73.99 11.69.49 12.92 3.13 3.41 5.02 7.77 5.02 13.1 0 18.76-11.42 22.89-22.3 24.09 1.75 1.51 3.31 4.49 3.31 9.05 0 6.53-.06 11.8-.06 13.4 0 1.3.88 2.83 3.36 2.35C83.72 88.69 97.7 70.41 97.7 48.85 97.7 21.9 75.8 0 48.85 0Z" />
     </svg>
   );
@@ -60,9 +60,11 @@ function GitHubIcon() {
 function BrowserIcon() {
   return (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9.5" stroke="#202124" strokeWidth="1.8" />
-      <path d="M2.9 12h18.2" stroke="#202124" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M12 2.5c2.5 2.55 3.75 5.72 3.75 9.5S14.5 18.95 12 21.5C9.5 18.95 8.25 15.78 8.25 12S9.5 5.05 12 2.5Z" stroke="#202124" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="10" fill="#fff" />
+      <path d="M12 12 3.34 7a10 10 0 0 1 17.32 0H12Z" fill="#EA4335" />
+      <path d="M12 12h8.66A10 10 0 0 1 12 22l-4.33-7.5L12 12Z" fill="#34A853" />
+      <path d="M12 12 7.67 14.5 3.34 7A10 10 0 0 0 12 22V12Z" fill="#FBBC04" />
+      <circle cx="12" cy="12" r="4.15" fill="#4285F4" stroke="#fff" strokeWidth="1.25" />
     </svg>
   );
 }
@@ -84,14 +86,13 @@ function DriveIcon() {
 function OutlookMailIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <path fill="#28A8EA" d="M28 14h26.5A3.5 3.5 0 0 1 58 17.5v29A3.5 3.5 0 0 1 54.5 50H28V14Z" />
-      <path fill="#0078D4" d="M28 18h15v12H28V18Z" />
-      <path fill="#50D9FF" d="M43 18h15v12H43V18Z" />
-      <path fill="#0364B8" d="M28 30h15v12H28V30Z" />
-      <path fill="#0078D4" d="M43 30h15v12H43V30Z" />
-      <path fill="#14447D" d="m28 24 15 10 15-10v22.5A3.5 3.5 0 0 1 54.5 50H28V24Z" opacity=".55" />
-      <path fill="#0A5EBE" d="M4 18.5 31 13v38L4 45.5v-27Z" />
-      <path fill="#fff" d="M10 32c0-6.75 3.95-11.15 9.85-11.15 5.88 0 9.65 4.25 9.65 10.95 0 6.82-3.9 11.25-9.8 11.25C13.85 43.05 10 38.75 10 32Zm6.1-.05c0 3.65 1.35 5.9 3.7 5.9s3.65-2.25 3.65-5.9c0-3.58-1.3-5.75-3.65-5.75s-3.7 2.17-3.7 5.75Z" />
+      <path fill="#0078D4" d="M26 15h27a3 3 0 0 1 3 3v28a3 3 0 0 1-3 3H26V15Z" />
+      <path fill="#50D9FF" d="M38 20h18v11H38V20Z" />
+      <path fill="#28A8EA" d="M38 31h18v11H38V31Z" />
+      <path fill="#0364B8" d="M26 20h12v11H26V20Z" />
+      <path fill="#14447D" d="M26 31h12v11H26V31Z" />
+      <path fill="#0A5EBE" d="M5 19.5 30 14v38L5 46.5v-27Z" />
+      <path fill="#fff" d="M10 32c0-6.6 3.75-10.75 9.2-10.75 5.5 0 9.05 4.05 9.05 10.55 0 6.65-3.65 10.9-9.15 10.9C13.65 42.7 10 38.55 10 32Zm5.75-.05c0 3.65 1.2 5.85 3.4 5.85s3.35-2.2 3.35-5.85c0-3.55-1.2-5.7-3.35-5.7-2.2 0-3.4 2.15-3.4 5.7Z" />
     </svg>
   );
 }
