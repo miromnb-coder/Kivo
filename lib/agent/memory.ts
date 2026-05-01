@@ -1,27 +1,43 @@
 import { createSupabaseServer } from '@/lib/supabase/server';
 import type { AgentMemoryContext } from './types';
 
-type MemoryType = 'preference' | 'goal' | 'fact' | 'person' | 'project' | 'routine' | 'constraint';
-
 function toText(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function inferMemoryType(content: string): MemoryType {
-  const text = content.toLowerCase();
+function buildInsights(memories: string[]) {
+  const insights: string[] = [];
 
-  if (text.includes('goal') || text.includes('haluan') || text.includes('tavoite')) return 'goal';
-  if (text.includes('prefer') || text.includes('tykkään') || text.includes('pidän')) return 'preference';
-  if (text.includes('every') || text.includes('aina') || text.includes('maanantaisin')) return 'routine';
-  if (text.includes('cannot') || text.includes('en voi') || text.includes('constraint')) return 'constraint';
-  if (text.includes('project') || text.includes('kivo')) return 'project';
+  const hasShortPref = memories.some((m) => m.toLowerCase().includes('short'));
+  if (hasShortPref) {
+    insights.push('User prefers concise answers → keep responses short and direct.');
+  }
 
-  return 'fact';
+  const hasRoutine = memories.some((m) => m.toLowerCase().includes('maanant'));
+  if (hasRoutine) {
+    insights.push('User has recurring routines → consider schedule-aware suggestions.');
+  }
+
+  return insights;
+}
+
+function buildProactiveSuggestions(memories: string[]) {
+  const suggestions: string[] = [];
+
+  if (memories.some((m) => m.toLowerCase().includes('learn') || m.toLowerCase().includes('oppia'))) {
+    suggestions.push('Suggest small daily learning sessions.');
+  }
+
+  if (memories.some((m) => m.toLowerCase().includes('project') || m.toLowerCase().includes('kivo'))) {
+    suggestions.push('Suggest progress check or next step for active projects.');
+  }
+
+  return suggestions;
 }
 
 export async function getMemoryContext(userId?: string, message?: string): Promise<AgentMemoryContext> {
   if (!userId) {
-    return { profileSummary: '', preferences: [], recentContext: [] };
+    return { profileSummary: '', preferences: [], recentContext: [], insights: [], proactiveSuggestions: [] };
   }
 
   const supabase = createSupabaseServer();
@@ -42,13 +58,7 @@ export async function getMemoryContext(userId?: string, message?: string): Promi
     .order('updated_at', { ascending: false })
     .limit(12);
 
-  const relevantMemories = (memories ?? []).filter((memory) => {
-    if (!queryText) return true;
-    const content = String(memory.content).toLowerCase();
-    return content.split(/\s+/).some((word) => word.length > 3 && queryText.includes(word));
-  });
-
-  const selectedMemories = (relevantMemories.length ? relevantMemories : memories ?? []).slice(0, 8);
+  const selectedMemories = (memories ?? []).slice(0, 8);
 
   const { data: goals } = await supabase
     .from('kivo_goals')
@@ -72,24 +82,30 @@ export async function getMemoryContext(userId?: string, message?: string): Promi
     .order('created_at', { ascending: false })
     .limit(5);
 
+  const memoryTexts = selectedMemories.map((m) => String(m.content));
+
   const profileParts = [
     profile?.display_name ? `Name: ${profile.display_name}` : '',
     profile?.language ? `Language: ${profile.language}` : '',
     profile?.timezone ? `Timezone: ${profile.timezone}` : '',
   ].filter(Boolean);
 
+  const preferences = [
+    ...selectedMemories.map((m) => `[${m.type}] ${m.content}`),
+    ...(goals ?? []).map((g) => `[goal] ${g.title}${g.description ? ` — ${g.description}` : ''}`),
+    ...(people ?? []).map((p) => `[person] ${p.name}${p.relationship ? ` — ${p.relationship}` : ''}${p.notes ? ` — ${p.notes}` : ''}`),
+  ];
+
   return {
     profileSummary: profileParts.join(' | '),
-    preferences: [
-      ...selectedMemories.map((m) => `[${m.type}] ${m.content}`),
-      ...(goals ?? []).map((g) => `[goal] ${g.title}${g.description ? ` — ${g.description}` : ''}`),
-      ...(people ?? []).map((p) => `[person] ${p.name}${p.relationship ? ` — ${p.relationship}` : ''}${p.notes ? ` — ${p.notes}` : ''}`),
-    ],
+    preferences,
     recentContext: (runs ?? []).map((r) => `User: ${r.message}${r.answer ? ` | Kivo: ${String(r.answer).slice(0, 220)}` : ''}`),
+    insights: buildInsights(memoryTexts),
+    proactiveSuggestions: buildProactiveSuggestions(memoryTexts),
   };
 }
 
-export async function saveAgentRun(userId: string, message: string, answer: string, meta?: { agent?: string; mode?: string; context?: string; model?: string; provider?: string; steps?: unknown[]; structuredData?: unknown }) {
+export async function saveAgentRun(userId: string, message: string, answer: string, meta?: any) {
   const supabase = createSupabaseServer();
 
   await supabase.from('kivo_agent_runs').insert({
@@ -107,7 +123,7 @@ export async function saveAgentRun(userId: string, message: string, answer: stri
   });
 }
 
-export async function saveMemory(userId: string, content: string, type?: MemoryType, importance = 3) {
+export async function saveMemory(userId: string, content: string, type?: any, importance = 3) {
   const clean = content.trim();
   if (!clean) return;
 
@@ -116,7 +132,7 @@ export async function saveMemory(userId: string, content: string, type?: MemoryT
   await supabase.from('kivo_memories').insert({
     user_id: userId,
     content: clean,
-    type: type ?? inferMemoryType(clean),
+    type: type ?? 'fact',
     importance,
     source: 'chat',
   });
