@@ -6,6 +6,35 @@ import { KivoComposer } from './KivoComposer';
 import { KivoTopBar } from './KivoTopBar';
 import { KivoChatMessages, type KivoChatMessage } from './KivoChatMessages';
 
+type StreamStep = {
+  id?: string;
+  title?: string;
+  label?: string;
+  detail?: string;
+  status?: string;
+  kind?: string;
+};
+
+function getStepKey(step: StreamStep) {
+  return step.id || step.title || step.label || 'step';
+}
+
+function mergeStep(prevSteps: StreamStep[] = [], nextStep: StreamStep) {
+  const key = getStepKey(nextStep);
+  const index = prevSteps.findIndex((step) => getStepKey(step) === key);
+
+  if (index === -1) return [...prevSteps, nextStep];
+
+  return prevSteps.map((step, stepIndex) =>
+    stepIndex === index
+      ? {
+          ...step,
+          ...nextStep,
+        }
+      : step,
+  );
+}
+
 export function KivoStartScreen() {
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
   const [messages, setMessages] = useState<KivoChatMessage[]>([]);
@@ -27,7 +56,7 @@ export function KivoStartScreen() {
         id: assistantId,
         role: 'assistant',
         content: '',
-        steps: [{ label: 'Thinking', status: 'active' }],
+        steps: [],
       },
     ]);
 
@@ -48,16 +77,11 @@ export function KivoStartScreen() {
         body: JSON.stringify({ message, userId }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Agent request failed (${res.status})`);
-      }
+      if (!res.ok) throw new Error(`Agent request failed (${res.status})`);
 
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
-
-      if (!reader) {
-        throw new Error('Agent stream did not start');
-      }
+      if (!reader) throw new Error('Agent stream did not start');
 
       let buffer = '';
 
@@ -66,7 +90,6 @@ export function KivoStartScreen() {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-
         const parts = buffer.split('\n\n');
         buffer = parts.pop() || '';
 
@@ -83,11 +106,7 @@ export function KivoStartScreen() {
 
           if (event === 'token') {
             setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, content: m.content + data.token }
-                  : m,
-              ),
+              prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + data.token } : m)),
             );
           }
 
@@ -95,7 +114,10 @@ export function KivoStartScreen() {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, steps: [...(m.steps ?? []), data] }
+                  ? {
+                      ...m,
+                      steps: mergeStep(m.steps ?? [], data),
+                    }
                   : m,
               ),
             );
@@ -103,21 +125,13 @@ export function KivoStartScreen() {
 
           if (event === 'meta') {
             setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, model: data.model, provider: data.provider }
-                  : m,
-              ),
+              prev.map((m) => (m.id === assistantId ? { ...m, model: data.model, provider: data.provider } : m)),
             );
           }
 
           if (event === 'data') {
             setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, structuredData: data.structuredData }
-                  : m,
-              ),
+              prev.map((m) => (m.id === assistantId ? { ...m, structuredData: data.structuredData } : m)),
             );
           }
 
@@ -143,7 +157,6 @@ export function KivoStartScreen() {
                 m.id === assistantId
                   ? {
                       ...m,
-                      steps: undefined,
                       structuredData: data.structuredData ?? m.structuredData,
                     }
                   : m,
@@ -186,12 +199,8 @@ export function KivoStartScreen() {
             isKeyboardMode || messages.length > 0 ? 'top-[20%] scale-[0.9] opacity-0 pointer-events-none' : 'top-[51%] scale-100 opacity-100'
           }`}
         >
-          <h1 className="mx-auto max-w-[320px] text-[32px] leading-[1.2] tracking-[-0.04em] text-[#202024]">
-            How can I help you today?
-          </h1>
-          <p className="mt-[18px] text-[17px] tracking-[-0.02em] text-[#b2b2b7]">
-            Your personal AI assistant
-          </p>
+          <h1 className="mx-auto max-w-[320px] text-[32px] leading-[1.2] tracking-[-0.04em] text-[#202024]">How can I help you today?</h1>
+          <p className="mt-[18px] text-[17px] tracking-[-0.02em] text-[#b2b2b7]">Your personal AI assistant</p>
         </section>
 
         <KivoComposer onFocusChange={setIsKeyboardMode} onSubmitMessage={handleSend} disabled={loading} />
