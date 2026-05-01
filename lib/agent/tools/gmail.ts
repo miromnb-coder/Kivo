@@ -1,7 +1,40 @@
 import { createSupabaseServer } from '@/lib/supabase/server';
-import { listGmailMessages } from '@/lib/integrations/google/gmail';
+import { listGmailMessages, GmailMessageSummary } from '@/lib/integrations/google/gmail';
 
-export async function runGmailTool(userId: string) {
+export type GmailToolResult = {
+  connected: boolean;
+  messages: GmailMessageSummary[];
+  important: GmailMessageSummary[];
+  bills: GmailMessageSummary[];
+  error?: string;
+};
+
+function classifyMessages(messages: GmailMessageSummary[]) {
+  const importantKeywords = ['invoice', 'bill', 'receipt', 'payment', 'subscription', 'renewal', 'lasku', 'maksu'];
+
+  const important: GmailMessageSummary[] = [];
+  const bills: GmailMessageSummary[] = [];
+
+  for (const msg of messages) {
+    const text = `${msg.subject} ${msg.snippet}`.toLowerCase();
+
+    if (importantKeywords.some((k) => text.includes(k))) {
+      important.push(msg);
+    }
+
+    if (text.includes('invoice') || text.includes('lasku') || text.includes('payment')) {
+      bills.push(msg);
+    }
+  }
+
+  return { important, bills };
+}
+
+export async function runGmailTool(userId?: string): Promise<GmailToolResult> {
+  if (!userId) {
+    return { connected: false, messages: [], important: [], bills: [], error: 'User not signed in' };
+  }
+
   const supabase = createSupabaseServer();
 
   const { data } = await supabase
@@ -9,21 +42,29 @@ export async function runGmailTool(userId: string) {
     .select('*')
     .eq('user_id', userId)
     .eq('provider', 'gmail')
-    .single();
+    .maybeSingle();
 
-  if (!data) {
-    return { connected: false, messages: [] };
+  if (!data?.access_token) {
+    return { connected: false, messages: [], important: [], bills: [] };
   }
 
   try {
     const messages = await listGmailMessages(data.access_token);
-    return { connected: true, messages };
+    const { important, bills } = classifyMessages(messages);
+
+    return { connected: true, messages, important, bills };
   } catch (e: any) {
-    return { connected: true, error: e.message, messages: [] };
+    return { connected: true, messages: [], important: [], bills: [], error: e.message };
   }
 }
 
 export function shouldRunGmailTool(message: string) {
   const m = message.toLowerCase();
-  return m.includes('email') || m.includes('sähköposti') || m.includes('gmail');
+  return (
+    m.includes('email') ||
+    m.includes('sähköposti') ||
+    m.includes('gmail') ||
+    m.includes('lasku') ||
+    m.includes('bill')
+  );
 }
