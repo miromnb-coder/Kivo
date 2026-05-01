@@ -1,7 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 
-const appIcon = '/kivo-app-image.png';
+const appIcon = '/kivo-app-image.PNG';
 
 export const metadata: Metadata = {
   title: 'Kivo',
@@ -43,9 +43,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href={`${appIcon}?v=2`} type="image/png" />
-        <link rel="shortcut icon" href={`${appIcon}?v=2`} type="image/png" />
-        <link rel="apple-touch-icon" href={`${appIcon}?v=2`} />
+        <link rel="icon" href={`${appIcon}?v=3`} type="image/png" />
+        <link rel="shortcut icon" href={`${appIcon}?v=3`} type="image/png" />
+        <link rel="apple-touch-icon" href={`${appIcon}?v=3`} />
       </head>
       <body>{children}</body>
     </html>
