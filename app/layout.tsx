@@ -16,10 +16,13 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/kivo-logo.png', type: 'image/png' },
+    ],
+    shortcut: [
+      { url: '/kivo-logo.png', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-touch-icon.svg', type: 'image/svg+xml' },
+      { url: '/kivo-logo.png', type: 'image/png' },
     ],
   },
 };
