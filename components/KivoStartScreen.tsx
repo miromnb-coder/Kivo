@@ -111,6 +111,16 @@ export function KivoStartScreen() {
             );
           }
 
+          if (event === 'data') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, structuredData: data.structuredData }
+                  : m,
+              ),
+            );
+          }
+
           if (event === 'error') {
             setMessages((prev) =>
               prev.map((m) =>
@@ -131,7 +141,11 @@ export function KivoStartScreen() {
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? { ...m, steps: undefined }
+                  ? {
+                      ...m,
+                      steps: undefined,
+                      structuredData: data.structuredData ?? m.structuredData,
+                    }
                   : m,
               ),
             );
