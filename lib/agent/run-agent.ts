@@ -50,44 +50,75 @@ function formatDuration(start?: string, end?: string) {
   return rest ? `${hours} h ${rest} min` : `${hours} h`;
 }
 
-function buildMiniTable(calendar: any, gmail: any) {
-  if (calendar?.connected && calendar.events?.length > 0) {
-    return {
-      title: 'Kalenteri tänään',
-      columns: ['Aika', 'Tapahtuma', 'Kesto'],
-      rows: calendar.events.slice(0, 5).map((event: any) => [
-        formatTime(event.start),
-        event.summary ?? 'Untitled event',
-        formatDuration(event.start, event.end),
-      ]),
-    };
+function buildCalendarTable(calendar: any) {
+  if (!calendar?.connected || !calendar.events?.length) return null;
+
+  return {
+    title: 'Kalenteri tänään',
+    columns: ['Aika', 'Tapahtuma', 'Kesto'],
+    rows: calendar.events.slice(0, 5).map((event: any) => [
+      formatTime(event.start),
+      event.summary ?? 'Untitled event',
+      formatDuration(event.start, event.end),
+    ]),
+  };
+}
+
+function buildGmailTable(gmail: any) {
+  if (!gmail?.connected) return null;
+
+  const priorityRows = [
+    ...(gmail.bills ?? []).slice(0, 3).map((m: any) => ['Lasku', m.subject ?? 'No subject', m.from ?? 'Unknown']),
+    ...(gmail.important ?? []).slice(0, 3).map((m: any) => ['Tärkeä', m.subject ?? 'No subject', m.from ?? 'Unknown']),
+  ];
+
+  const fallbackRows = (gmail.messages ?? [])
+    .slice(0, 5)
+    .map((m: any) => ['Viesti', m.subject ?? 'No subject', m.from ?? 'Unknown']);
+
+  const rows = (priorityRows.length ? priorityRows : fallbackRows).slice(0, 5);
+
+  if (!rows.length) return null;
+
+  return {
+    title: 'Sähköposti',
+    columns: ['Tyyppi', 'Otsikko', 'Lähettäjä'],
+    rows,
+  };
+}
+
+function buildTodayTable(calendar: any, gmail: any) {
+  if (!calendar?.connected && !gmail?.connected) return null;
+
+  return {
+    title: 'Today',
+    columns: ['Alue', 'Tilanne', 'Ehdotus'],
+    rows: [
+      ['Calendar', calendar?.events?.length ? `${calendar.events.length} tapahtumaa` : 'Ei tapahtumia', calendar?.events?.length ? 'Tarkista päivän rytmi' : 'Voit suunnitella päivän'],
+      ['Gmail', gmail?.important?.length ? `${gmail.important.length} tärkeää` : 'Ei tärkeitä', gmail?.bills?.length ? 'Tarkista laskut' : 'Inbox ok'],
+    ],
+  };
+}
+
+function isCalendarRequest(message: string) {
+  const text = message.toLowerCase();
+  return ['kalenteri', 'calendar', 'tänään', 'tanaan', 'aikataulu', 'schedule', 'tapahtuma', 'event'].some((word) => text.includes(word));
+}
+
+function buildMiniTable(calendar: any, gmail: any, message: string) {
+  if (shouldRunGmailTool(message)) {
+    return buildGmailTable(gmail) ?? buildTodayTable(calendar, gmail);
   }
 
-  if (gmail?.connected && (gmail.bills?.length > 0 || gmail.important?.length > 0)) {
-    const rows = [
-      ...(gmail.bills ?? []).slice(0, 3).map((m: any) => ['Lasku', m.subject ?? 'No subject', m.from ?? 'Unknown']),
-      ...(gmail.important ?? []).slice(0, 3).map((m: any) => ['Tärkeä', m.subject ?? 'No subject', m.from ?? 'Unknown']),
-    ].slice(0, 5);
-
-    return {
-      title: 'Sähköposti',
-      columns: ['Tyyppi', 'Otsikko', 'Lähettäjä'],
-      rows,
-    };
+  if (isCalendarRequest(message)) {
+    return buildCalendarTable(calendar) ?? buildTodayTable(calendar, gmail);
   }
 
-  if (calendar?.connected || gmail?.connected) {
-    return {
-      title: 'Today',
-      columns: ['Alue', 'Tilanne', 'Ehdotus'],
-      rows: [
-        ['Calendar', calendar?.events?.length ? `${calendar.events.length} tapahtumaa` : 'Ei tapahtumia', calendar?.events?.length ? 'Tarkista päivän rytmi' : 'Voit suunnitella päivän'],
-        ['Gmail', gmail?.important?.length ? `${gmail.important.length} tärkeää` : 'Ei tärkeitä', gmail?.bills?.length ? 'Tarkista laskut' : 'Inbox ok'],
-      ],
-    };
+  if (calendar?.connected && gmail?.connected) {
+    return buildTodayTable(calendar, gmail);
   }
 
-  return null;
+  return buildCalendarTable(calendar) ?? buildGmailTable(gmail) ?? buildTodayTable(calendar, gmail);
 }
 
 function withStructuredData(base: Omit<AgentResult, 'structuredData'>, structuredData: any): AgentResult {
@@ -101,7 +132,7 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const calendar = await runCalendarTodayTool(req.userId);
   const gmail = await runGmailTool(req.userId);
   const tinySuggestion = buildTinySmartSuggestion(calendar, gmail);
-  const miniTable = buildMiniTable(calendar, gmail);
+  const miniTable = buildMiniTable(calendar, gmail, req.message);
   const structuredData = { tinySuggestion, miniTable, gmail, calendar };
 
   if (shouldRunGmailTool(req.message)) {
@@ -114,44 +145,22 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     }
 
     if (gmail.bills.length > 0) {
-      return withStructuredData(
-        {
-          answer: `Sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia.`,
-          steps: [],
-          intent,
-        },
-        structuredData,
-      );
+      return withStructuredData({ answer: `Sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia.`, steps: [], intent }, structuredData);
     }
 
     if (gmail.important.length > 0) {
-      return withStructuredData(
-        {
-          answer: `Löysin ${gmail.important.length} tärkeää sähköpostia.`,
-          steps: [],
-          intent,
-        },
-        structuredData,
-      );
+      return withStructuredData({ answer: `Löysin ${gmail.important.length} tärkeää sähköpostia.`, steps: [], intent }, structuredData);
     }
 
     return withStructuredData(
-      {
-        answer: gmail.messages.length ? `Löysin ${gmail.messages.length} viimeisintä sähköpostia.` : 'Ei sähköposteja.',
-        steps: [],
-        intent,
-      },
+      { answer: gmail.messages.length ? `Löysin ${gmail.messages.length} viimeisintä sähköpostia.` : 'Ei sähköposteja.', steps: [], intent },
       structuredData,
     );
   }
 
   if (calendar.connected && gmail.connected && calendar.events.length === 0 && gmail.bills.length > 0) {
     return withStructuredData(
-      {
-        answer: `Sinulla ei ole tapahtumia tänään, mutta sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia.`,
-        steps: [],
-        intent,
-      },
+      { answer: `Sinulla ei ole tapahtumia tänään, mutta sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia.`, steps: [], intent },
       structuredData,
     );
   }
