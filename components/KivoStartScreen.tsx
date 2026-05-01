@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createSupabaseBrowser } from '@/lib/supabase/client';
 import { KivoComposer } from './KivoComposer';
 import { KivoTopBar } from './KivoTopBar';
 import { KivoChatMessages, type KivoChatMessage } from './KivoChatMessages';
@@ -33,10 +34,18 @@ export function KivoStartScreen() {
     setLoading(true);
 
     try {
+      const supabase = createSupabaseBrowser();
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+
+      if (!userId) {
+        throw new Error('Please sign in again to use Kivo memory.');
+      }
+
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, userId }),
       });
 
       if (!res.ok) {
