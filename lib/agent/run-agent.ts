@@ -105,7 +105,27 @@ function isCalendarRequest(message: string) {
   return ['kalenteri', 'calendar', 'tänään', 'tanaan', 'aikataulu', 'schedule', 'tapahtuma', 'event'].some((word) => text.includes(word));
 }
 
+function isTodayOperatorRequest(message: string) {
+  const text = message.toLowerCase();
+  return [
+    'mitä minun pitäisi tehdä',
+    'mitä pitäisi tehdä',
+    'mitä teen tänään',
+    'päiväni',
+    'suunnittele päivä',
+    'today plan',
+    'what should i do today',
+    'plan my day',
+  ].some((phrase) => text.includes(phrase));
+}
+
+function shouldShowMiniTable(message: string) {
+  return shouldRunGmailTool(message) || isCalendarRequest(message) || isTodayOperatorRequest(message);
+}
+
 function buildMiniTable(calendar: any, gmail: any, message: string) {
+  if (!shouldShowMiniTable(message)) return null;
+
   if (shouldRunGmailTool(message)) {
     return buildGmailTable(gmail) ?? buildTodayTable(calendar, gmail);
   }
@@ -114,11 +134,11 @@ function buildMiniTable(calendar: any, gmail: any, message: string) {
     return buildCalendarTable(calendar) ?? buildTodayTable(calendar, gmail);
   }
 
-  if (calendar?.connected && gmail?.connected) {
+  if (isTodayOperatorRequest(message)) {
     return buildTodayTable(calendar, gmail);
   }
 
-  return buildCalendarTable(calendar) ?? buildGmailTable(gmail) ?? buildTodayTable(calendar, gmail);
+  return null;
 }
 
 function withStructuredData(base: Omit<AgentResult, 'structuredData'>, structuredData: any): AgentResult {
@@ -131,9 +151,15 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
 
   const calendar = await runCalendarTodayTool(req.userId);
   const gmail = await runGmailTool(req.userId);
-  const tinySuggestion = buildTinySmartSuggestion(calendar, gmail);
+  const showMiniTable = shouldShowMiniTable(req.message);
+  const tinySuggestion = showMiniTable ? buildTinySmartSuggestion(calendar, gmail) : null;
   const miniTable = buildMiniTable(calendar, gmail, req.message);
-  const structuredData = { tinySuggestion, miniTable, gmail, calendar };
+  const structuredData = {
+    tinySuggestion,
+    miniTable,
+    gmail: showMiniTable ? gmail : null,
+    calendar: showMiniTable ? calendar : null,
+  };
 
   if (shouldRunGmailTool(req.message)) {
     if (!gmail.connected) {
@@ -158,7 +184,7 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     );
   }
 
-  if (calendar.connected && gmail.connected && calendar.events.length === 0 && gmail.bills.length > 0) {
+  if (isTodayOperatorRequest(req.message) && calendar.connected && gmail.connected && calendar.events.length === 0 && gmail.bills.length > 0) {
     return withStructuredData(
       { answer: `Sinulla ei ole tapahtumia tänään, mutta sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia.`, steps: [], intent },
       structuredData,
