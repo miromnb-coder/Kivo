@@ -17,19 +17,18 @@ function encoderLine(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as AgentRequest;
     const message = body.message?.trim();
     const userId = body.userId?.trim();
 
-    if (!message) {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!message) return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const agent = body.agent ?? 'kivo';
     const mode = body.mode ?? 'chat';
@@ -41,62 +40,55 @@ export async function POST(req: Request) {
         const send = (event: string, data: unknown) => controller.enqueue(encoder.encode(encoderLine(event, data)));
 
         try {
-          const agentPromise = runKivoAgent({
-            message,
-            agent,
-            mode,
-            context,
-            userId,
-          });
+          send('step', { id: 'understand-request', title: 'Ymmärretään pyyntö', status: 'running', kind: 'think' });
 
-          send('step', { label: 'Understanding your request', status: 'active' });
-          await new Promise((r) => setTimeout(r, 180));
+          const result = await runKivoAgent({ message, agent, mode, context, userId });
+          const resultSteps = Array.isArray(result.steps) ? result.steps : [];
 
-          send('step', { label: 'Checking your context', status: 'active' });
-          await new Promise((r) => setTimeout(r, 200));
+          if (!resultSteps.length) {
+            send('step', { id: 'understand-request', title: 'Ymmärretään pyyntö', status: 'done', kind: 'think' });
+          } else {
+            for (let index = 0; index < resultSteps.length; index += 1) {
+              const rawStep: any = resultSteps[index];
+              const id = rawStep.id ?? `step-${index}`;
+              const title = rawStep.title ?? rawStep.label ?? `Step ${index + 1}`;
+              const detail = rawStep.detail;
+              const kind = rawStep.kind ?? 'think';
 
-          const result = await agentPromise;
+              if (index === 0) {
+                send('step', { id, title, detail, status: 'done', kind });
+                await delay(120);
+                continue;
+              }
 
-          for (const step of result.steps) {
-            send('step', { ...step, status: 'done' });
-            await new Promise((r) => setTimeout(r, 120));
+              send('step', { id, title, detail, status: 'running', kind });
+              await delay(260);
+              send('step', { id, title, detail, status: 'done', kind });
+              await delay(90);
+            }
           }
 
           send('meta', { model: result.model, provider: result.provider });
 
-          if (result.structuredData) {
-            send('data', { structuredData: result.structuredData });
-          }
+          if (result.structuredData) send('data', { structuredData: result.structuredData });
 
           const tokens = result.answer.match(/\S+\s*/g) ?? [];
           for (const token of tokens) {
             send('token', { token });
-            await new Promise((r) => setTimeout(r, 10));
+            await delay(10);
           }
 
-          send('done', {
-            content: result.answer,
-            model: result.model,
-            provider: result.provider,
-            structuredData: result.structuredData,
-          });
-
+          send('done', { content: result.answer, model: result.model, provider: result.provider, structuredData: result.structuredData });
           controller.close();
         } catch (error) {
-          send('error', {
-            message: error instanceof Error ? error.message : 'Agent failed',
-          });
+          send('error', { message: error instanceof Error ? error.message : 'Agent failed' });
           controller.close();
         }
       },
     });
 
     return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream; charset=utf-8',
-        'Cache-Control': 'no-cache, no-transform',
-        Connection: 'keep-alive',
-      },
+      headers: { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive' },
     });
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
