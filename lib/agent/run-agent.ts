@@ -4,6 +4,11 @@ import { getMemoryContext, saveAgentRun, saveMemory } from './memory';
 import { extractMemoryCandidates } from './memory-extraction';
 import { buildMemoryBrief, shouldUseMemory } from './memory-policy';
 import { buildProactiveSuggestions, buildProactivePrompt } from './proactive';
+import {
+  formatCalendarTodayForPrompt,
+  runCalendarTodayTool,
+  shouldRunCalendarTodayTool,
+} from './tools/calendar';
 import { routeIntent } from './router';
 import { verifyAnswer } from './verifier';
 import type { AgentRequest, AgentResult } from './types';
@@ -19,6 +24,11 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const proactiveSuggestions = buildProactiveSuggestions(memory, intent);
   const proactivePrompt = buildProactivePrompt(proactiveSuggestions);
 
+  const calendarResult = shouldRunCalendarTodayTool(req.message)
+    ? await runCalendarTodayTool(req.userId)
+    : null;
+  const calendarPrompt = calendarResult ? formatCalendarTodayForPrompt(calendarResult) : '';
+
   const response = await runKivoModel({
     agent: req.agent,
     mode: req.mode,
@@ -31,9 +41,10 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
           'You are Kivo, a high-end personal AI operator.',
           `Intent: ${intent}.`,
           useMemory ? memoryBrief : 'No memory available. Stay neutral.',
+          calendarPrompt,
           proactivePrompt,
           'Be proactive, but not annoying. Always stay relevant.',
-        ].join('\n\n'),
+        ].filter(Boolean).join('\n\n'),
       },
       { role: 'user', content: req.message },
     ],
@@ -61,6 +72,7 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     provider: response.provider,
     structuredData: {
       proactiveSuggestions,
+      calendar: calendarResult,
     },
   };
 }
