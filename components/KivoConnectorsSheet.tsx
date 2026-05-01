@@ -51,8 +51,8 @@ function GoogleCalendarIcon() {
 
 function GitHubIcon() {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="#24292F" aria-hidden="true">
-      <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.15c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18A10.98 10.98 0 0 1 12 6.07c.98 0 1.96.13 2.88.38 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.19 1.83 1.19 3.08 0 4.41-2.69 5.38-5.25 5.67.42.36.78 1.07.78 2.16v3.13c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+    <svg width="26" height="26" viewBox="0 0 98 96" fill="#24292F" aria-hidden="true">
+      <path fillRule="evenodd" clipRule="evenodd" d="M48.85 0C21.9 0 0 21.9 0 48.85c0 21.57 13.98 39.86 33.37 46.31 2.44.45 3.34-1.06 3.34-2.35 0-1.16-.04-5.01-.07-9.09-13.58 2.95-16.45-5.76-16.45-5.76-2.22-5.64-5.42-7.14-5.42-7.14-4.43-3.03.34-2.97.34-2.97 4.9.35 7.48 5.03 7.48 5.03 4.35 7.46 11.42 5.3 14.2 4.05.44-3.15 1.7-5.3 3.1-6.52-10.84-1.23-22.24-5.42-22.24-24.13 0-5.33 1.9-9.69 5.03-13.1-.51-1.23-2.18-6.19.48-12.92 0 0 4.1-1.31 13.43 5.01a46.65 46.65 0 0 1 12.23-1.64c4.15.02 8.34.56 12.23 1.64 9.33-6.32 13.42-5.01 13.42-5.01 2.67 6.73.99 11.69.49 12.92 3.13 3.41 5.02 7.77 5.02 13.1 0 18.76-11.42 22.89-22.3 24.09 1.75 1.51 3.31 4.49 3.31 9.05 0 6.53-.06 11.8-.06 13.4 0 1.3.88 2.83 3.36 2.35C83.72 88.69 97.7 70.41 97.7 48.85 97.7 21.9 75.8 0 48.85 0Z" />
     </svg>
   );
 }
@@ -60,9 +60,9 @@ function GitHubIcon() {
 function BrowserIcon() {
   return (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="#202124" strokeWidth="1.8" />
-      <path d="M2.8 9h18.4M2.8 15h18.4" stroke="#202124" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M12 2.4c2.2 2.35 3.4 5.6 3.4 9.6s-1.2 7.25-3.4 9.6C9.8 19.25 8.6 16 8.6 12S9.8 4.75 12 2.4Z" stroke="#202124" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="9.5" stroke="#202124" strokeWidth="1.8" />
+      <path d="M2.9 12h18.2" stroke="#202124" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 2.5c2.5 2.55 3.75 5.72 3.75 9.5S14.5 18.95 12 21.5C9.5 18.95 8.25 15.78 8.25 12S9.5 5.05 12 2.5Z" stroke="#202124" strokeWidth="1.8" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -81,17 +81,29 @@ function DriveIcon() {
   );
 }
 
-function OutlookIcon({ calendar = false }: { calendar?: boolean }) {
+function OutlookMailIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <path fill="#0A5EBE" d="M28 12h28a4 4 0 0 1 4 4v32a4 4 0 0 1-4 4H28V12Z" />
-      <path fill="#0078D4" d="M28 16h18v12H28V16Z" />
-      <path fill="#28A8EA" d="M46 16h10v12H46V16Z" />
-      <path fill="#50D9FF" d="M46 28h10v12H46V28Z" />
-      <path fill="#0364B8" d="M28 28h18v12H28V28Z" />
-      <path fill="#14447D" d="M28 40h28v8H28v-8Z" />
+      <path fill="#28A8EA" d="M28 14h26.5A3.5 3.5 0 0 1 58 17.5v29A3.5 3.5 0 0 1 54.5 50H28V14Z" />
+      <path fill="#0078D4" d="M28 18h15v12H28V18Z" />
+      <path fill="#50D9FF" d="M43 18h15v12H43V18Z" />
+      <path fill="#0364B8" d="M28 30h15v12H28V30Z" />
+      <path fill="#0078D4" d="M43 30h15v12H43V30Z" />
+      <path fill="#14447D" d="m28 24 15 10 15-10v22.5A3.5 3.5 0 0 1 54.5 50H28V24Z" opacity=".55" />
       <path fill="#0A5EBE" d="M4 18.5 31 13v38L4 45.5v-27Z" />
-      <path fill="#fff" d={calendar ? 'M15 25h10v3H15v-3Zm0 6h5v3h-5v-3Zm8 0h5v3h-5v-3Zm-8 6h5v3h-5v-3Zm8 0h5v3h-5v-3Z' : 'M10 25.5c0-5.3 3.25-8.8 8.1-8.8 4.9 0 8 3.5 8 8.7 0 5.35-3.2 8.9-8.1 8.9-4.85 0-8-3.5-8-8.8Zm5.1-.05c0 2.95 1.1 4.8 3 4.8s3-1.85 3-4.8c0-2.9-1.1-4.7-3-4.7s-3 1.8-3 4.7Z'} />
+      <path fill="#fff" d="M10 32c0-6.75 3.95-11.15 9.85-11.15 5.88 0 9.65 4.25 9.65 10.95 0 6.82-3.9 11.25-9.8 11.25C13.85 43.05 10 38.75 10 32Zm6.1-.05c0 3.65 1.35 5.9 3.7 5.9s3.65-2.25 3.65-5.9c0-3.58-1.3-5.75-3.65-5.75s-3.7 2.17-3.7 5.75Z" />
+    </svg>
+  );
+}
+
+function OutlookCalendarIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <rect x="8" y="12" width="46" height="42" rx="4" fill="#0078D4" />
+      <path fill="#28A8EA" d="M8 18a6 6 0 0 1 6-6h34a6 6 0 0 1 6 6v8H8v-8Z" />
+      <path fill="#50D9FF" d="M16 32h8v8h-8v-8Zm12 0h8v8h-8v-8Zm12 0h8v8h-8v-8ZM16 43h8v8h-8v-8Zm12 0h8v8h-8v-8Z" />
+      <path fill="#0A5EBE" d="M4 20.5 31 15v38L4 47.5v-27Z" />
+      <path fill="#fff" d="M13 29h13v4H13v-4Zm0 8h8v4h-8v-4Z" />
     </svg>
   );
 }
@@ -102,8 +114,8 @@ function BrandIcon({ icon }: { icon: string }) {
   if (icon === 'github') return <GitHubIcon />;
   if (icon === 'browser') return <BrowserIcon />;
   if (icon === 'drive') return <DriveIcon />;
-  if (icon === 'outlook-mail') return <OutlookIcon />;
-  if (icon === 'outlook-calendar') return <OutlookIcon calendar />;
+  if (icon === 'outlook-mail') return <OutlookMailIcon />;
+  if (icon === 'outlook-calendar') return <OutlookCalendarIcon />;
   return null;
 }
 
