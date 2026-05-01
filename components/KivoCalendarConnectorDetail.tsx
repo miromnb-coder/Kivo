@@ -1,6 +1,12 @@
 'use client';
 
 import { ArrowUpRight, CalendarDays, ChevronLeft, Eye, Lock, Sparkles } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 type Props = {
   open: boolean;
@@ -23,33 +29,17 @@ function GoogleCalendarLargeIcon() {
   );
 }
 
-function Capability({ icon, title, subtitle, divider = true }: { icon: React.ReactNode; title: string; subtitle: string; divider?: boolean }) {
-  return (
-    <div className="flex gap-[18px]">
-      <div className="mt-[2px] flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[11px] bg-[#f0f0f1] text-[#8b8c91]">
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-[17px] font-semibold leading-[1.18] tracking-[-0.035em] text-[#191a1d]">{title}</div>
-        <div className="mt-[4px] text-[14.5px] leading-[1.25] tracking-[-0.025em] text-[#67686d]">{subtitle}</div>
-        {divider ? <div className="mt-[14px] h-px bg-[#e7e7e9]" /> : null}
-      </div>
-    </div>
-  );
-}
-
-function DetailRow({ label, value, arrow }: { label: string; value?: string; arrow?: boolean }) {
-  return (
-    <div className="flex h-[50px] items-center border-b border-[#e7e7e9] last:border-b-0">
-      <div className="flex-1 text-[15.5px] tracking-[-0.025em] text-[#5e5f64]">{label}</div>
-      {value ? <div className="text-[15.5px] tracking-[-0.025em] text-[#222327]">{value}</div> : null}
-      {arrow ? <ArrowUpRight size={21} strokeWidth={2} className="text-[#74757a]" /> : null}
-    </div>
-  );
-}
-
 export function KivoCalendarConnectorDetail({ open, onBack, onClose }: Props) {
   if (!open) return null;
+
+  async function handleConnect() {
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id;
+
+    if (!userId) return;
+
+    window.location.href = `/api/integrations/google/calendar/connect?userId=${userId}`;
+  }
 
   return (
     <div className="fixed inset-0 z-[120] bg-black/35 backdrop-blur-[3px]">
@@ -68,36 +58,18 @@ export function KivoCalendarConnectorDetail({ open, onBack, onClose }: Props) {
             <GoogleCalendarLargeIcon />
             <h1 className="mt-[20px] text-[26px] font-semibold leading-[1.05] tracking-[-0.045em] text-[#111214]">Google Calendar</h1>
             <p className="mt-[14px] max-w-[340px] text-[17px] leading-[1.42] tracking-[-0.035em] text-[#4f5055]">
-              Connect your calendar to Kivo to manage your schedule intelligently. See your events, find the best time for tasks, and keep your day on track.
+              Connect your calendar to Kivo to manage your schedule intelligently.
             </p>
           </div>
 
-          <div className="mt-[32px] rounded-[22px] border border-[#ececef] bg-white/46 px-[20px] py-[18px] shadow-[0_8px_26px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
-            <h2 className="text-[16px] font-semibold tracking-[-0.03em] text-[#111214]">Kivo will be able to:</h2>
-            <div className="mt-[18px] space-y-[14px]">
-              <Capability icon={<Eye size={19} strokeWidth={2.1} />} title="View your schedule" subtitle="See your events, calendars, and availability." />
-              <Capability icon={<Sparkles size={19} strokeWidth={2.1} />} title="Suggest better time usage" subtitle="Get AI-powered suggestions to optimize your day." />
-              <Capability icon={<CalendarDays size={19} strokeWidth={2.1} />} title="Create and manage events" subtitle="Create, update, and delete events with your approval." divider={false} />
-            </div>
-          </div>
-
-          <h2 className="mt-[28px] text-[18px] font-semibold tracking-[-0.035em] text-[#111214]">Details</h2>
-          <div className="mt-[12px] rounded-[22px] border border-[#ececef] bg-white/46 px-[18px] shadow-[0_8px_26px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
-            <DetailRow label="Connector Type" value="App" />
-            <DetailRow label="Built by" value="Kivo" />
-            <DetailRow label="Website" arrow />
-            <DetailRow label="Privacy Policy" arrow />
-            <DetailRow label="Permissions" arrow />
-          </div>
-
-          <button type="button" className="mt-[28px] flex h-[62px] w-full items-center justify-center gap-[14px] rounded-[18px] bg-[#111113] text-[17px] font-semibold tracking-[-0.025em] text-white shadow-[0_16px_32px_rgba(0,0,0,0.14)]">
+          <button onClick={handleConnect} className="mt-[28px] flex h-[62px] w-full items-center justify-center gap-[14px] rounded-[18px] bg-[#111113] text-[17px] font-semibold tracking-[-0.025em] text-white">
             <CalendarDays size={21} strokeWidth={2} />
             Connect Google Calendar
           </button>
 
           <div className="mt-[16px] flex items-center justify-center gap-[8px] text-[13.5px] tracking-[-0.02em] text-[#929399]">
             <Lock size={14} strokeWidth={2} />
-            <span>Your data is private and secure. You can disconnect anytime.</span>
+            <span>Your data is private and secure.</span>
           </div>
         </div>
       </section>
