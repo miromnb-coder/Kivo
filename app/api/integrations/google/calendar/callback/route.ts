@@ -66,24 +66,27 @@ export async function GET(req: Request) {
 
   const supabase = createSupabaseServer();
 
-  const { error } = await supabase.from('kivo_integrations').upsert(
-    {
-      user_id: userId,
-      provider: 'google_calendar',
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token ?? null,
-      scope: tokens.scope ?? null,
-      expires_at: tokens.expires_in
-        ? new Date(Date.now() + Number(tokens.expires_in) * 1000).toISOString()
-        : null,
-      status: 'connected',
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,provider' },
-  );
+  await supabase
+    .from('kivo_integrations')
+    .delete()
+    .eq('user_id', userId)
+    .eq('provider', 'google_calendar');
+
+  const { error } = await supabase.from('kivo_integrations').insert({
+    user_id: userId,
+    provider: 'google_calendar',
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token ?? null,
+    scopes: tokens.scope ? String(tokens.scope).split(' ') : [],
+    expires_at: tokens.expires_in
+      ? new Date(Date.now() + Number(tokens.expires_in) * 1000).toISOString()
+      : null,
+    status: 'connected',
+    updated_at: new Date().toISOString(),
+  });
 
   if (error) {
-    return NextResponse.redirect(`${baseUrl}/chat?calendar=save_failed`);
+    return NextResponse.redirect(`${baseUrl}/chat?calendar=save_failed_${encodeURIComponent(error.code ?? 'unknown')}`);
   }
 
   return NextResponse.redirect(`${baseUrl}/chat?connected=calendar`);
