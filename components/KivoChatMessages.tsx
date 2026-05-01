@@ -44,6 +44,8 @@ export function KivoChatMessages({ messages, loading }: any) {
             );
           }
 
+          const insight = message.structuredData?.gmail?.insight;
+
           return (
             <div key={message.id} className="flex justify-start">
               <div className="w-full px-[18px] py-[6px]">
@@ -66,6 +68,12 @@ export function KivoChatMessages({ messages, loading }: any) {
                 </div>
 
                 <KivoMiniTable table={message.structuredData?.miniTable} />
+
+                {insight ? (
+                  <div className="mt-[12px] text-[13px] text-[#5f6066] leading-[1.5]">
+                    {insight.summary}
+                  </div>
+                ) : null}
 
                 {message.model || message.provider ? (
                   <div className="mt-[13px] text-[12px] tracking-[-0.01em] text-[#a0a1a7]">
