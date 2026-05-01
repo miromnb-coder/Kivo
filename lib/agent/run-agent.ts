@@ -9,108 +9,55 @@ import {
   runCalendarTodayTool,
   shouldRunCalendarTodayTool,
 } from './tools/calendar';
+import { runGmailTool, shouldRunGmailTool } from './tools/gmail';
 import { routeIntent } from './router';
 import { verifyAnswer } from './verifier';
 import type { AgentRequest, AgentResult } from './types';
-
-function formatDirectCalendarAnswer(calendarResult: Awaited<ReturnType<typeof runCalendarTodayTool>>) {
-  if (!calendarResult.connected) {
-    return 'Kalenteria ei ole vielä yhdistetty oikein. Avaa Connectors → Google Calendar ja yhdistä se uudestaan.';
-  }
-
-  if (calendarResult.error) {
-    return `Kalenterin lukeminen epäonnistui: ${calendarResult.error}`;
-  }
-
-  if (calendarResult.events.length === 0) {
-    return 'Sinulla ei ole kalenteritapahtumia tänään.';
-  }
-
-  return [
-    `Sinulla on tänään ${calendarResult.events.length} tapahtuma${calendarResult.events.length === 1 ? '' : 'a'}:`,
-    ...calendarResult.events.map((event) => `• ${event.summary} — ${event.start}–${event.end}${event.location ? `, ${event.location}` : ''}`),
-  ].join('\n');
-}
 
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
   const memory = await getMemoryContext(req.userId, req.message);
   const plan = createPlan(intent, req.message);
 
-  const useMemory = shouldUseMemory(memory);
-  const memoryBrief = useMemory ? buildMemoryBrief(memory, intent) : '';
-
-  const proactiveSuggestions = buildProactiveSuggestions(memory, intent);
-  const proactivePrompt = buildProactivePrompt(proactiveSuggestions);
-
   const calendarResult = await runCalendarTodayTool(req.userId);
+  const gmailResult = await runGmailTool(req.userId);
 
-  if (shouldRunCalendarTodayTool(req.message)) {
-    const directAnswer = formatDirectCalendarAnswer(calendarResult);
-
-    if (req.userId) {
-      await saveAgentRun(req.userId, req.message, directAnswer);
+  if (shouldRunGmailTool(req.message)) {
+    if (!gmailResult.connected) {
+      return { answer: 'Gmail ei ole yhdistetty.', steps: [], intent };
     }
 
+    if (gmailResult.error) {
+      return { answer: `Gmail virhe: ${gmailResult.error}`, steps: [], intent };
+    }
+
+    const text = gmailResult.messages
+      .map((m) => `• ${m.subject} (${m.from})`)
+      .join('\n');
+
     return {
-      answer: directAnswer,
-      steps: plan.steps.map((step) => ({ ...step, status: 'done' })),
+      answer: text || 'Ei sähköposteja.',
+      steps: [],
       intent,
-      structuredData: {
-        proactiveSuggestions,
-        calendar: calendarResult,
-      },
     };
   }
-
-  const calendarPrompt = calendarResult
-    ? `Use this real calendar data when relevant. Do not invent events. If the user asks about today, schedule, free time, plans, or calendar, answer from this data:\n${formatCalendarTodayForPrompt(calendarResult)}`
-    : '';
 
   const response = await runKivoModel({
     agent: req.agent,
     mode: req.mode,
     context: req.context,
-    complexity: req.mode === 'deep' || intent === 'plan' || intent === 'research' ? 'high' : 'low',
     messages: [
       {
         role: 'system',
-        content: [
-          'You are Kivo, a high-end personal AI operator.',
-          `Intent: ${intent}.`,
-          useMemory ? memoryBrief : 'No memory available. Stay neutral.',
-          calendarPrompt,
-          proactivePrompt,
-          'Be proactive, but not annoying. Always stay relevant.',
-        ].filter(Boolean).join('\n\n'),
+        content: `You are Kivo AI.`,
       },
       { role: 'user', content: req.message },
     ],
   });
 
-  const final = verifyAnswer(response.content);
-
-  if (req.userId) {
-    await saveAgentRun(req.userId, req.message, final);
-
-    try {
-      const candidates = await extractMemoryCandidates(req.message, final);
-
-      for (const memoryItem of candidates) {
-        await saveMemory(req.userId, memoryItem.content, memoryItem.type, memoryItem.importance);
-      }
-    } catch {}
-  }
-
   return {
-    answer: final,
-    steps: plan.steps.map((step) => ({ ...step, status: 'done' })),
+    answer: verifyAnswer(response.content),
+    steps: plan.steps.map((s) => ({ ...s, status: 'done' })),
     intent,
-    model: response.model,
-    provider: response.provider,
-    structuredData: {
-      proactiveSuggestions,
-      calendar: calendarResult,
-    },
   };
 }
