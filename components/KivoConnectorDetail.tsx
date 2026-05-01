@@ -1,11 +1,17 @@
 'use client';
 
-import { ArrowUpRight, ChevronLeft, Lock } from 'lucide-react';
+import { ArrowUpRight, Check, ChevronLeft, Lock, Trash2 } from 'lucide-react';
 
 type DetailRow = {
   label: string;
   value?: string;
   arrow?: boolean;
+};
+
+type ConnectorCapability = {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
 };
 
 type ConnectorDetailProps = {
@@ -19,6 +25,7 @@ type ConnectorDetailProps = {
   author: string;
   buttonLabel: string;
   rows?: DetailRow[];
+  capabilities?: ConnectorCapability[];
   onConnect?: () => void;
   isConnected?: boolean;
   onDisconnect?: () => void;
@@ -34,6 +41,21 @@ function DetailRowItem({ label, value, arrow }: DetailRow) {
   );
 }
 
+function CapabilityItem({ capability, divider }: { capability: ConnectorCapability; divider: boolean }) {
+  return (
+    <div className="flex gap-[18px]">
+      <div className="mt-[2px] flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[11px] bg-[#f0f0f1] text-[#8b8c91]">
+        {capability.icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[17px] font-semibold leading-[1.18] tracking-[-0.035em] text-[#191a1d]">{capability.title}</div>
+        <div className="mt-[4px] text-[14.5px] leading-[1.25] tracking-[-0.025em] text-[#67686d]">{capability.subtitle}</div>
+        {divider ? <div className="mt-[14px] h-px bg-[#e7e7e9]" /> : null}
+      </div>
+    </div>
+  );
+}
+
 export function KivoConnectorDetail({
   open,
   onBack,
@@ -45,6 +67,7 @@ export function KivoConnectorDetail({
   author,
   buttonLabel,
   rows,
+  capabilities,
   onConnect,
   isConnected = false,
   onDisconnect,
@@ -53,10 +76,10 @@ export function KivoConnectorDetail({
 
   const detailRows = rows ?? [
     { label: 'Connector Type', value: connectorType },
-    { label: 'Author', value: author },
+    { label: 'Built by', value: author },
     { label: 'Website', arrow: true },
     { label: 'Privacy Policy', arrow: true },
-    { label: 'Provide feedback', arrow: true },
+    { label: 'Permissions', arrow: true },
   ];
 
   return (
@@ -81,7 +104,18 @@ export function KivoConnectorDetail({
               <p className="mt-[14px] max-w-[360px] text-[17px] leading-[1.42] tracking-[-0.035em] text-[#4f5055]">{description}</p>
             </div>
 
-            <h2 className="mt-[46px] text-[18px] font-semibold tracking-[-0.035em] text-[#111214]">Details</h2>
+            {capabilities?.length ? (
+              <div className="mt-[32px] rounded-[22px] border border-[#ececef] bg-white/46 px-[20px] py-[18px] shadow-[0_8px_26px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
+                <h2 className="text-[16px] font-semibold tracking-[-0.03em] text-[#111214]">Kivo will be able to:</h2>
+                <div className="mt-[18px] space-y-[14px]">
+                  {capabilities.map((capability, index) => (
+                    <CapabilityItem key={`${capability.title}-${index}`} capability={capability} divider={index < capabilities.length - 1} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <h2 className="mt-[28px] text-[18px] font-semibold tracking-[-0.035em] text-[#111214]">Details</h2>
             <div className="mt-[12px] rounded-[22px] border border-[#ececef] bg-white/46 px-[18px] shadow-[0_8px_26px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
               {detailRows.map((row) => (
                 <DetailRowItem key={row.label} {...row} />
@@ -92,17 +126,19 @@ export function KivoConnectorDetail({
           <button
             type="button"
             onClick={isConnected ? onBack : onConnect}
-            className="flex h-[62px] w-full items-center justify-center rounded-[18px] bg-[#111113] text-[17px] font-semibold tracking-[-0.025em] text-white shadow-[0_16px_32px_rgba(0,0,0,0.14)]"
+            className={`flex h-[62px] w-full items-center justify-center gap-[12px] rounded-[18px] text-[17px] font-semibold tracking-[-0.025em] text-white shadow-[0_16px_32px_rgba(0,0,0,0.14)] transition-all ${isConnected ? 'bg-[#2f7d4f]' : 'bg-[#111113]'}`}
           >
+            {isConnected ? <Check size={21} strokeWidth={2.2} /> : null}
             {isConnected ? 'Connected' : buttonLabel}
           </button>
 
-          {isConnected ? (
+          {isConnected && onDisconnect ? (
             <button
               type="button"
               onClick={onDisconnect}
-              className="mt-[12px] flex h-[46px] w-full items-center justify-center rounded-[16px] bg-[#f2f2f3] text-[16px] font-medium tracking-[-0.025em] text-[#c7332f]"
+              className="mt-[12px] flex h-[46px] w-full items-center justify-center gap-[10px] rounded-[16px] bg-[#f2f2f3] text-[16px] font-medium tracking-[-0.025em] text-[#c7332f]"
             >
+              <Trash2 size={17} strokeWidth={2.1} />
               Disconnect
             </button>
           ) : null}
