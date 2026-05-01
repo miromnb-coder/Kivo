@@ -8,12 +8,12 @@
   "theme_color": "#f3f3f5",
   "icons": [
     {
-      "src": "/kivo-logo.png",
+      "src": "/kivo-app-image.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/kivo-logo.png",
+      "src": "/kivo-app-image.png",
       "sizes": "512x512",
       "type": "image/png"
     }
