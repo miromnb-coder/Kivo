@@ -32,9 +32,10 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdmin();
 
     const { error } = await supabase
-      .from('google_gmail_connections')
+      .from('kivo_integrations')
       .delete()
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('provider', 'gmail');
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
