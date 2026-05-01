@@ -46,7 +46,7 @@ export function KivoChatMessages({ messages, loading }: any) {
 
           return (
             <div key={message.id} className="flex justify-start">
-              <div className="w-full rounded-[28px] border border-[#eeeeF1] bg-white/78 px-[18px] py-[16px] shadow-[0_14px_34px_rgba(15,23,42,0.055)] backdrop-blur-[18px]">
+              <div className="w-full px-[18px] py-[6px]">
                 {message.steps?.length ? (
                   <div className="mb-[14px] rounded-[20px] bg-[#f4f4f5] px-[14px] py-[12px]">
                     <div className="mb-[9px] text-[12px] font-medium uppercase tracking-[0.14em] text-[#8d8d93]">Agent steps</div>
@@ -65,7 +65,6 @@ export function KivoChatMessages({ messages, loading }: any) {
                   {message.content || (loading ? 'Kivo is thinking…' : '')}
                 </div>
 
-                {/* 🔥 MINI TABLE RENDER */}
                 <KivoMiniTable table={message.structuredData?.miniTable} />
 
                 {message.model || message.provider ? (
