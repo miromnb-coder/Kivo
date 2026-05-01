@@ -20,6 +20,8 @@ type ConnectorDetailProps = {
   buttonLabel: string;
   rows?: DetailRow[];
   onConnect?: () => void;
+  isConnected?: boolean;
+  onDisconnect?: () => void;
 };
 
 function DetailRowItem({ label, value, arrow }: DetailRow) {
@@ -44,6 +46,8 @@ export function KivoConnectorDetail({
   buttonLabel,
   rows,
   onConnect,
+  isConnected = false,
+  onDisconnect,
 }: ConnectorDetailProps) {
   if (!open) return null;
 
@@ -87,11 +91,21 @@ export function KivoConnectorDetail({
 
           <button
             type="button"
-            onClick={onConnect}
+            onClick={isConnected ? onBack : onConnect}
             className="flex h-[62px] w-full items-center justify-center rounded-[18px] bg-[#111113] text-[17px] font-semibold tracking-[-0.025em] text-white shadow-[0_16px_32px_rgba(0,0,0,0.14)]"
           >
-            {buttonLabel}
+            {isConnected ? 'Connected' : buttonLabel}
           </button>
+
+          {isConnected ? (
+            <button
+              type="button"
+              onClick={onDisconnect}
+              className="mt-[12px] flex h-[46px] w-full items-center justify-center rounded-[16px] bg-[#f2f2f3] text-[16px] font-medium tracking-[-0.025em] text-[#c7332f]"
+            >
+              Disconnect
+            </button>
+          ) : null}
 
           <div className="mt-[16px] flex items-center justify-center gap-[8px] text-[13.5px] tracking-[-0.02em] text-[#929399]">
             <Lock size={14} strokeWidth={2} />
