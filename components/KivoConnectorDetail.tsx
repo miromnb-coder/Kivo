@@ -67,7 +67,7 @@ export function KivoConnectorDetail({
   author,
   buttonLabel,
   rows,
-  capabilities,
+  capabilities = [],
   onConnect,
   isConnected = false,
   onDisconnect,
@@ -94,39 +94,37 @@ export function KivoConnectorDetail({
           </button>
         </div>
 
-        <div className="flex h-full flex-col px-[26px] pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[88px]">
-          <div className="flex-1 overflow-y-auto pb-[24px]">
-            <div className="flex flex-col items-center text-center">
-              <div className="flex h-[76px] w-[76px] items-center justify-center rounded-[18px] border border-[#ececef] bg-white shadow-[0_12px_26px_rgba(15,23,42,0.035)]">
-                {icon}
-              </div>
-              <h1 className="mt-[20px] text-[26px] font-semibold leading-[1.05] tracking-[-0.045em] text-[#111214]">{title}</h1>
-              <p className="mt-[14px] max-w-[360px] text-[17px] leading-[1.42] tracking-[-0.035em] text-[#4f5055]">{description}</p>
+        <div className="h-full overflow-y-auto px-[26px] pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[88px]">
+          <div className="flex flex-col items-center text-center">
+            <div className="flex h-[76px] w-[76px] items-center justify-center rounded-[18px] border border-[#ececef] bg-white shadow-[0_12px_26px_rgba(15,23,42,0.035)]">
+              {icon}
             </div>
+            <h1 className="mt-[20px] text-[26px] font-semibold leading-[1.05] tracking-[-0.045em] text-[#111214]">{title}</h1>
+            <p className="mt-[14px] max-w-[360px] text-[17px] leading-[1.42] tracking-[-0.035em] text-[#4f5055]">{description}</p>
+          </div>
 
-            {capabilities?.length ? (
-              <div className="mt-[32px] rounded-[22px] border border-[#ececef] bg-white/46 px-[20px] py-[18px] shadow-[0_8px_26px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
-                <h2 className="text-[16px] font-semibold tracking-[-0.03em] text-[#111214]">Kivo will be able to:</h2>
-                <div className="mt-[18px] space-y-[14px]">
-                  {capabilities.map((capability, index) => (
-                    <CapabilityItem key={`${capability.title}-${index}`} capability={capability} divider={index < capabilities.length - 1} />
-                  ))}
-                </div>
+          {capabilities.length ? (
+            <div className="mt-[32px] rounded-[22px] border border-[#ececef] bg-white/46 px-[20px] py-[18px] shadow-[0_8px_26px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
+              <h2 className="text-[16px] font-semibold tracking-[-0.03em] text-[#111214]">Kivo will be able to:</h2>
+              <div className="mt-[18px] space-y-[14px]">
+                {capabilities.map((capability, index) => (
+                  <CapabilityItem key={`${capability.title}-${index}`} capability={capability} divider={index < capabilities.length - 1} />
+                ))}
               </div>
-            ) : null}
-
-            <h2 className="mt-[28px] text-[18px] font-semibold tracking-[-0.035em] text-[#111214]">Details</h2>
-            <div className="mt-[12px] rounded-[22px] border border-[#ececef] bg-white/46 px-[18px] shadow-[0_8px_26px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
-              {detailRows.map((row) => (
-                <DetailRowItem key={row.label} {...row} />
-              ))}
             </div>
+          ) : null}
+
+          <h2 className="mt-[28px] text-[18px] font-semibold tracking-[-0.035em] text-[#111214]">Details</h2>
+          <div className="mt-[12px] rounded-[22px] border border-[#ececef] bg-white/46 px-[18px] shadow-[0_8px_26px_rgba(15,23,42,0.018)] backdrop-blur-[14px]">
+            {detailRows.map((row) => (
+              <DetailRowItem key={row.label} {...row} />
+            ))}
           </div>
 
           <button
             type="button"
             onClick={isConnected ? onBack : onConnect}
-            className={`flex h-[62px] w-full items-center justify-center gap-[12px] rounded-[18px] text-[17px] font-semibold tracking-[-0.025em] text-white shadow-[0_16px_32px_rgba(0,0,0,0.14)] transition-all ${isConnected ? 'bg-[#2f7d4f]' : 'bg-[#111113]'}`}
+            className={`mt-[28px] flex h-[62px] w-full items-center justify-center gap-[12px] rounded-[18px] text-[17px] font-semibold tracking-[-0.025em] text-white shadow-[0_16px_32px_rgba(0,0,0,0.14)] transition-all ${isConnected ? 'bg-[#2f7d4f]' : 'bg-[#111113]'}`}
           >
             {isConnected ? <Check size={21} strokeWidth={2.2} /> : null}
             {isConnected ? 'Connected' : buttonLabel}
