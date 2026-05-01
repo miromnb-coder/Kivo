@@ -2,6 +2,7 @@ import { runKivoModel } from '@/lib/ai/model-router';
 import { createPlan } from './planner';
 import { getMemoryContext, saveAgentRun, saveMemory } from './memory';
 import { extractMemoryCandidates } from './memory-extraction';
+import { buildMemoryBrief, shouldUseMemory } from './memory-policy';
 import { routeIntent } from './router';
 import { verifyAnswer } from './verifier';
 import type { AgentRequest, AgentResult } from './types';
@@ -10,6 +11,9 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
   const memory = await getMemoryContext(req.userId, req.message);
   const plan = createPlan(intent, req.message);
+
+  const useMemory = shouldUseMemory(memory);
+  const memoryBrief = useMemory ? buildMemoryBrief(memory, intent) : '';
 
   const response = await runKivoModel({
     agent: req.agent,
@@ -20,12 +24,11 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
       {
         role: 'system',
         content: [
-          'You are Kivo, a personal AI agent.',
+          'You are Kivo, a high-end personal AI operator.',
           `Intent: ${intent}.`,
-          `User: ${memory.profileSummary}.`,
-          `Preferences: ${memory.preferences.join(', ')}`,
-          'Use memory naturally. Be personal and proactive.',
-        ].join('\n'),
+          useMemory ? memoryBrief : 'No memory available. Stay neutral.',
+          'Use memory intelligently. Be proactive but accurate.',
+        ].join('\n\n'),
       },
       { role: 'user', content: req.message },
     ],
@@ -36,16 +39,13 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   if (req.userId) {
     await saveAgentRun(req.userId, req.message, final);
 
-    // 🔥 Intelligent memory extraction
     try {
       const candidates = await extractMemoryCandidates(req.message, final);
 
       for (const memoryItem of candidates) {
         await saveMemory(req.userId, memoryItem.content, memoryItem.type, memoryItem.importance);
       }
-    } catch {
-      // silent fail (never break main flow)
-    }
+    } catch {}
   }
 
   return {
