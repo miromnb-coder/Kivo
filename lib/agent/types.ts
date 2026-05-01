@@ -29,6 +29,8 @@ export type AgentMemoryContext = {
   profileSummary: string;
   preferences: string[];
   recentContext: string[];
+  insights?: string[];
+  proactiveSuggestions?: string[];
 };
 
 export type AgentResult = {
