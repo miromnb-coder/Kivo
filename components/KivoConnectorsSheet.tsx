@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, CornerDownRight, Plus, SlidersHorizontal, X } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 import { KivoCalendarConnectorDetail } from './KivoCalendarConnectorDetail';
 import { KivoConnectorDetail } from './KivoConnectorDetail';
 import { KivoGmailConnectorDetail } from './KivoGmailConnectorDetail';
@@ -45,6 +46,8 @@ const MEDIUM_HEIGHT = 0.78;
 const emptyConnectedMap: Record<ConnectorIconId, boolean> = { gmail: false, 'google-calendar': false, github: false, browser: false, drive: false, 'outlook-mail': false, 'outlook-calendar': false };
 const defaultEnabledMap: Record<ConnectorIconId, boolean> = { gmail: true, 'google-calendar': true, github: true, browser: true, drive: true, 'outlook-mail': true, 'outlook-calendar': true };
 
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+
 function ConnectorToggle({ checked, onClick }: { checked: boolean; onClick: () => void }) {
   return (
     <button type="button" aria-pressed={checked} onClick={(event) => { event.stopPropagation(); onClick(); }} className={`relative h-[34px] w-[56px] shrink-0 overflow-hidden rounded-full transition-colors ${checked ? 'bg-[#0a84ff]' : 'bg-[#e2e2e4]'}`}>
@@ -65,6 +68,8 @@ function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boo
 export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<ConnectorItem | null>(null);
+  const [gmailDetailOpen, setGmailDetailOpen] = useState(false);
+  const [calendarDetailOpen, setCalendarDetailOpen] = useState(false);
   const [repositoriesOpen, setRepositoriesOpen] = useState(false);
   const [connectedMap, setConnectedMap] = useState<Record<ConnectorIconId, boolean>>(emptyConnectedMap);
   const [enabledMap, setEnabledMap] = useState<Record<ConnectorIconId, boolean>>(defaultEnabledMap);
@@ -91,17 +96,39 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
 
   useEffect(() => {
     if (!open) return;
-    setIsVisible(false); setSelectedConnector(null); setRepositoriesOpen(false);
+    setIsVisible(false); setSelectedConnector(null); setGmailDetailOpen(false); setCalendarDetailOpen(false); setRepositoriesOpen(false);
     const frame = requestAnimationFrame(() => setIsVisible(true));
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { cancelAnimationFrame(frame); document.body.style.overflow = originalOverflow; };
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !hasLoadedStoredState) return;
+    async function syncGoogleStatuses() {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data.user?.id;
+        if (!userId) return;
+        const [gmailRes, calendarRes] = await Promise.allSettled([
+          fetch(`/api/integrations/google/gmail/status?userId=${userId}`),
+          fetch(`/api/integrations/google/calendar/status?userId=${userId}`),
+        ]);
+        const gmailConnected = gmailRes.status === 'fulfilled' ? Boolean((await gmailRes.value.json()).connected) : false;
+        const calendarConnected = calendarRes.status === 'fulfilled' ? Boolean((await calendarRes.value.json()).connected) : false;
+        setConnectedMap((current) => ({ ...current, gmail: gmailConnected, 'google-calendar': calendarConnected }));
+        setEnabledMap((current) => ({ ...current, gmail: gmailConnected ? current.gmail : false, 'google-calendar': calendarConnected ? current['google-calendar'] : false }));
+      } catch {
+        // Keep the local UI state if status sync fails.
+      }
+    }
+    syncGoogleStatuses();
+  }, [open, hasLoadedStoredState]);
+
   if (!open) return null;
 
-  function closeWithAnimation() { setIsVisible(false); setSelectedConnector(null); setRepositoriesOpen(false); window.setTimeout(onClose, 180); }
-  function openConnector(connector: ConnectorItem) { setSelectedConnector(connector); }
+  function closeWithAnimation() { setIsVisible(false); setSelectedConnector(null); setGmailDetailOpen(false); setCalendarDetailOpen(false); setRepositoriesOpen(false); window.setTimeout(onClose, 180); }
+  function openConnector(connector: ConnectorItem) { if (connector.icon === 'gmail') { setGmailDetailOpen(true); return; } if (connector.icon === 'google-calendar') { setCalendarDetailOpen(true); return; } setSelectedConnector(connector); }
   function connectConnector(connector: ConnectorItem) { setConnectedMap((current) => ({ ...current, [connector.icon]: true })); setEnabledMap((current) => ({ ...current, [connector.icon]: true })); }
   function disconnectConnector(connector: ConnectorItem) { setConnectedMap((current) => ({ ...current, [connector.icon]: false })); setEnabledMap((current) => ({ ...current, [connector.icon]: false })); if (connector.icon === 'github') setEnabledRepositories({}); }
   function toggleConnector(icon: ConnectorIconId) { setEnabledMap((current) => ({ ...current, [icon]: !current[icon] })); }
@@ -124,6 +151,8 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
         </div>
       </div>
       {selectedConnector && selectedConnectorDetail ? (<KivoConnectorDetail open onBack={() => setSelectedConnector(null)} onClose={closeWithAnimation} icon={<BrandIcon icon={selectedConnector.icon} large />} title={selectedConnectorDetail.title} description={selectedConnectorDetail.description} connectorType={selectedConnectorDetail.connectorType} author={selectedConnectorDetail.author} buttonLabel={selectedConnectorDetail.buttonLabel} isConnected={connectedMap[selectedConnector.icon]} onConnect={() => { connectConnector(selectedConnector); setSelectedConnector(null); }} onDisconnect={() => { disconnectConnector(selectedConnector); setSelectedConnector(null); }} />) : null}
+      <KivoGmailConnectorDetail open={gmailDetailOpen} onBack={() => setGmailDetailOpen(false)} onClose={closeWithAnimation} />
+      <KivoCalendarConnectorDetail open={calendarDetailOpen} onBack={() => setCalendarDetailOpen(false)} onClose={closeWithAnimation} />
       <KivoRepositoriesSheet open={repositoriesOpen} onBack={() => setRepositoriesOpen(false)} repositories={repositories} enabledRepositories={enabledRepositories} onToggleRepository={toggleRepository} />
     </div>
   );
