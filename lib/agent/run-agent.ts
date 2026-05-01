@@ -95,22 +95,11 @@ function buildTodayIntelligenceV2(calendar: any, gmail: any) {
   const freeTime = buildFreeTimeWindows(calendar);
   const topPriorities: Array<{ title: string; reason: string; source: 'gmail' | 'calendar' | 'system'; score: number }> = [];
 
-  for (const message of (gmail?.bills ?? []).slice(0, 3)) {
-    topPriorities.push({ title: message.subject ?? 'Tarkista laskuun liittyvä sähköposti', reason: 'Löytyi laskuun, maksuun tai uusimiseen liittyvästä sähköpostista.', source: 'gmail', score: 95 });
-  }
+  for (const message of (gmail?.bills ?? []).slice(0, 3)) topPriorities.push({ title: message.subject ?? 'Tarkista laskuun liittyvä sähköposti', reason: 'Löytyi laskuun, maksuun tai uusimiseen liittyvästä sähköpostista.', source: 'gmail', score: 95 });
+  for (const message of (gmail?.important ?? []).slice(0, 3)) topPriorities.push({ title: message.subject ?? 'Tarkista tärkeä sähköposti', reason: 'Sähköposti näyttää tärkeältä tai vaatii huomiota.', source: 'gmail', score: 85 });
+  for (const event of (calendar?.events ?? []).slice(0, 3)) topPriorities.push({ title: event.summary ?? 'Kalenteritapahtuma', reason: `Tänään kalenterissa ${formatTime(event.start)} (${formatDuration(event.start, event.end)}).`, source: 'calendar', score: 75 });
 
-  for (const message of (gmail?.important ?? []).slice(0, 3)) {
-    topPriorities.push({ title: message.subject ?? 'Tarkista tärkeä sähköposti', reason: 'Sähköposti näyttää tärkeältä tai vaatii huomiota.', source: 'gmail', score: 85 });
-  }
-
-  for (const event of (calendar?.events ?? []).slice(0, 3)) {
-    topPriorities.push({ title: event.summary ?? 'Kalenteritapahtuma', reason: `Tänään kalenterissa ${formatTime(event.start)} (${formatDuration(event.start, event.end)}).`, source: 'calendar', score: 75 });
-  }
-
-  if (!topPriorities.length) {
-    topPriorities.push({ title: 'Suunnittele päivän tärkein tehtävä', reason: 'Kalenterista tai sähköposteista ei löytynyt kiireellisiä asioita.', source: 'system', score: 50 });
-  }
-
+  if (!topPriorities.length) topPriorities.push({ title: 'Suunnittele päivän tärkein tehtävä', reason: 'Kalenterista tai sähköposteista ei löytynyt kiireellisiä asioita.', source: 'system', score: 50 });
   topPriorities.sort((a, b) => b.score - a.score);
 
   const nextAction = topPriorities[0]
@@ -133,49 +122,56 @@ function buildTodayIntelligenceV2(calendar: any, gmail: any) {
     nextAction,
     freeTime,
     risk: { level: riskLevel, reason: riskReason },
-    summary: {
-      calendarEvents: calendar?.events?.length ?? 0,
-      importantEmails: gmail?.important?.length ?? 0,
-      bills: gmail?.bills?.length ?? 0,
-      freeWindows: freeTime.length,
-    },
+    summary: { calendarEvents: calendar?.events?.length ?? 0, importantEmails: gmail?.important?.length ?? 0, bills: gmail?.bills?.length ?? 0, freeWindows: freeTime.length },
+  };
+}
+
+function buildTodayDocumentCard(todayPlan: any) {
+  if (!todayPlan) return null;
+  const priority = todayPlan.topPriorities?.[0];
+  const freeWindow = todayPlan.freeTime?.[0]?.label;
+  const summary = todayPlan.summary ?? {};
+  const content = [
+    priority ? `Focus: ${priority.title}` : 'Focus: choose one meaningful task for today',
+    priority?.reason ? `Why: ${priority.reason}` : null,
+    freeWindow ? `Best window: ${freeWindow}` : 'Best window: no clear free slot found yet',
+    todayPlan.nextAction?.instruction ? `Next action: ${todayPlan.nextAction.instruction}` : null,
+    '',
+    `Calendar events: ${summary.calendarEvents ?? 0}`,
+    `Important emails: ${summary.importantEmails ?? 0}`,
+    `Bills / payments: ${summary.bills ?? 0}`,
+    `Free windows: ${summary.freeWindows ?? 0}`,
+    todayPlan.risk?.level === 'medium' ? `Attention: ${todayPlan.risk.reason}` : null,
+  ].filter(Boolean).join('\n');
+
+  return {
+    title: 'Today Plan',
+    subtitle: priority ? priority.title : 'A clean plan based on your calendar and email context.',
+    meta: 'Kivo Intelligence',
+    content,
   };
 }
 
 function buildCalendarTable(calendar: any) {
   if (!calendar?.connected || !calendar.events?.length) return null;
-  return {
-    title: 'Kalenteri tänään',
-    columns: ['Aika', 'Tapahtuma', 'Kesto'],
-    rows: calendar.events.slice(0, 5).map((event: any) => [formatTime(event.start), event.summary ?? 'Untitled event', formatDuration(event.start, event.end)]),
-  };
+  return { title: 'Kalenteri tänään', columns: ['Aika', 'Tapahtuma', 'Kesto'], rows: calendar.events.slice(0, 5).map((event: any) => [formatTime(event.start), event.summary ?? 'Untitled event', formatDuration(event.start, event.end)]) };
 }
 
 function buildGmailTable(gmail: any) {
   if (!gmail?.connected) return null;
-
   const priorityRows = [
     ...(gmail.bills ?? []).slice(0, 3).map((m: any) => ['Lasku', m.subject ?? 'No subject', m.from ?? 'Unknown']),
     ...(gmail.important ?? []).slice(0, 3).map((m: any) => ['Tärkeä', m.subject ?? 'No subject', m.from ?? 'Unknown']),
   ];
-
   const fallbackRows = (gmail.messages ?? []).slice(0, 5).map((m: any) => ['Viesti', m.subject ?? 'No subject', m.from ?? 'Unknown']);
   const rows = (priorityRows.length ? priorityRows : fallbackRows).slice(0, 5);
   if (!rows.length) return null;
-
   return { title: 'Sähköposti', columns: ['Tyyppi', 'Otsikko', 'Lähettäjä'], rows };
 }
 
 function buildTodayTable(calendar: any, gmail: any) {
   if (!calendar?.connected && !gmail?.connected) return null;
-  return {
-    title: 'Today',
-    columns: ['Alue', 'Tilanne', 'Ehdotus'],
-    rows: [
-      ['Calendar', calendar?.events?.length ? `${calendar.events.length} tapahtumaa` : 'Ei tapahtumia', calendar?.events?.length ? 'Tarkista päivän rytmi' : 'Voit suunnitella päivän'],
-      ['Gmail', gmail?.important?.length ? `${gmail.important.length} tärkeää` : 'Ei tärkeitä', gmail?.bills?.length ? 'Tarkista laskut' : 'Inbox ok'],
-    ],
-  };
+  return { title: 'Today', columns: ['Alue', 'Tilanne', 'Ehdotus'], rows: [['Calendar', calendar?.events?.length ? `${calendar.events.length} tapahtumaa` : 'Ei tapahtumia', calendar?.events?.length ? 'Tarkista päivän rytmi' : 'Voit suunnitella päivän'], ['Gmail', gmail?.important?.length ? `${gmail.important.length} tärkeää` : 'Ei tärkeitä', gmail?.bills?.length ? 'Tarkista laskut' : 'Inbox ok']] };
 }
 
 function isCalendarRequest(message: string) {
@@ -205,50 +201,20 @@ function buildDailyAnswerV2(todayPlan: any) {
   const first = priorities[0];
   const freeWindow = todayPlan?.freeTime?.[0]?.label;
   const summary = todayPlan?.summary ?? {};
-
-  if (!first) {
-    return '## Tänään\n\nEn löytänyt kiireellisiä asioita kalenterista tai sähköposteista.\n\n**Seuraava paras askel:** valitse yksi tärkeä tehtävä ja tee siitä 25 minuutin aloitus.';
-  }
+  if (!first) return '## Tänään\n\nEn löytänyt kiireellisiä asioita kalenterista tai sähköposteista.\n\n**Seuraava paras askel:** valitse yksi tärkeä tehtävä ja tee siitä 25 minuutin aloitus.';
 
   const lines: string[] = [];
-  lines.push('## Tänään kannattaa keskittyä tähän');
-  lines.push('');
-  lines.push(`**${first.title}**`);
-  lines.push('');
-  lines.push(first.reason);
-  lines.push('');
-
-  if (freeWindow) {
-    lines.push('### Paras hetki');
-    lines.push(`**${freeWindow}**`);
-    lines.push('');
-  }
-
-  lines.push('### Seuraava askel');
-  lines.push(todayPlan?.nextAction?.instruction ?? 'Aloita tästä yhdellä pienellä askeleella.');
-  lines.push('');
-
+  lines.push('## Tänään kannattaa keskittyä tähän', '', `**${first.title}**`, '', first.reason, '');
+  if (freeWindow) lines.push('### Paras hetki', `**${freeWindow}**`, '');
+  lines.push('### Seuraava askel', todayPlan?.nextAction?.instruction ?? 'Aloita tästä yhdellä pienellä askeleella.', '');
   const otherPriorities = priorities.slice(1, 4);
   if (otherPriorities.length) {
     lines.push('### Muut tärkeät');
-    for (const item of otherPriorities) {
-      lines.push(`- **${item.title}** — ${item.source === 'gmail' ? 'sähköpostista' : item.source === 'calendar' ? 'kalenterista' : 'suunnittelusta'}`);
-    }
+    for (const item of otherPriorities) lines.push(`- **${item.title}** — ${item.source === 'gmail' ? 'sähköpostista' : item.source === 'calendar' ? 'kalenterista' : 'suunnittelusta'}`);
     lines.push('');
   }
-
-  lines.push('### Nopea tilanne');
-  lines.push(`- **${summary.calendarEvents ?? 0}** kalenteritapahtumaa tänään`);
-  lines.push(`- **${summary.importantEmails ?? 0}** tärkeää sähköpostia`);
-  lines.push(`- **${summary.bills ?? 0}** laskuun tai maksuun liittyvää viestiä`);
-  lines.push(`- **${summary.freeWindows ?? 0}** vapaata aikaikkunaa`);
-
-  if (todayPlan?.risk?.level === 'medium') {
-    lines.push('');
-    lines.push('### Huomio');
-    lines.push(todayPlan.risk.reason);
-  }
-
+  lines.push('### Nopea tilanne', `- **${summary.calendarEvents ?? 0}** kalenteritapahtumaa tänään`, `- **${summary.importantEmails ?? 0}** tärkeää sähköpostia`, `- **${summary.bills ?? 0}** laskuun tai maksuun liittyvää viestiä`, `- **${summary.freeWindows ?? 0}** vapaata aikaikkunaa`);
+  if (todayPlan?.risk?.level === 'medium') lines.push('', '### Huomio', todayPlan.risk.reason);
   return lines.join('\n');
 }
 
@@ -259,14 +225,19 @@ function withStructuredData(base: Omit<AgentResult, 'structuredData'>, structure
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
   const plan = createPlan(intent, req.message);
-
   const calendar = await runCalendarTodayTool(req.userId);
   const gmail = await runGmailTool(req.userId);
   const showMiniTable = shouldShowMiniTable(req.message);
-  const tinySuggestion = showMiniTable ? buildTinySmartSuggestion(calendar, gmail) : null;
-  const miniTable = buildMiniTable(calendar, gmail, req.message);
+  const todayRequest = isTodayOperatorRequest(req.message);
   const todayPlan = buildTodayIntelligenceV2(calendar, gmail);
-  const structuredData = { tinySuggestion, miniTable, todayPlan, gmail: showMiniTable ? gmail : null, calendar: showMiniTable ? calendar : null };
+  const structuredData = {
+    tinySuggestion: showMiniTable ? buildTinySmartSuggestion(calendar, gmail) : null,
+    miniTable: buildMiniTable(calendar, gmail, req.message),
+    documentCard: todayRequest ? buildTodayDocumentCard(todayPlan) : null,
+    todayPlan,
+    gmail: showMiniTable ? gmail : null,
+    calendar: showMiniTable ? calendar : null,
+  };
 
   if (shouldRunGmailTool(req.message)) {
     if (!gmail.connected) return withStructuredData({ answer: 'Gmail ei ole yhdistetty.', steps: [], intent }, structuredData);
@@ -276,19 +247,14 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     return withStructuredData({ answer: gmail.messages.length ? `## Sähköposti\n\nLöysin **${gmail.messages.length}** viimeisintä sähköpostia.` : 'Ei sähköposteja.', steps: [], intent }, structuredData);
   }
 
-  if (isTodayOperatorRequest(req.message)) {
-    return withStructuredData({ answer: buildDailyAnswerV2(todayPlan), steps: [], intent }, structuredData);
-  }
+  if (todayRequest) return withStructuredData({ answer: buildDailyAnswerV2(todayPlan), steps: [], intent }, structuredData);
 
   const response = await runKivoModel({
     agent: req.agent,
     mode: req.mode,
     context: req.context,
     messages: [
-      {
-        role: 'system',
-        content: 'You are Kivo AI. Use Markdown for hierarchy: ## for main sections, ### for smaller sections, **bold** for key decisions. Be proactive and practical. When calendar or Gmail context is available, suggest next actions without making changes unless the user confirms. Use tables/cards only when structuredData is available in the UI; keep the text itself clean and readable.',
-      },
+      { role: 'system', content: 'You are Kivo AI. Use Markdown for hierarchy: ## for main sections, ### for smaller sections, **bold** for key decisions. Be proactive and practical. When calendar or Gmail context is available, suggest next actions without making changes unless the user confirms. Use tables/cards only when structuredData is available in the UI; keep the text itself clean and readable.' },
       { role: 'user', content: req.message },
     ],
   });
