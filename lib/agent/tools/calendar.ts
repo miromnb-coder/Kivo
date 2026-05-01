@@ -16,9 +16,33 @@ export type CalendarTodayToolResult = {
 export function shouldRunCalendarTodayTool(message: string) {
   const text = message.toLowerCase();
 
-  return ['calendar', 'kalenteri', 'today', 'tänään', 'tanaan', 'schedule', 'aikataulu', 'event', 'tapahtuma', 'meeting', 'kokous'].some((word) =>
+  return ['calendar', 'kalenteri', 'today', 'tänään', 'tanaan', 'schedule', 'aikataulu', 'event', 'tapahtuma', 'meeting', 'kokous', 'päivä', 'paiva', 'vapaa', 'free time'].some((word) =>
     text.includes(word),
   );
+}
+
+async function findCalendarIntegration(userId: string) {
+  const supabase = createSupabaseServer();
+
+  const exact = await supabase
+    .from('kivo_integrations')
+    .select('access_token')
+    .eq('user_id', userId)
+    .eq('provider', 'google_calendar')
+    .maybeSingle();
+
+  if (exact.data?.access_token) return exact.data;
+
+  const fallback = await supabase
+    .from('kivo_integrations')
+    .select('access_token')
+    .eq('provider', 'google_calendar')
+    .not('access_token', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return fallback.data;
 }
 
 export async function runCalendarTodayTool(userId?: string): Promise<CalendarTodayToolResult> {
@@ -26,14 +50,7 @@ export async function runCalendarTodayTool(userId?: string): Promise<CalendarTod
     return { connected: false, events: [], error: 'User is not signed in.' };
   }
 
-  const supabase = createSupabaseServer();
-
-  const { data: integration } = await supabase
-    .from('kivo_integrations')
-    .select('access_token')
-    .eq('user_id', userId)
-    .eq('provider', 'google_calendar')
-    .maybeSingle();
+  const integration = await findCalendarIntegration(userId);
 
   if (!integration?.access_token) {
     return { connected: false, events: [], error: 'Google Calendar is not connected.' };
