@@ -60,25 +60,20 @@ function GitHubIcon() {
 function BrowserIcon() {
   return (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="#fff" />
-      <path d="M12 12 3.34 7a10 10 0 0 1 17.32 0H12Z" fill="#EA4335" />
-      <path d="M12 12h8.66A10 10 0 0 1 12 22l-4.33-7.5L12 12Z" fill="#34A853" />
-      <path d="M12 12 7.67 14.5 3.34 7A10 10 0 0 0 12 22V12Z" fill="#FBBC04" />
-      <circle cx="12" cy="12" r="4.15" fill="#4285F4" stroke="#fff" strokeWidth="1.25" />
+      <circle cx="12" cy="12" r="9" stroke="#3b3b3f" strokeWidth="1.9" />
+      <circle cx="12" cy="12" r="3.7" stroke="#3b3b3f" strokeWidth="1.9" />
+      <path d="M12 8.3h8.1M8.75 13.85 4.7 6.85M8.78 13.9 4.7 20.9" stroke="#3b3b3f" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function DriveIcon() {
   return (
-    <svg width="29" height="26" viewBox="0 0 87.3 78" fill="none" aria-hidden="true">
-      <path fill="#0066DA" d="M6.6 66.85 11.52 75.33A5.34 5.34 0 0 0 16.13 78h55.04a5.34 5.34 0 0 0 4.61-2.67l4.92-8.48H6.6Z" />
-      <path fill="#00AC47" d="M43.65 0H21.63a5.34 5.34 0 0 0-4.61 2.67L0 32.13l11.52 19.95L43.65 0Z" />
-      <path fill="#00832D" d="M11.52 52.08 0 32.13l6.6 34.72h22.98l-18.06-14.77Z" />
-      <path fill="#EA4335" d="M65.67 0H43.65l32.13 52.08L87.3 32.13 70.28 2.67A5.34 5.34 0 0 0 65.67 0Z" />
-      <path fill="#FFBA00" d="M75.78 52.08 87.3 32.13 80.7 66.85H57.72l18.06-14.77Z" />
-      <path fill="#2684FC" d="M29.58 66.85h28.14l18.06-14.77H11.52l18.06 14.77Z" />
-      <path fill="#FFBA00" d="M43.65 0 11.52 52.08h64.26L43.65 0Z" />
+    <svg width="29" height="26" viewBox="0 0 64 56" fill="none" aria-hidden="true">
+      <path fill="#1E8E3E" d="M23.2 2h17.6L64 42.2H46.4L23.2 2Z" />
+      <path fill="#F9AB00" d="M40.8 2 64 42.2H46.4L23.2 2h17.6Z" />
+      <path fill="#34A853" d="M23.2 2 0 42.2l8.8 15.2L32 17.2 23.2 2Z" />
+      <path fill="#4285F4" d="M8.8 57.4h46.4L64 42.2H17.6L8.8 57.4Z" />
     </svg>
   );
 }
@@ -86,13 +81,20 @@ function DriveIcon() {
 function OutlookMailIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <path fill="#0078D4" d="M26 15h27a3 3 0 0 1 3 3v28a3 3 0 0 1-3 3H26V15Z" />
-      <path fill="#50D9FF" d="M38 20h18v11H38V20Z" />
-      <path fill="#28A8EA" d="M38 31h18v11H38V31Z" />
-      <path fill="#0364B8" d="M26 20h12v11H26V20Z" />
-      <path fill="#14447D" d="M26 31h12v11H26V31Z" />
-      <path fill="#0A5EBE" d="M5 19.5 30 14v38L5 46.5v-27Z" />
-      <path fill="#fff" d="M10 32c0-6.6 3.75-10.75 9.2-10.75 5.5 0 9.05 4.05 9.05 10.55 0 6.65-3.65 10.9-9.15 10.9C13.65 42.7 10 38.55 10 32Zm5.75-.05c0 3.65 1.2 5.85 3.4 5.85s3.35-2.2 3.35-5.85c0-3.55-1.2-5.7-3.35-5.7-2.2 0-3.4 2.15-3.4 5.7Z" />
+      <defs>
+        <linearGradient id="outlookMailBack" x1="30" y1="13" x2="58" y2="50" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#47D3FF" />
+          <stop offset="1" stopColor="#0A63D8" />
+        </linearGradient>
+        <linearGradient id="outlookMailFront" x1="7" y1="18" x2="30" y2="50" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#32A8FF" />
+          <stop offset="1" stopColor="#0057C2" />
+        </linearGradient>
+      </defs>
+      <rect x="25" y="14" width="34" height="36" rx="4" fill="url(#outlookMailBack)" />
+      <path d="M25 24 42 35l17-11v22a4 4 0 0 1-4 4H25V24Z" fill="#0A5EBE" opacity=".55" />
+      <path d="M5 19.5 31 14v38L5 46.5v-27Z" fill="url(#outlookMailFront)" />
+      <path fill="#fff" d="M10.5 32c0-6.5 3.7-10.6 9.05-10.6 5.4 0 8.9 4 8.9 10.4 0 6.55-3.6 10.75-9 10.75-5.35 0-8.95-4.1-8.95-10.55Zm5.65-.05c0 3.55 1.17 5.7 3.35 5.7 2.15 0 3.3-2.15 3.3-5.7 0-3.48-1.15-5.58-3.3-5.58-2.18 0-3.35 2.1-3.35 5.58Z" />
     </svg>
   );
 }
@@ -100,11 +102,15 @@ function OutlookMailIcon() {
 function OutlookCalendarIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <rect x="8" y="12" width="46" height="42" rx="4" fill="#0078D4" />
-      <path fill="#28A8EA" d="M8 18a6 6 0 0 1 6-6h34a6 6 0 0 1 6 6v8H8v-8Z" />
-      <path fill="#50D9FF" d="M16 32h8v8h-8v-8Zm12 0h8v8h-8v-8Zm12 0h8v8h-8v-8ZM16 43h8v8h-8v-8Zm12 0h8v8h-8v-8Z" />
-      <path fill="#0A5EBE" d="M4 20.5 31 15v38L4 47.5v-27Z" />
-      <path fill="#fff" d="M13 29h13v4H13v-4Zm0 8h8v4h-8v-4Z" />
+      <defs>
+        <linearGradient id="outlookCalendarIcon" x1="8" y1="10" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#37C8FF" />
+          <stop offset="1" stopColor="#0A63D8" />
+        </linearGradient>
+      </defs>
+      <rect x="8" y="11" width="48" height="43" rx="7" fill="url(#outlookCalendarIcon)" />
+      <path fill="#D7F4FF" d="M18 28h6v6h-6v-6Zm11 0h6v6h-6v-6Zm11 0h6v6h-6v-6ZM18 39h6v6h-6v-6Zm11 0h6v6h-6v-6Zm11 0h6v6h-6v-6Z" />
+      <path fill="#B9EEFF" d="M15 20h34v3H15v-3Z" opacity=".9" />
     </svg>
   );
 }
