@@ -81,24 +81,7 @@ const connectorDetails: Record<ConnectorIconId, { title: string; description: st
   },
 };
 
-const sampleRepositories = [
-  'halo-navigation-app',
-  'haloglass-ai',
-  'halo-ai-app',
-  'supreme-engine',
-  'vibe-mode-app-',
-  'ai-app',
-  'halo-ai-glasses',
-  'Ai-',
-  'Uusin',
-  'Yksi',
-  'Kaksi',
-  'SDK',
-  'kolme',
-];
-
 const MEDIUM_HEIGHT = 0.78;
-const CLOSED_OFFSET = 110;
 
 function ConnectorToggle({ checked, onClick }: { checked: boolean; onClick: () => void }) {
   return (
@@ -226,6 +209,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
     'outlook-mail': true,
     'outlook-calendar': true,
   });
+  const [repositories] = useState<string[]>([]);
   const [enabledRepositories, setEnabledRepositories] = useState<Record<string, boolean>>({});
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const selectedConnectorDetail = useMemo(() => {
@@ -337,7 +321,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
       {selectedConnector && selectedConnectorDetail ? (
         <KivoConnectorDetail open onBack={() => setSelectedConnector(null)} onClose={closeWithAnimation} icon={<BrandIcon icon={selectedConnector.icon} large />} title={selectedConnectorDetail.title} description={selectedConnectorDetail.description} connectorType={selectedConnectorDetail.connectorType} author={selectedConnectorDetail.author} buttonLabel={selectedConnectorDetail.buttonLabel} />
       ) : null}
-      <KivoRepositoriesSheet open={repositoriesOpen} onBack={() => setRepositoriesOpen(false)} repositories={sampleRepositories} enabledRepositories={enabledRepositories} onToggleRepository={toggleRepository} />
+      <KivoRepositoriesSheet open={repositoriesOpen} onBack={() => setRepositoriesOpen(false)} repositories={repositories} enabledRepositories={enabledRepositories} onToggleRepository={toggleRepository} />
       <KivoCalendarConnectorDetail open={calendarDetailOpen} onBack={() => setCalendarDetailOpen(false)} onClose={closeWithAnimation} />
       <KivoGmailConnectorDetail open={gmailDetailOpen} onBack={() => setGmailDetailOpen(false)} onClose={closeWithAnimation} />
     </div>
