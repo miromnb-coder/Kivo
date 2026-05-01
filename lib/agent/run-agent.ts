@@ -1,14 +1,37 @@
 import { runKivoModel } from '@/lib/ai/model-router';
 import { createPlan } from './planner';
-import { getMemoryContext } from './memory';
-import { buildProactiveSuggestions, buildProactivePrompt } from './proactive';
 import {
   runCalendarTodayTool,
-  shouldRunCalendarTodayTool,
 } from './tools/calendar';
 import { runGmailTool, shouldRunGmailTool } from './tools/gmail';
 import { routeIntent } from './router';
 import type { AgentRequest, AgentResult } from './types';
+
+function buildTinySmartSuggestion(calendar: any, gmail: any) {
+  if (!calendar?.connected || !gmail?.connected) return null;
+
+  if (calendar.events?.length === 0 && gmail.bills?.length > 0) {
+    return {
+      type: 'bill_focus',
+      title: 'Lasku + vapaa hetki',
+      subtitle: `${gmail.bills.length} laskuun liittyvä sähköposti. Tänään ei ole tapahtumia.`,
+      actionLabel: 'Katso',
+      size: 'tiny',
+    };
+  }
+
+  if (gmail.important?.length > 0) {
+    return {
+      type: 'important_email',
+      title: 'Tärkeä sähköposti',
+      subtitle: gmail.important[0]?.subject ?? 'Tarkista inbox.',
+      actionLabel: 'Avaa',
+      size: 'tiny',
+    };
+  }
+
+  return null;
+}
 
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
@@ -16,8 +39,8 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
 
   const calendar = await runCalendarTodayTool(req.userId);
   const gmail = await runGmailTool(req.userId);
+  const tinySuggestion = buildTinySmartSuggestion(calendar, gmail);
 
-  // 🔥 Gmail intelligence
   if (shouldRunGmailTool(req.message)) {
     if (!gmail.connected) {
       return { answer: 'Gmail ei ole yhdistetty.', steps: [], intent };
@@ -34,6 +57,7 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
           .join('\n')}`,
         steps: [],
         intent,
+        structuredData: { tinySuggestion, gmail, calendar },
       };
     }
 
@@ -42,6 +66,7 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
         answer: `Tärkeät sähköpostit:\n${gmail.important.map((m) => `• ${m.subject}`).join('\n')}`,
         steps: [],
         intent,
+        structuredData: { tinySuggestion, gmail, calendar },
       };
     }
 
@@ -49,18 +74,17 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
       answer: gmail.messages.map((m) => `• ${m.subject}`).join('\n') || 'Ei sähköposteja.',
       steps: [],
       intent,
+      structuredData: { tinySuggestion, gmail, calendar },
     };
   }
 
-  // 🔥 Combined intelligence
-  if (calendar.connected && gmail.connected) {
-    if (calendar.events.length === 0 && gmail.bills.length > 0) {
-      return {
-        answer: `Sinulla ei ole tapahtumia tänään, mutta sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia. Haluatko että muistutan sinua?`,
-        steps: [],
-        intent,
-      };
-    }
+  if (calendar.connected && gmail.connected && calendar.events.length === 0 && gmail.bills.length > 0) {
+    return {
+      answer: `Sinulla ei ole tapahtumia tänään, mutta sinulla on ${gmail.bills.length} laskuun liittyvää sähköpostia.`,
+      steps: [],
+      intent,
+      structuredData: { tinySuggestion, gmail, calendar },
+    };
   }
 
   const response = await runKivoModel({
@@ -80,5 +104,6 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     answer: response.content,
     steps: plan.steps.map((s) => ({ ...s, status: 'done' })),
     intent,
+    structuredData: { tinySuggestion, gmail, calendar },
   };
 }
