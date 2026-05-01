@@ -60,6 +60,15 @@ export async function GET(req: Request) {
 
   const supabase = createSupabaseServer();
 
+  const { data: existing } = await supabase
+    .from('kivo_integrations')
+    .select('refresh_token')
+    .eq('user_id', userId)
+    .eq('provider', 'gmail')
+    .maybeSingle();
+
+  const refreshToken = tokens.refresh_token ?? existing?.refresh_token ?? null;
+
   await supabase
     .from('kivo_integrations')
     .delete()
@@ -70,12 +79,12 @@ export async function GET(req: Request) {
     user_id: userId,
     provider: 'gmail',
     access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token ?? null,
+    refresh_token: refreshToken,
     scopes: tokens.scope ? String(tokens.scope).split(' ') : [],
     expires_at: tokens.expires_in
       ? new Date(Date.now() + Number(tokens.expires_in) * 1000).toISOString()
       : null,
-    status: 'connected',
+    status: refreshToken ? 'connected' : 'needs_reconnect',
     updated_at: new Date().toISOString(),
   });
 
