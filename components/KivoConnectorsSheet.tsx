@@ -92,9 +92,9 @@ function ConnectorToggle({ checked, onClick }: { checked: boolean; onClick: () =
         event.stopPropagation();
         onClick();
       }}
-      className={`relative h-[34px] w-[56px] rounded-full transition-colors ${checked ? 'bg-[#0a84ff]' : 'bg-[#e2e2e4]'}`}
+      className={`relative h-[34px] w-[56px] shrink-0 overflow-hidden rounded-full transition-colors ${checked ? 'bg-[#0a84ff]' : 'bg-[#e2e2e4]'}`}
     >
-      <span className={`absolute top-[3px] h-[28px] w-[28px] rounded-full bg-white shadow-[0_2px_5px_rgba(0,0,0,0.18)] transition-transform ${checked ? 'translate-x-[25px]' : 'translate-x-[3px]'}`} />
+      <span className={`absolute left-0 top-[3px] h-[28px] w-[28px] rounded-full bg-white shadow-[0_2px_5px_rgba(0,0,0,0.18)] transition-transform ${checked ? 'translate-x-[25px]' : 'translate-x-[3px]'}`} />
     </button>
   );
 }
@@ -296,17 +296,19 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
               return (
                 <div key={connector.name}>
                   <button type="button" onClick={() => (connected ? undefined : openConnector(connector))} className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]">
-                    <span className="flex h-[28px] w-[28px] items-center justify-center"><BrandIcon icon={connector.icon} /></span>
+                    <span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center"><BrandIcon icon={connector.icon} /></span>
                     <span className="min-w-0 flex-1 truncate text-[21px] tracking-[-0.035em]">{connector.name}</span>
-                    {connected ? <ConnectorToggle checked={enabled} onClick={() => toggleConnector(connector.icon)} /> : <button type="button" onClick={(event) => { event.stopPropagation(); connectConnector(connector); }} className="text-[20px] tracking-[-0.03em] text-[#7e7e84]">Connect</button>}
+                    <span className="flex w-[72px] shrink-0 items-center justify-end">
+                      {connected ? <ConnectorToggle checked={enabled} onClick={() => toggleConnector(connector.icon)} /> : <button type="button" onClick={(event) => { event.stopPropagation(); openConnector(connector); }} className="text-[20px] tracking-[-0.03em] text-[#7e7e84]">Connect</button>}
+                    </span>
                   </button>
                   {showRepositories ? (
                     <>
                       <div className="ml-[46px] h-px bg-[#dddddf]" />
                       <button type="button" onClick={() => setRepositoriesOpen(true)} className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]">
-                        <span className="flex h-[28px] w-[28px] items-center justify-center text-[#8b8b90]"><CornerDownRight size={25} strokeWidth={2} /></span>
+                        <span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center text-[#8b8b90]"><CornerDownRight size={25} strokeWidth={2} /></span>
                         <span className="min-w-0 flex-1 truncate text-[21px] tracking-[-0.035em]">Repositories</span>
-                        <ChevronRight size={23} strokeWidth={2.2} className="text-[#8b8b90]" />
+                        <span className="flex w-[72px] shrink-0 items-center justify-end"><ChevronRight size={23} strokeWidth={2.2} className="text-[#8b8b90]" /></span>
                       </button>
                     </>
                   ) : null}
