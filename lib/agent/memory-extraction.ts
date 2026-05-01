@@ -1,10 +1,28 @@
 import { runKivoModel } from '@/lib/ai/model-router';
 
+type MemoryType = 'preference' | 'goal' | 'fact' | 'person' | 'project' | 'routine' | 'constraint';
+type MemoryImportance = 1 | 2 | 3 | 4 | 5;
+
 type MemoryCandidate = {
-  type: 'preference' | 'goal' | 'fact' | 'person' | 'project' | 'routine' | 'constraint';
+  type: MemoryType;
   content: string;
-  importance: 1 | 2 | 3 | 4 | 5;
+  importance: MemoryImportance;
 };
+
+const ALLOWED_TYPES: MemoryType[] = ['preference', 'goal', 'fact', 'person', 'project', 'routine', 'constraint'];
+
+function normalizeType(value: unknown): MemoryType {
+  return ALLOWED_TYPES.includes(value as MemoryType) ? (value as MemoryType) : 'fact';
+}
+
+function normalizeImportance(value: unknown): MemoryImportance {
+  const n = Math.round(Number(value) || 3);
+  if (n <= 1) return 1;
+  if (n === 2) return 2;
+  if (n === 4) return 4;
+  if (n >= 5) return 5;
+  return 3;
+}
 
 function safeJsonParse(text: string): MemoryCandidate[] {
   try {
@@ -13,11 +31,11 @@ function safeJsonParse(text: string): MemoryCandidate[] {
     if (!Array.isArray(parsed)) return [];
 
     return parsed
-      .filter((item) => item && typeof item.content === 'string' && typeof item.type === 'string')
-      .map((item) => ({
-        type: item.type,
+      .filter((item) => item && typeof item.content === 'string')
+      .map((item): MemoryCandidate => ({
+        type: normalizeType(item.type),
         content: item.content.trim(),
-        importance: Math.min(5, Math.max(1, Number(item.importance) || 3)),
+        importance: normalizeImportance(item.importance),
       }))
       .filter((item) => item.content.length > 8 && item.content.length < 240);
   } catch {
