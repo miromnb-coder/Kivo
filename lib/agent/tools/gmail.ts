@@ -9,25 +9,81 @@ export type GmailToolResult = {
   error?: string;
 };
 
+type GmailIntegration = {
+  id: string;
+  access_token: string | null;
+  refresh_token: string | null;
+  expires_at: string | null;
+};
+
 function classifyMessages(messages: GmailMessageSummary[]) {
   const importantKeywords = ['invoice', 'bill', 'receipt', 'payment', 'subscription', 'renewal', 'lasku', 'maksu'];
-
+  const billKeywords = ['invoice', 'bill', 'payment', 'lasku', 'maksu'];
   const important: GmailMessageSummary[] = [];
   const bills: GmailMessageSummary[] = [];
 
   for (const msg of messages) {
     const text = `${msg.subject} ${msg.snippet}`.toLowerCase();
-
-    if (importantKeywords.some((k) => text.includes(k))) {
-      important.push(msg);
-    }
-
-    if (text.includes('invoice') || text.includes('lasku') || text.includes('payment')) {
-      bills.push(msg);
-    }
+    if (importantKeywords.some((word) => text.includes(word))) important.push(msg);
+    if (billKeywords.some((word) => text.includes(word))) bills.push(msg);
   }
 
   return { important, bills };
+}
+
+function tokenNeedsRefresh(expiresAt: string | null) {
+  if (!expiresAt) return false;
+  return new Date(expiresAt).getTime() <= Date.now() + 60_000;
+}
+
+async function refreshGmailAccessToken(integration: GmailIntegration): Promise<string | null> {
+  if (!integration.refresh_token) return null;
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) return null;
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: integration.refresh_token,
+      grant_type: 'refresh_token',
+    }),
+  });
+
+  const tokenData = await response.json();
+
+  if (!response.ok || !tokenData.access_token) {
+    return null;
+  }
+
+  const expiresAt = tokenData.expires_in
+    ? new Date(Date.now() + Number(tokenData.expires_in) * 1000).toISOString()
+    : integration.expires_at;
+
+  await createSupabaseServer()
+    .from('kivo_integrations')
+    .update({
+      access_token: String(tokenData.access_token),
+      expires_at: expiresAt,
+      status: 'connected',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', integration.id);
+
+  return String(tokenData.access_token);
+}
+
+async function getUsableGmailAccessToken(integration: GmailIntegration): Promise<string | null> {
+  if (tokenNeedsRefresh(integration.expires_at)) {
+    return refreshGmailAccessToken(integration);
+  }
+
+  return integration.access_token;
 }
 
 export async function runGmailTool(userId?: string): Promise<GmailToolResult> {
@@ -35,26 +91,60 @@ export async function runGmailTool(userId?: string): Promise<GmailToolResult> {
     return { connected: false, messages: [], important: [], bills: [], error: 'User not signed in' };
   }
 
-  const supabase = createSupabaseServer();
-
-  const { data } = await supabase
+  const { data } = await createSupabaseServer()
     .from('kivo_integrations')
-    .select('*')
+    .select('id, access_token, refresh_token, expires_at')
     .eq('user_id', userId)
     .eq('provider', 'gmail')
     .maybeSingle();
 
-  if (!data?.access_token) {
+  const integration = data as GmailIntegration | null;
+
+  if (!integration?.access_token) {
     return { connected: false, messages: [], important: [], bills: [] };
   }
 
   try {
-    const messages = await listGmailMessages(data.access_token);
-    const { important, bills } = classifyMessages(messages);
+    let accessToken = await getUsableGmailAccessToken(integration);
 
-    return { connected: true, messages, important, bills };
-  } catch (e: any) {
-    return { connected: true, messages: [], important: [], bills: [], error: e.message };
+    if (!accessToken) {
+      return { connected: true, messages: [], important: [], bills: [], error: 'Gmail reconnect required.' };
+    }
+
+    try {
+      const messages = await listGmailMessages(accessToken);
+      const { important, bills } = classifyMessages(messages);
+      return { connected: true, messages, important, bills };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+
+      if (message.includes('(401)')) {
+        accessToken = await refreshGmailAccessToken(integration);
+
+        if (!accessToken) {
+          await createSupabaseServer()
+            .from('kivo_integrations')
+            .update({ status: 'needs_reconnect', updated_at: new Date().toISOString() })
+            .eq('id', integration.id);
+
+          return { connected: true, messages: [], important: [], bills: [], error: 'Gmail reconnect required.' };
+        }
+
+        const messages = await listGmailMessages(accessToken);
+        const { important, bills } = classifyMessages(messages);
+        return { connected: true, messages, important, bills };
+      }
+
+      throw error;
+    }
+  } catch (error) {
+    return {
+      connected: true,
+      messages: [],
+      important: [],
+      bills: [],
+      error: error instanceof Error ? error.message : 'Gmail failed.',
+    };
   }
 }
 
