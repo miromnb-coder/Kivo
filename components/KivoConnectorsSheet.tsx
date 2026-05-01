@@ -64,8 +64,6 @@ function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boo
 
 export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [calendarDetailOpen, setCalendarDetailOpen] = useState(false);
-  const [gmailDetailOpen, setGmailDetailOpen] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<ConnectorItem | null>(null);
   const [repositoriesOpen, setRepositoriesOpen] = useState(false);
   const [connectedMap, setConnectedMap] = useState<Record<ConnectorIconId, boolean>>(emptyConnectedMap);
@@ -85,22 +83,15 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
         setEnabledMap({ ...defaultEnabledMap, ...parsed.enabledMap });
         setEnabledRepositories(parsed.enabledRepositories ?? {});
       }
-    } catch {
-      setConnectedMap(emptyConnectedMap);
-      setEnabledMap(defaultEnabledMap);
-      setEnabledRepositories({});
-    }
+    } catch { setConnectedMap(emptyConnectedMap); setEnabledMap(defaultEnabledMap); setEnabledRepositories({}); }
     setHasLoadedStoredState(true);
   }, []);
 
-  useEffect(() => {
-    if (!hasLoadedStoredState) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ connectedMap, enabledMap, enabledRepositories }));
-  }, [connectedMap, enabledMap, enabledRepositories, hasLoadedStoredState]);
+  useEffect(() => { if (!hasLoadedStoredState) return; window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ connectedMap, enabledMap, enabledRepositories })); }, [connectedMap, enabledMap, enabledRepositories, hasLoadedStoredState]);
 
   useEffect(() => {
     if (!open) return;
-    setIsVisible(false); setCalendarDetailOpen(false); setGmailDetailOpen(false); setSelectedConnector(null); setRepositoriesOpen(false);
+    setIsVisible(false); setSelectedConnector(null); setRepositoriesOpen(false);
     const frame = requestAnimationFrame(() => setIsVisible(true));
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -109,9 +100,10 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
 
   if (!open) return null;
 
-  function closeWithAnimation() { setIsVisible(false); setCalendarDetailOpen(false); setGmailDetailOpen(false); setSelectedConnector(null); setRepositoriesOpen(false); window.setTimeout(onClose, 180); }
-  function openConnector(connector: ConnectorItem) { if (connector.name === 'Google Calendar') { setCalendarDetailOpen(true); return; } if (connector.name === 'Gmail') { setGmailDetailOpen(true); return; } setSelectedConnector(connector); }
+  function closeWithAnimation() { setIsVisible(false); setSelectedConnector(null); setRepositoriesOpen(false); window.setTimeout(onClose, 180); }
+  function openConnector(connector: ConnectorItem) { setSelectedConnector(connector); }
   function connectConnector(connector: ConnectorItem) { setConnectedMap((current) => ({ ...current, [connector.icon]: true })); setEnabledMap((current) => ({ ...current, [connector.icon]: true })); }
+  function disconnectConnector(connector: ConnectorItem) { setConnectedMap((current) => ({ ...current, [connector.icon]: false })); setEnabledMap((current) => ({ ...current, [connector.icon]: false })); if (connector.icon === 'github') setEnabledRepositories({}); }
   function toggleConnector(icon: ConnectorIconId) { setEnabledMap((current) => ({ ...current, [icon]: !current[icon] })); }
   function toggleRepository(repository: string) { setEnabledRepositories((current) => ({ ...current, [repository]: !current[repository] })); }
 
@@ -126,15 +118,13 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
           <div className="mt-[28px] overflow-hidden rounded-[24px] bg-[#f4f4f5] px-[18px]">
             {connectors.map((connector, index) => {
               const connected = connectedMap[connector.icon]; const enabled = enabledMap[connector.icon]; const showRepositories = connector.icon === 'github' && connected;
-              return (<div key={connector.name}><button type="button" onClick={() => (connected ? undefined : openConnector(connector))} className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]"><span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center"><BrandIcon icon={connector.icon} /></span><span className="min-w-0 flex-1 truncate text-[21px] tracking-[-0.035em]">{connector.name}</span><span className="flex w-[72px] shrink-0 items-center justify-end">{connected ? <ConnectorToggle checked={enabled} onClick={() => toggleConnector(connector.icon)} /> : <button type="button" onClick={(event) => { event.stopPropagation(); openConnector(connector); }} className="text-[20px] tracking-[-0.03em] text-[#7e7e84]">Connect</button>}</span></button>{showRepositories ? (<><div className="ml-[46px] h-px bg-[#dddddf]" /><button type="button" onClick={() => setRepositoriesOpen(true)} className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]"><span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center text-[#8b8b90]"><CornerDownRight size={25} strokeWidth={2} /></span><span className="min-w-0 flex-1 truncate text-[21px] tracking-[-0.035em]">Repositories</span><span className="flex w-[72px] shrink-0 items-center justify-end"><ChevronRight size={23} strokeWidth={2.2} className="text-[#8b8b90]" /></span></button></>) : null}{index < connectors.length - 1 ? <div className="ml-[46px] h-px bg-[#dddddf]" /> : null}</div>);
+              return (<div key={connector.name}><button type="button" onClick={() => openConnector(connector)} className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]"><span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center"><BrandIcon icon={connector.icon} /></span><span className="min-w-0 flex-1 truncate text-[21px] tracking-[-0.035em]">{connector.name}</span><span className="flex w-[72px] shrink-0 items-center justify-end">{connected ? <ConnectorToggle checked={enabled} onClick={() => toggleConnector(connector.icon)} /> : <span className="text-[20px] tracking-[-0.03em] text-[#7e7e84]">Connect</span>}</span></button>{showRepositories ? (<><div className="ml-[46px] h-px bg-[#dddddf]" /><button type="button" onClick={() => setRepositoriesOpen(true)} className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]"><span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center text-[#8b8b90]"><CornerDownRight size={25} strokeWidth={2} /></span><span className="min-w-0 flex-1 truncate text-[21px] tracking-[-0.035em]">Repositories</span><span className="flex w-[72px] shrink-0 items-center justify-end"><ChevronRight size={23} strokeWidth={2.2} className="text-[#8b8b90]" /></span></button></>) : null}{index < connectors.length - 1 ? <div className="ml-[46px] h-px bg-[#dddddf]" /> : null}</div>);
             })}
           </div>
         </div>
       </div>
-      {selectedConnector && selectedConnectorDetail ? (<KivoConnectorDetail open onBack={() => setSelectedConnector(null)} onClose={closeWithAnimation} icon={<BrandIcon icon={selectedConnector.icon} large />} title={selectedConnectorDetail.title} description={selectedConnectorDetail.description} connectorType={selectedConnectorDetail.connectorType} author={selectedConnectorDetail.author} buttonLabel={selectedConnectorDetail.buttonLabel} onConnect={() => { connectConnector(selectedConnector); setSelectedConnector(null); }} />) : null}
+      {selectedConnector && selectedConnectorDetail ? (<KivoConnectorDetail open onBack={() => setSelectedConnector(null)} onClose={closeWithAnimation} icon={<BrandIcon icon={selectedConnector.icon} large />} title={selectedConnectorDetail.title} description={selectedConnectorDetail.description} connectorType={selectedConnectorDetail.connectorType} author={selectedConnectorDetail.author} buttonLabel={selectedConnectorDetail.buttonLabel} isConnected={connectedMap[selectedConnector.icon]} onConnect={() => { connectConnector(selectedConnector); setSelectedConnector(null); }} onDisconnect={() => { disconnectConnector(selectedConnector); setSelectedConnector(null); }} />) : null}
       <KivoRepositoriesSheet open={repositoriesOpen} onBack={() => setRepositoriesOpen(false)} repositories={repositories} enabledRepositories={enabledRepositories} onToggleRepository={toggleRepository} />
-      <KivoCalendarConnectorDetail open={calendarDetailOpen} onBack={() => setCalendarDetailOpen(false)} onClose={closeWithAnimation} />
-      <KivoGmailConnectorDetail open={gmailDetailOpen} onBack={() => setGmailDetailOpen(false)} onClose={closeWithAnimation} />
     </div>
   );
 }
