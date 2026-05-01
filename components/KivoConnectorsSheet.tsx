@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { KivoCalendarConnectorDetail } from './KivoCalendarConnectorDetail';
+import { KivoConnectorDetail } from './KivoConnectorDetail';
 import { KivoGmailConnectorDetail } from './KivoGmailConnectorDetail';
 
 type KivoConnectorsSheetProps = {
@@ -10,7 +11,14 @@ type KivoConnectorsSheetProps = {
   onClose: () => void;
 };
 
-const connectors = [
+type ConnectorIconId = 'gmail' | 'google-calendar' | 'github' | 'browser' | 'drive' | 'outlook-mail' | 'outlook-calendar';
+
+type ConnectorItem = {
+  name: string;
+  icon: ConnectorIconId;
+};
+
+const connectors: ConnectorItem[] = [
   { name: 'Gmail', icon: 'gmail' },
   { name: 'Google Calendar', icon: 'google-calendar' },
   { name: 'GitHub', icon: 'github' },
@@ -19,6 +27,58 @@ const connectors = [
   { name: 'Outlook Mail', icon: 'outlook-mail' },
   { name: 'Outlook Calendar', icon: 'outlook-calendar' },
 ];
+
+const connectorDetails: Record<ConnectorIconId, { title: string; description: string; connectorType: string; author: string; buttonLabel: string }> = {
+  gmail: {
+    title: 'Gmail',
+    description: 'Connect Gmail to Kivo to understand your inbox intelligently. See important emails, find receipts, and keep your tasks on track.',
+    connectorType: 'App',
+    author: 'Google',
+    buttonLabel: 'Connect Gmail',
+  },
+  'google-calendar': {
+    title: 'Google Calendar',
+    description: 'Connect your calendar to Kivo to manage your schedule intelligently. See your events, find the best time for tasks, and keep your day on track.',
+    connectorType: 'App',
+    author: 'Google',
+    buttonLabel: 'Connect Google Calendar',
+  },
+  github: {
+    title: 'GitHub',
+    description: 'Connect GitHub so Kivo can help understand repositories, inspect code, summarize issues, and prepare safe development tasks.',
+    connectorType: 'Developer tool',
+    author: 'GitHub',
+    buttonLabel: 'Connect GitHub',
+  },
+  browser: {
+    title: 'My Browser',
+    description: 'Install and enable a Chrome extension so Kivo can use your local browser for tasks that require logged-in pages or heightened security.',
+    connectorType: 'Browser extension',
+    author: 'Kivo',
+    buttonLabel: 'Connect',
+  },
+  drive: {
+    title: 'Google Drive',
+    description: 'Connect Google Drive so Kivo can help find, understand, and summarize your files and documents when you ask.',
+    connectorType: 'App',
+    author: 'Google',
+    buttonLabel: 'Connect Google Drive',
+  },
+  'outlook-mail': {
+    title: 'Outlook Mail',
+    description: 'Connect Outlook Mail so Kivo can help understand your Microsoft inbox, surface important messages, and summarize email context.',
+    connectorType: 'App',
+    author: 'Microsoft',
+    buttonLabel: 'Connect Outlook Mail',
+  },
+  'outlook-calendar': {
+    title: 'Outlook Calendar',
+    description: 'Connect Outlook Calendar so Kivo can help understand your Microsoft schedule, events, availability, and daily planning.',
+    connectorType: 'App',
+    author: 'Microsoft',
+    buttonLabel: 'Connect Outlook Calendar',
+  },
+};
 
 const MEDIUM_HEIGHT = 0.78;
 const CLOSED_OFFSET = 110;
@@ -115,28 +175,28 @@ function OutlookCalendarIcon() {
   );
 }
 
-function BrandIcon({ icon }: { icon: string }) {
-  if (icon === 'gmail') return <GmailIcon />;
-  if (icon === 'google-calendar') return <GoogleCalendarIcon />;
-  if (icon === 'github') return <GitHubIcon />;
-  if (icon === 'browser') return <BrowserIcon />;
-  if (icon === 'drive') return <DriveIcon />;
-  if (icon === 'outlook-mail') return <OutlookMailIcon />;
-  if (icon === 'outlook-calendar') return <OutlookCalendarIcon />;
-  return null;
+function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boolean }) {
+  const scaleClass = large ? 'scale-[1.55]' : '';
+  return <span className={`flex h-full w-full items-center justify-center ${scaleClass}`}>{icon === 'gmail' ? <GmailIcon /> : icon === 'google-calendar' ? <GoogleCalendarIcon /> : icon === 'github' ? <GitHubIcon /> : icon === 'browser' ? <BrowserIcon /> : icon === 'drive' ? <DriveIcon /> : icon === 'outlook-mail' ? <OutlookMailIcon /> : <OutlookCalendarIcon />}</span>;
 }
 
 export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [calendarDetailOpen, setCalendarDetailOpen] = useState(false);
   const [gmailDetailOpen, setGmailDetailOpen] = useState(false);
+  const [selectedConnector, setSelectedConnector] = useState<ConnectorItem | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
+  const selectedConnectorDetail = useMemo(() => {
+    if (!selectedConnector) return null;
+    return connectorDetails[selectedConnector.icon];
+  }, [selectedConnector]);
 
   useEffect(() => {
     if (!open) return;
     setIsVisible(false);
     setCalendarDetailOpen(false);
     setGmailDetailOpen(false);
+    setSelectedConnector(null);
     const frame = requestAnimationFrame(() => setIsVisible(true));
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -152,6 +212,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
     setIsVisible(false);
     setCalendarDetailOpen(false);
     setGmailDetailOpen(false);
+    setSelectedConnector(null);
     window.setTimeout(onClose, 180);
   }
 
@@ -201,8 +262,15 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
                 <button
                   type="button"
                   onClick={() => {
-                    if (connector.name === 'Google Calendar') setCalendarDetailOpen(true);
-                    if (connector.name === 'Gmail') setGmailDetailOpen(true);
+                    if (connector.name === 'Google Calendar') {
+                      setCalendarDetailOpen(true);
+                      return;
+                    }
+                    if (connector.name === 'Gmail') {
+                      setGmailDetailOpen(true);
+                      return;
+                    }
+                    setSelectedConnector(connector);
                   }}
                   className="flex h-[58px] w-full items-center gap-[18px] text-left text-[#2c2d31]"
                 >
@@ -217,6 +285,19 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
         </div>
       </div>
 
+      {selectedConnector && selectedConnectorDetail ? (
+        <KivoConnectorDetail
+          open
+          onBack={() => setSelectedConnector(null)}
+          onClose={closeWithAnimation}
+          icon={<BrandIcon icon={selectedConnector.icon} large />}
+          title={selectedConnectorDetail.title}
+          description={selectedConnectorDetail.description}
+          connectorType={selectedConnectorDetail.connectorType}
+          author={selectedConnectorDetail.author}
+          buttonLabel={selectedConnectorDetail.buttonLabel}
+        />
+      ) : null}
       <KivoCalendarConnectorDetail open={calendarDetailOpen} onBack={() => setCalendarDetailOpen(false)} onClose={closeWithAnimation} />
       <KivoGmailConnectorDetail open={gmailDetailOpen} onBack={() => setGmailDetailOpen(false)} onClose={closeWithAnimation} />
     </div>
