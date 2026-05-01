@@ -19,6 +19,7 @@ type ConnectorDetailProps = {
   author: string;
   buttonLabel: string;
   rows?: DetailRow[];
+  onConnect?: () => void;
 };
 
 function DetailRowItem({ label, value, arrow }: DetailRow) {
@@ -42,6 +43,7 @@ export function KivoConnectorDetail({
   author,
   buttonLabel,
   rows,
+  onConnect,
 }: ConnectorDetailProps) {
   if (!open) return null;
 
@@ -85,6 +87,7 @@ export function KivoConnectorDetail({
 
           <button
             type="button"
+            onClick={onConnect}
             className="flex h-[62px] w-full items-center justify-center rounded-[18px] bg-[#111113] text-[17px] font-semibold tracking-[-0.025em] text-white shadow-[0_16px_32px_rgba(0,0,0,0.14)]"
           >
             {buttonLabel}
