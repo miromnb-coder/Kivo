@@ -7,10 +7,30 @@ import { buildProactiveSuggestions, buildProactivePrompt } from './proactive';
 import {
   formatCalendarTodayForPrompt,
   runCalendarTodayTool,
+  shouldRunCalendarTodayTool,
 } from './tools/calendar';
 import { routeIntent } from './router';
 import { verifyAnswer } from './verifier';
 import type { AgentRequest, AgentResult } from './types';
+
+function formatDirectCalendarAnswer(calendarResult: Awaited<ReturnType<typeof runCalendarTodayTool>>) {
+  if (!calendarResult.connected) {
+    return 'Kalenteria ei ole vielä yhdistetty oikein. Avaa Connectors → Google Calendar ja yhdistä se uudestaan.';
+  }
+
+  if (calendarResult.error) {
+    return `Kalenterin lukeminen epäonnistui: ${calendarResult.error}`;
+  }
+
+  if (calendarResult.events.length === 0) {
+    return 'Sinulla ei ole kalenteritapahtumia tänään.';
+  }
+
+  return [
+    `Sinulla on tänään ${calendarResult.events.length} tapahtuma${calendarResult.events.length === 1 ? '' : 'a'}:`,
+    ...calendarResult.events.map((event) => `• ${event.summary} — ${event.start}–${event.end}${event.location ? `, ${event.location}` : ''}`),
+  ].join('\n');
+}
 
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
@@ -24,6 +44,25 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const proactivePrompt = buildProactivePrompt(proactiveSuggestions);
 
   const calendarResult = await runCalendarTodayTool(req.userId);
+
+  if (shouldRunCalendarTodayTool(req.message)) {
+    const directAnswer = formatDirectCalendarAnswer(calendarResult);
+
+    if (req.userId) {
+      await saveAgentRun(req.userId, req.message, directAnswer);
+    }
+
+    return {
+      answer: directAnswer,
+      steps: plan.steps.map((step) => ({ ...step, status: 'done' })),
+      intent,
+      structuredData: {
+        proactiveSuggestions,
+        calendar: calendarResult,
+      },
+    };
+  }
+
   const calendarPrompt = calendarResult
     ? `Use this real calendar data when relevant. Do not invent events. If the user asks about today, schedule, free time, plans, or calendar, answer from this data:\n${formatCalendarTodayForPrompt(calendarResult)}`
     : '';
