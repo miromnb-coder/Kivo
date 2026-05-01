@@ -64,6 +64,10 @@ export async function POST(req: Request) {
 
           send('meta', { model: result.model, provider: result.provider });
 
+          if (result.structuredData) {
+            send('data', { structuredData: result.structuredData });
+          }
+
           const tokens = result.answer.match(/\S+\s*/g) ?? [];
           for (const token of tokens) {
             send('token', { token });
@@ -74,6 +78,7 @@ export async function POST(req: Request) {
             content: result.answer,
             model: result.model,
             provider: result.provider,
+            structuredData: result.structuredData,
           });
 
           controller.close();
