@@ -13,6 +13,13 @@ export type CalendarTodayToolResult = {
   error?: string;
 };
 
+type CalendarIntegration = {
+  id: string;
+  access_token: string | null;
+  refresh_token: string | null;
+  expires_at: string | null;
+};
+
 export function shouldRunCalendarTodayTool(message: string) {
   const text = message.toLowerCase();
 
@@ -21,28 +28,71 @@ export function shouldRunCalendarTodayTool(message: string) {
   );
 }
 
-async function findCalendarIntegration(userId: string) {
+async function findCalendarIntegration(userId: string): Promise<CalendarIntegration | null> {
   const supabase = createSupabaseServer();
 
   const exact = await supabase
     .from('kivo_integrations')
-    .select('access_token')
+    .select('id, access_token, refresh_token, expires_at')
     .eq('user_id', userId)
     .eq('provider', 'google_calendar')
     .maybeSingle();
 
-  if (exact.data?.access_token) return exact.data;
+  if (exact.data?.access_token) return exact.data as CalendarIntegration;
 
   const fallback = await supabase
     .from('kivo_integrations')
-    .select('access_token')
+    .select('id, access_token, refresh_token, expires_at')
     .eq('provider', 'google_calendar')
     .not('access_token', 'is', null)
     .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  return fallback.data;
+  return (fallback.data as CalendarIntegration | null) ?? null;
+}
+
+function shouldRefresh(expiresAt: string | null) {
+  if (!expiresAt) return false;
+  return new Date(expiresAt).getTime() < Date.now() + 60_000;
+}
+
+async function refreshCalendarAccess(integration: CalendarIntegration) {
+  if (!integration.refresh_token) return integration.access_token;
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) return integration.access_token;
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: integration.refresh_token,
+      grant_type: 'refresh_token',
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.access_token) return integration.access_token;
+
+  const expiresAt = data.expires_in
+    ? new Date(Date.now() + Number(data.expires_in) * 1000).toISOString()
+    : integration.expires_at;
+
+  await createSupabaseServer()
+    .from('kivo_integrations')
+    .update({
+      access_token: data.access_token,
+      expires_at: expiresAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', integration.id);
+
+  return data.access_token as string;
 }
 
 export async function runCalendarTodayTool(userId?: string): Promise<CalendarTodayToolResult> {
@@ -57,8 +107,22 @@ export async function runCalendarTodayTool(userId?: string): Promise<CalendarTod
   }
 
   try {
-    const events = await listGoogleCalendarToday(integration.access_token);
-    return { connected: true, events };
+    let access = shouldRefresh(integration.expires_at)
+      ? await refreshCalendarAccess(integration)
+      : integration.access_token;
+
+    try {
+      const events = await listGoogleCalendarToday(access);
+      return { connected: true, events };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('(401)')) {
+        access = await refreshCalendarAccess(integration);
+        const events = await listGoogleCalendarToday(access);
+        return { connected: true, events };
+      }
+      throw error;
+    }
   } catch (error) {
     return {
       connected: true,
