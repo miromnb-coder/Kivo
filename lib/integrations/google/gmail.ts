@@ -1,5 +1,17 @@
-export async function listGmailMessages(accessToken: string) {
-  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=5', {
+export type GmailMessageSummary = {
+  id: string;
+  subject: string;
+  from: string;
+  snippet: string;
+  date?: string;
+};
+
+function getHeader(headers: Array<{ name: string; value: string }>, name: string) {
+  return headers.find((header) => header.name.toLowerCase() === name.toLowerCase())?.value ?? '';
+}
+
+export async function listGmailMessages(accessToken: string, maxResults = 10): Promise<GmailMessageSummary[]> {
+  const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${maxResults}`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -10,25 +22,33 @@ export async function listGmailMessages(accessToken: string) {
   }
 
   const data = await res.json();
+  const messages = data.messages ?? [];
 
-  const messages = data.messages || [];
-
-  const detailed = await Promise.all(
-    messages.map(async (m: any) => {
-      const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+  return Promise.all(
+    messages.map(async (message: { id: string }) => {
+      const detailRes = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
       );
 
-      const j = await r.json();
+      if (!detailRes.ok) {
+        throw new Error(`Gmail message request failed (${detailRes.status})`);
+      }
 
-      const headers = j.payload?.headers || [];
+      const detail = await detailRes.json();
+      const headers = detail.payload?.headers ?? [];
 
-      const subject = headers.find((h: any) => h.name === 'Subject')?.value;
-      const from = headers.find((h: any) => h.name === 'From')?.value;
-
-      return { subject, from };
-    })
+      return {
+        id: message.id,
+        subject: getHeader(headers, 'Subject') || 'No subject',
+        from: getHeader(headers, 'From') || 'Unknown sender',
+        date: getHeader(headers, 'Date'),
+        snippet: detail.snippet ?? '',
+      };
+    }),
   );
-
-  return detailed;
 }
