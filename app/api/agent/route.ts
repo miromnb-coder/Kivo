@@ -10,6 +10,7 @@ type AgentRequest = {
   agent?: KivoAgentId;
   mode?: KivoModeId;
   context?: KivoContextId;
+  userId?: string;
 };
 
 function encoderLine(event: string, data: unknown) {
@@ -20,9 +21,14 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as AgentRequest;
     const message = body.message?.trim();
+    const userId = body.userId?.trim();
 
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const agent = body.agent ?? 'kivo';
@@ -40,10 +46,9 @@ export async function POST(req: Request) {
             agent,
             mode,
             context,
-            userId: 'demo-user',
+            userId,
           });
 
-          // early steps (feels instant)
           send('step', { label: 'Understanding your request', status: 'active' });
           await new Promise((r) => setTimeout(r, 180));
 
@@ -52,7 +57,6 @@ export async function POST(req: Request) {
 
           const result = await agentPromise;
 
-          // real steps (completed)
           for (const step of result.steps) {
             send('step', { ...step, status: 'done' });
             await new Promise((r) => setTimeout(r, 120));
@@ -60,7 +64,6 @@ export async function POST(req: Request) {
 
           send('meta', { model: result.model, provider: result.provider });
 
-          // streaming answer
           const tokens = result.answer.match(/\S+\s*/g) ?? [];
           for (const token of tokens) {
             send('token', { token });
