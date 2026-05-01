@@ -7,7 +7,6 @@ import { buildProactiveSuggestions, buildProactivePrompt } from './proactive';
 import {
   formatCalendarTodayForPrompt,
   runCalendarTodayTool,
-  shouldRunCalendarTodayTool,
 } from './tools/calendar';
 import { routeIntent } from './router';
 import { verifyAnswer } from './verifier';
@@ -24,10 +23,10 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const proactiveSuggestions = buildProactiveSuggestions(memory, intent);
   const proactivePrompt = buildProactivePrompt(proactiveSuggestions);
 
-  const calendarResult = shouldRunCalendarTodayTool(req.message)
-    ? await runCalendarTodayTool(req.userId)
-    : null;
-  const calendarPrompt = calendarResult ? formatCalendarTodayForPrompt(calendarResult) : '';
+  const calendarResult = await runCalendarTodayTool(req.userId);
+  const calendarPrompt = calendarResult
+    ? `Use this real calendar data when relevant. Do not invent events. If the user asks about today, schedule, free time, plans, or calendar, answer from this data:\n${formatCalendarTodayForPrompt(calendarResult)}`
+    : '';
 
   const response = await runKivoModel({
     agent: req.agent,
