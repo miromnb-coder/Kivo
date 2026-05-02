@@ -1,11 +1,7 @@
 'use client';
 
+import Link from 'next/link';
 import { BarChart3, Bell, ChevronLeft, Code2, MessageCircle, Sparkles, Zap } from 'lucide-react';
-
-type Props = {
-  open: boolean;
-  onClose: () => void;
-};
 
 const notifications = [
   {
@@ -29,21 +25,18 @@ const notifications = [
   },
 ];
 
-export function KivoNotificationsSheet({ open, onClose }: Props) {
-  if (!open) return null;
-
+export function KivoNotificationsSheet() {
   return (
-    <div className="fixed inset-0 z-[90] bg-[#f6f6f7] text-[#1f2024]">
-      <div className="mx-auto flex h-full w-full max-w-[430px] flex-col overflow-hidden bg-[radial-gradient(circle_at_50%_12%,#ffffff_0%,#f7f7f8_58%,#f1f1f3_100%)]">
+    <main className="min-h-[100dvh] bg-[#f6f6f7] text-[#1f2024]">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-[radial-gradient(circle_at_50%_12%,#ffffff_0%,#f7f7f8_58%,#f1f1f3_100%)]">
         <header className="relative flex items-center justify-between px-[22px] pt-[calc(env(safe-area-inset-top)+18px)]">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close notifications"
+          <Link
+            href="/chat"
+            aria-label="Back to chat"
             className="flex h-[40px] w-[40px] items-center justify-start rounded-full text-[#202124] transition active:scale-[0.96]"
           >
             <ChevronLeft size={24} strokeWidth={2.1} />
-          </button>
+          </Link>
 
           <div className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+12px)] -translate-x-1/2 text-center">
             <div className="flex items-center justify-center gap-[6px] text-[20px] font-semibold tracking-[-0.035em] text-[#1f2023]">
@@ -58,7 +51,7 @@ export function KivoNotificationsSheet({ open, onClose }: Props) {
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-[20px] pb-[36px] pt-[42px] [-webkit-overflow-scrolling:touch]">
+        <div className="flex-1 px-[20px] pb-[36px] pt-[42px]">
           <section>
             <div className="mb-[12px] text-[15px] font-medium tracking-[-0.02em] text-[#85868d]">Featured</div>
 
@@ -115,6 +108,6 @@ export function KivoNotificationsSheet({ open, onClose }: Props) {
           </section>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
