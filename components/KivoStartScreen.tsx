@@ -15,6 +15,25 @@ type StreamStep = {
   kind?: string;
 };
 
+type BrowserPreviewEvent = {
+  url?: string;
+  title?: string;
+  action?: 'open' | 'search' | 'read' | 'click' | 'type' | 'scroll' | 'extract' | 'done';
+  actionLabel?: string;
+  screenshotUrl?: string;
+  highlight?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  cursor?: {
+    x: number;
+    y: number;
+  };
+  status?: 'idle' | 'running' | 'done';
+};
+
 function getStepKey(step: StreamStep) {
   return step.id || step.title || step.label || 'step';
 }
@@ -33,6 +52,13 @@ function mergeStep(prevSteps: StreamStep[] = [], nextStep: StreamStep) {
         }
       : step,
   );
+}
+
+function mergeBrowserPreview(prevPreview: BrowserPreviewEvent | undefined, nextPreview: BrowserPreviewEvent) {
+  return {
+    ...(prevPreview ?? {}),
+    ...nextPreview,
+  };
 }
 
 export function KivoStartScreen() {
@@ -123,6 +149,19 @@ export function KivoStartScreen() {
             );
           }
 
+          if (event === 'browser') {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? {
+                      ...m,
+                      browserPreview: mergeBrowserPreview(m.browserPreview, data),
+                    }
+                  : m,
+              ),
+            );
+          }
+
           if (event === 'meta') {
             setMessages((prev) =>
               prev.map((m) => (m.id === assistantId ? { ...m, model: data.model, provider: data.provider } : m)),
@@ -158,6 +197,7 @@ export function KivoStartScreen() {
                   ? {
                       ...m,
                       structuredData: data.structuredData ?? m.structuredData,
+                      browserPreview: m.browserPreview ? { ...m.browserPreview, status: 'done', action: 'done', actionLabel: 'Browser task complete' } : m.browserPreview,
                     }
                   : m,
               ),
