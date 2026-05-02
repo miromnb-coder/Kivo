@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { Bell, ChevronDown, Sparkles } from 'lucide-react';
 import { KivoCreditsSheet } from './KivoCreditsSheet';
@@ -30,13 +31,13 @@ export function KivoTopBar() {
             <KivoMenuMark />
           </button>
 
-          <button
-            type="button"
+          <Link
+            href="/notifications"
             aria-label="Open notifications"
             className="flex h-[40px] w-[32px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]"
           >
             <Bell size={29} strokeWidth={1.95} />
-          </button>
+          </Link>
         </div>
 
         <button
