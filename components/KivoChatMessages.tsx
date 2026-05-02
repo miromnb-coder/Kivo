@@ -24,6 +24,8 @@ type InlinePart = {
   bold: boolean;
 };
 
+const THINKING_MESSAGES = ['Reading your message', 'Understanding the request', 'Planning the answer', 'Preparing the response'];
+
 function parseInlineMarkdown(text: string): InlinePart[] {
   const parts: InlinePart[] = [];
   const regex = /\*\*(.*?)\*\*/g;
@@ -167,10 +169,30 @@ function KivoAssistantHeader() {
 }
 
 function KivoThinkingState() {
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setMessageIndex((current) => (current + 1) % THINKING_MESSAGES.length);
+    }, 1450);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
-    <p className="animate-[kivoThinkingIn_160ms_ease-out] text-[17px] leading-[1.45] tracking-[-0.025em] text-[#73747b] [@keyframes_kivoThinkingIn]:from{opacity:0;transform:translateY(3px)} [@keyframes_kivoThinkingIn]:to{opacity:1;transform:translateY(0)]" aria-label="Kivo is thinking">
-      Kivo is thinking ...
-    </p>
+    <div className="animate-[kivoThinkingIn_180ms_ease-out] text-[17px] leading-[1.45] tracking-[-0.025em] text-[#73747b] [@keyframes_kivoThinkingIn]:from{opacity:0;transform:translateY(3px)} [@keyframes_kivoThinkingIn]:to{opacity:1;transform:translateY(0)]" aria-label="Kivo is thinking">
+      <span key={THINKING_MESSAGES[messageIndex]} className="relative inline-flex max-w-full animate-[kivoThinkingSwap_420ms_ease-out] overflow-hidden align-bottom [@keyframes_kivoThinkingSwap]:from{opacity:0;transform:translateY(5px)} [@keyframes_kivoThinkingSwap]:to{opacity:1;transform:translateY(0)]">
+        <span className="relative overflow-hidden">
+          <span className="relative z-10">{THINKING_MESSAGES[messageIndex]}</span>
+          <span className="pointer-events-none absolute inset-y-[-20%] left-[-45%] z-20 w-[42%] skew-x-[-18deg] animate-[kivoThinkingShimmer_1450ms_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/75 to-transparent blur-[1px] [@keyframes_kivoThinkingShimmer]:0%{transform:translateX(0)} [@keyframes_kivoThinkingShimmer]:100%{transform:translateX(350%)]" aria-hidden="true" />
+        </span>
+        <span className="ml-[7px] inline-flex w-[28px] items-end gap-[3px] pb-[2px]" aria-hidden="true">
+          <span className="h-[5px] w-[5px] rounded-full bg-[#73747b] animate-[kivoDotOne_1200ms_ease-in-out_infinite] [@keyframes_kivoDotOne]:0%,100%{opacity:.28;transform:translateY(0) scale(.72)} [@keyframes_kivoDotOne]:35%{opacity:1;transform:translateY(-5px) scale(1.05)]" />
+          <span className="h-[5px] w-[5px] rounded-full bg-[#73747b] animate-[kivoDotTwo_1200ms_ease-in-out_infinite] [@keyframes_kivoDotTwo]:0%,100%{opacity:.28;transform:translateY(0) scale(.72)} [@keyframes_kivoDotTwo]:50%{opacity:1;transform:translateY(-5px) scale(1.05)]" />
+          <span className="h-[5px] w-[5px] rounded-full bg-[#73747b] animate-[kivoDotThree_1200ms_ease-in-out_infinite] [@keyframes_kivoDotThree]:0%,100%{opacity:.28;transform:translateY(0) scale(.72)} [@keyframes_kivoDotThree]:65%{opacity:1;transform:translateY(-5px) scale(1.05)]" />
+        </span>
+      </span>
+    </div>
   );
 }
 
