@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronLeft, Sparkles } from 'lucide-react';
+import { ChevronDown, MessageCircle, Sparkles, User } from 'lucide-react';
 import { KivoCreditsSheet } from './KivoCreditsSheet';
 import { KivoAgentSelector } from './KivoAgentSelector';
 
@@ -12,9 +12,23 @@ export function KivoTopBar() {
   return (
     <>
       <header className="relative z-20 flex items-center justify-between px-[20px] pt-[calc(env(safe-area-inset-top)+10px)]">
-        <button aria-label="Go back" className="flex h-[40px] w-[40px] items-center justify-center rounded-full text-[#202124]">
-          <ChevronLeft size={22} strokeWidth={2} />
-        </button>
+        <div className="flex h-[40px] items-center gap-[18px]">
+          <button
+            type="button"
+            aria-label="Open profile"
+            className="flex h-[40px] w-[32px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]"
+          >
+            <User size={28} strokeWidth={1.9} />
+          </button>
+
+          <button
+            type="button"
+            aria-label="Open conversations"
+            className="flex h-[40px] w-[32px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]"
+          >
+            <MessageCircle size={29} strokeWidth={1.9} />
+          </button>
+        </div>
 
         <button
           onClick={() => setAgentOpen(true)}
