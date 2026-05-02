@@ -180,16 +180,108 @@ function KivoThinkingState() {
   }, []);
 
   return (
-    <div className="animate-[kivoThinkingIn_180ms_ease-out] text-[17px] leading-[1.45] tracking-[-0.025em] text-[#73747b] [@keyframes_kivoThinkingIn]:from{opacity:0;transform:translateY(3px)} [@keyframes_kivoThinkingIn]:to{opacity:1;transform:translateY(0)]" aria-label="Kivo is thinking">
-      <span key={THINKING_MESSAGES[messageIndex]} className="relative inline-flex max-w-full animate-[kivoThinkingSwap_420ms_ease-out] overflow-hidden align-bottom [@keyframes_kivoThinkingSwap]:from{opacity:0;transform:translateY(5px)} [@keyframes_kivoThinkingSwap]:to{opacity:1;transform:translateY(0)]">
-        <span className="relative overflow-hidden">
-          <span className="relative z-10">{THINKING_MESSAGES[messageIndex]}</span>
-          <span className="pointer-events-none absolute inset-y-[-20%] left-[-45%] z-20 w-[42%] skew-x-[-18deg] animate-[kivoThinkingShimmer_1450ms_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/75 to-transparent blur-[1px] [@keyframes_kivoThinkingShimmer]:0%{transform:translateX(0)} [@keyframes_kivoThinkingShimmer]:100%{transform:translateX(350%)]" aria-hidden="true" />
+    <div className="kivo-thinking" aria-label="Kivo is thinking">
+      <style jsx>{`
+        .kivo-thinking {
+          color: #73747b;
+          font-size: 17px;
+          line-height: 1.45;
+          letter-spacing: -0.025em;
+          animation: kivo-thinking-in 180ms ease-out both;
+        }
+
+        .kivo-thinking-row {
+          display: inline-flex;
+          max-width: 100%;
+          align-items: flex-end;
+          overflow: hidden;
+          vertical-align: bottom;
+          animation: kivo-thinking-swap 420ms ease-out both;
+        }
+
+        .kivo-thinking-text-wrap {
+          position: relative;
+          display: inline-block;
+          overflow: hidden;
+        }
+
+        .kivo-thinking-text {
+          position: relative;
+          z-index: 1;
+        }
+
+        .kivo-thinking-shimmer {
+          pointer-events: none;
+          position: absolute;
+          z-index: 2;
+          top: -35%;
+          bottom: -35%;
+          left: -62%;
+          width: 44%;
+          transform: translateX(0) skewX(-18deg);
+          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.92) 50%, transparent 100%);
+          filter: blur(1px);
+          animation: kivo-thinking-shimmer 1450ms ease-in-out infinite;
+        }
+
+        .kivo-thinking-dots {
+          display: inline-flex;
+          width: 24px;
+          gap: 3px;
+          align-items: flex-end;
+          margin-left: 7px;
+          padding-bottom: 4px;
+        }
+
+        .kivo-thinking-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 999px;
+          background: #73747b;
+          opacity: 0.3;
+          animation: kivo-thinking-dot 1150ms ease-in-out infinite;
+        }
+
+        .kivo-thinking-dot:nth-child(2) {
+          animation-delay: 140ms;
+        }
+
+        .kivo-thinking-dot:nth-child(3) {
+          animation-delay: 280ms;
+        }
+
+        @keyframes kivo-thinking-in {
+          from { opacity: 0; transform: translateY(3px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes kivo-thinking-swap {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes kivo-thinking-shimmer {
+          0% { transform: translateX(0) skewX(-18deg); opacity: 0; }
+          18% { opacity: 0.9; }
+          68% { opacity: 0.9; }
+          100% { transform: translateX(360%) skewX(-18deg); opacity: 0; }
+        }
+
+        @keyframes kivo-thinking-dot {
+          0%, 100% { opacity: 0.28; transform: translateY(0) scale(0.78); }
+          45% { opacity: 1; transform: translateY(-4px) scale(1); }
+        }
+      `}</style>
+
+      <span key={THINKING_MESSAGES[messageIndex]} className="kivo-thinking-row">
+        <span className="kivo-thinking-text-wrap">
+          <span className="kivo-thinking-text">{THINKING_MESSAGES[messageIndex]}</span>
+          <span className="kivo-thinking-shimmer" aria-hidden="true" />
         </span>
-        <span className="ml-[7px] inline-flex w-[28px] items-end gap-[3px] pb-[2px]" aria-hidden="true">
-          <span className="h-[5px] w-[5px] rounded-full bg-[#73747b] animate-[kivoDotOne_1200ms_ease-in-out_infinite] [@keyframes_kivoDotOne]:0%,100%{opacity:.28;transform:translateY(0) scale(.72)} [@keyframes_kivoDotOne]:35%{opacity:1;transform:translateY(-5px) scale(1.05)]" />
-          <span className="h-[5px] w-[5px] rounded-full bg-[#73747b] animate-[kivoDotTwo_1200ms_ease-in-out_infinite] [@keyframes_kivoDotTwo]:0%,100%{opacity:.28;transform:translateY(0) scale(.72)} [@keyframes_kivoDotTwo]:50%{opacity:1;transform:translateY(-5px) scale(1.05)]" />
-          <span className="h-[5px] w-[5px] rounded-full bg-[#73747b] animate-[kivoDotThree_1200ms_ease-in-out_infinite] [@keyframes_kivoDotThree]:0%,100%{opacity:.28;transform:translateY(0) scale(.72)} [@keyframes_kivoDotThree]:65%{opacity:1;transform:translateY(-5px) scale(1.05)]" />
+        <span className="kivo-thinking-dots" aria-hidden="true">
+          <span className="kivo-thinking-dot" />
+          <span className="kivo-thinking-dot" />
+          <span className="kivo-thinking-dot" />
         </span>
       </span>
     </div>
