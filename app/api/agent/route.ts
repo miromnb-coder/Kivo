@@ -71,21 +71,23 @@ function normalizeAgentStep(rawStep: any, index: number): StreamStep {
   return { id, title, detail: rawStep?.detail, status: 'pending', kind };
 }
 
-async function fetchBrowserPreview(url: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '';
-  const endpoint = baseUrl ? `${baseUrl}/api/browser/preview` : 'http://localhost:3000/api/browser/preview';
+// 🔥 FIXED: always use request origin (works in Vercel + local)
+async function fetchBrowserPreview(url: string, origin: string) {
+  try {
+    const res = await fetch(`${origin}/api/browser/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url }),
-  });
-
-  if (!response.ok) return null;
-  return response.json();
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
-async function runStepSequence(send: (event: string, data: unknown) => void, steps: StreamStep[], message: string) {
+async function runStepSequence(send: (event: string, data: unknown) => void, steps: StreamStep[], message: string, origin: string) {
   const needsBrowser = isLikelyCurrentInfoRequest(message);
   const searchUrl = buildSearchUrl(message);
   let browserPreviewStarted = false;
@@ -105,7 +107,7 @@ async function runStepSequence(send: (event: string, data: unknown) => void, ste
         cursor: { x: 18, y: 22 },
       });
 
-      const preview = await fetchBrowserPreview(searchUrl);
+      const preview = await fetchBrowserPreview(searchUrl, origin);
       if (preview?.screenshotUrl) {
         send('browser', {
           url: preview.url,
@@ -168,6 +170,8 @@ export async function POST(req: Request) {
     const mode = body.mode ?? 'chat';
     const context = body.context ?? 'general';
 
+    const origin = new URL(req.url).origin;
+
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
@@ -181,7 +185,7 @@ export async function POST(req: Request) {
           const agentSteps = Array.isArray(result.steps) ? result.steps.map(normalizeAgentStep) : [];
           const stepsToRun = agentSteps.length ? agentSteps : initialSteps;
 
-          await runStepSequence(send, stepsToRun, message);
+          await runStepSequence(send, stepsToRun, message, origin);
 
           send('meta', { model: result.model, provider: result.provider });
           if (result.structuredData) send('data', { structuredData: result.structuredData });
