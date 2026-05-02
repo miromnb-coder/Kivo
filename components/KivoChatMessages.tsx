@@ -133,7 +133,7 @@ function MarkdownLine({ line, index }: { line: string; index: number }) {
 }
 
 function StreamingCursor() {
-  return <span className="ml-[3px] inline-block h-[18px] w-[2px] translate-y-[3px] animate-pulse rounded-full bg-[#202024]/65" aria-hidden="true" />;
+  return <span className="ml-[4px] inline-block h-[8px] w-[8px] animate-pulse rounded-full bg-[#202024]" aria-hidden="true" />;
 }
 
 function KivoMarkdown({ content, streaming = false }: { content: string; streaming?: boolean }) {
@@ -155,22 +155,22 @@ function KivoMarkdown({ content, streaming = false }: { content: string; streami
   );
 }
 
+function KivoAssistantHeader() {
+  return (
+    <div className="mb-[12px] flex items-center gap-[8px] text-[#202024]">
+      <span className="flex h-[24px] w-[24px] items-center justify-center text-[20px] leading-none" aria-hidden="true">
+        ✦
+      </span>
+      <span className="font-serif text-[28px] font-semibold leading-none tracking-[-0.045em]">kivo</span>
+    </div>
+  );
+}
+
 function KivoThinkingState() {
   return (
-    <div className="flex items-center gap-[10px] py-[2px] text-[17px] leading-[1.5] tracking-[-0.025em] text-[#8f9097]" aria-label="Kivo is thinking">
-      <span className="relative flex h-[18px] w-[18px] shrink-0 items-center justify-center">
-        <span className="absolute h-[18px] w-[18px] animate-ping rounded-full bg-[#202024]/10" />
-        <span className="relative h-[7px] w-[7px] rounded-full bg-[#202024]/55 shadow-[0_0_18px_rgba(32,32,36,0.18)]" />
-      </span>
-      <span className="inline-flex items-center gap-[3px]">
-        <span>Kivo miettii</span>
-        <span className="inline-flex w-[18px] gap-[2px]" aria-hidden="true">
-          <span className="h-[3px] w-[3px] animate-bounce rounded-full bg-[#8f9097] [animation-delay:-180ms]" />
-          <span className="h-[3px] w-[3px] animate-bounce rounded-full bg-[#8f9097] [animation-delay:-90ms]" />
-          <span className="h-[3px] w-[3px] animate-bounce rounded-full bg-[#8f9097]" />
-        </span>
-      </span>
-    </div>
+    <p className="text-[17px] leading-[1.45] tracking-[-0.025em] text-[#73747b]" aria-label="Kivo is thinking">
+      Kivo is thinking ...
+    </p>
   );
 }
 
@@ -185,14 +185,14 @@ export function KivoChatMessages({ messages, loading }: any) {
 
   return (
     <div className="absolute inset-x-0 top-[94px] bottom-[142px] z-10 overflow-y-auto px-[18px] pb-[24px] pt-[12px] overscroll-contain">
-      <div className="mx-auto flex w-full max-w-[430px] flex-col gap-[18px]">
+      <div className="mx-auto flex w-full max-w-[430px] flex-col gap-[26px]">
         {messages.map((message: KivoChatMessage, index: number) => {
           const isUser = message.role === 'user';
 
           if (isUser) {
             return (
               <div key={message.id} className="flex justify-end">
-                <div className="max-w-[78%] rounded-[24px] bg-[#202024] px-[17px] py-[12px] text-[17px] leading-[1.35] tracking-[-0.025em] text-white shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                <div className="max-w-[78%] rounded-[18px] bg-white px-[18px] py-[11px] text-[17px] leading-[1.35] tracking-[-0.025em] text-[#202024] shadow-[0_1px_0_rgba(0,0,0,0.025)]">
                   {message.content}
                 </div>
               </div>
@@ -207,7 +207,8 @@ export function KivoChatMessages({ messages, loading }: any) {
 
           return (
             <div key={message.id} className="flex justify-start">
-              <div className="w-full px-[18px] py-[6px]">
+              <div className="w-full px-[8px] py-[2px]">
+                <KivoAssistantHeader />
                 <KivoDocumentCard document={message.structuredData?.documentCard} onOpen={(doc) => setOpenDoc(doc)} />
                 <KivoMiniBrowserPreview preview={message.browserPreview} />
                 {showExecutionSteps ? <KivoExecutionSteps steps={message.steps} /> : null}
