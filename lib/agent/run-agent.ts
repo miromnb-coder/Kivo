@@ -1,69 +1,29 @@
-import { runKivoModel } from '@/lib/ai/model-router';
-import { createPlan } from './planner';
-import { runCalendarTodayTool } from './tools/calendar';
-import { runGmailTool, shouldRunGmailTool } from './tools/gmail';
-import { routeIntent } from './router';
-import type { AgentRequest, AgentResult } from './types';
-
-type ExecutionStep = { title: string; detail?: string; status: 'pending' | 'running' | 'done'; kind?: 'search' | 'plan' | 'write' | 'tool' | 'think' };
-
-const KIVO_SYSTEM_PROMPT = [
-  'You are Kivo AI, a premium personal AI operator.',
-  'Use Markdown in every useful answer:',
-  '- Use ## for main sections.',
-  '- Use ### for subsections.',
-  '- Use **bold** for key parts, decisions, times, priorities, names, and next actions.',
-  '- Keep spacing clean with short paragraphs and blank lines between sections.',
-  '- Use numbered lists for steps and bullet lists for quick details.',
-  '- Do not over-format short answers; keep simple answers clean.',
-  'Be proactive and practical. If a complex task is missing key details, ask concise clarifying questions before doing the work.',
-].join('\n');
-
-function shouldAskClarifyingQuestion(message: string) {
-  const text = message.toLowerCase().trim();
-  const complex = ['suunnittele', 'tee minulle', 'rakenna', 'roadmap', 'plan', 'create', 'build', 'kirjoita', 'write'].some((word) => text.includes(word));
-  if (!complex) return false;
-  if (text.includes('tänään') || text.includes('today') || text.includes('gmail') || text.includes('sähköposti') || text.includes('kalenteri')) return false;
-  const hasEnoughContext = ['budjetti', 'budget', 'aika', 'time', 'kaupunki', 'city', 'tavoite', 'goal', 'tyyli', 'style', 'deadline'].some((word) => text.includes(word));
-  return text.length < 90 && !hasEnoughContext;
-}
-
-function buildClarifyingAnswer(message: string) {
-  return [
-    '## Tarvitsen vielä vähän tarkennusta',
-    '',
-    '**Voin tehdä tämän, mutta jotta lopputulos olisi oikeasti hyvä, tarvitsen pari asiaa ensin.**',
-    '',
-    '1. Mikä on tärkein tavoite?',
-    '2. Onko tähän jokin aika, paikka, budjetti tai deadline?',
-    '3. Haluatko lopputuloksen lyhyenä suunnitelmana vai valmiina tekstinä?',
-    '',
-    'Kun vastaat näihin, teen siitä heti paremman kokonaisuuden.',
-  ].join('\n');
-}
-
-function shouldShowExecutionSteps(message: string) {
-  const text = message.toLowerCase().trim();
-  if (!text || ['hei', 'moi', 'hello', 'hi', 'ok', 'kiitos'].includes(text)) return false;
-  if (text.length < 18) return false;
-  const complexWords = ['suunnittele', 'tee minulle', 'rakenna', 'analysoi', 'etsi', 'hae', 'selvitä', 'vertaa', 'kirjoita', 'roadmap', 'plan', 'analyze', 'research', 'build', 'create', 'write', 'compare', 'summary', 'yhteenveto', 'kalenteri', 'calendar', 'gmail', 'sähköposti', 'email', 'päivä', 'today', 'aikataulu', 'schedule'];
-  return complexWords.some((word) => text.includes(word));
-}
-
-function buildExecutionSteps(message: string, options?: { calendar?: boolean; gmail?: boolean; today?: boolean; clarify?: boolean }): ExecutionStep[] {
-  if (options?.clarify) return [{ title: 'Tarkistetaan puuttuuko tietoja', detail: 'Kivo huomaa, että hyvä vastaus vaatii vielä tarkennuksia.', status: 'done', kind: 'think' }];
-  if (!shouldShowExecutionSteps(message)) return [];
+// ADD ABOVE runKivoAgent
+function shouldCreateDocumentCard(message: string, answer: string) {
   const text = message.toLowerCase();
-  const steps: ExecutionStep[] = [{ title: 'Ymmärretään pyyntö', detail: 'Kivo tunnistaa tavoitteen ja valitsee sopivan vastaustavan.', status: 'done', kind: 'think' }];
-  if (options?.gmail || shouldRunGmailTool(message)) steps.push({ title: 'Tarkistetaan Gmail-konteksti', detail: 'Haetaan tärkeät viestit, laskut ja mahdolliset action itemit.', status: 'done', kind: 'tool' });
-  if (options?.calendar || text.includes('kalenteri') || text.includes('calendar') || text.includes('päivä') || text.includes('today')) steps.push({ title: 'Tarkistetaan kalenteri', detail: 'Haetaan päivän tapahtumat ja vapaat aikaikkunat.', status: 'done', kind: 'tool' });
-  if (text.includes('etsi') || text.includes('hae') || text.includes('research') || text.includes('selvitä')) steps.push({ title: 'Kootaan tarvittava tieto', detail: 'Kerätään oleelliset tiedot ennen lopullista vastausta.', status: 'done', kind: 'search' });
-  steps.push({ title: options?.today ? 'Rakennetaan päivän suunnitelma' : 'Rakennetaan vastaus', detail: 'Järjestetään tieto selkeäksi ja käyttökelpoiseksi kokonaisuudeksi.', status: 'done', kind: 'plan' });
-  if (text.includes('kirjoita') || text.includes('write') || text.includes('roadmap') || text.includes('suunnitelma') || text.includes('plan')) steps.push({ title: 'Muotoillaan valmis lopputulos', detail: 'Tehdään vastauksesta helposti luettava ja jatkokäytettävä.', status: 'done', kind: 'write' });
-  return steps.slice(0, 5);
+
+  const triggers = [
+    'suunnittele', 'plan', 'kirjoita', 'write', 'tee minulle', 'create', 'rakenna', 'build', 'roadmap', 'aikataulu', 'päivä'
+  ];
+
+  const isLong = answer.length > 700;
+  const isStructured = answer.includes('##') || answer.includes('1.') || answer.includes('- ');
+
+  return triggers.some((t) => text.includes(t)) && isLong && isStructured;
 }
 
-function withStructuredData(base: Omit<AgentResult, 'structuredData'>, structuredData: any): AgentResult { return { ...base, structuredData } as AgentResult; }
+function buildDocumentCard(answer: string) {
+  const lines = answer.split('\n').filter(Boolean);
+  const title = lines.find((l) => l.startsWith('##'))?.replace(/^##\s*/, '') || lines[0] || 'Kivo document';
+
+  return {
+    title,
+    type: 'Markdown',
+    content: answer,
+  };
+}
+
+// MODIFY RETURN PART
 
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
@@ -72,7 +32,10 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
 
   if (needsClarification) {
     const steps = buildExecutionSteps(req.message, { clarify: true });
-    return withStructuredData({ answer: buildClarifyingAnswer(req.message), steps, intent }, { clarification: { required: true, reason: 'Missing important context for a high-quality result.' } });
+    return withStructuredData(
+      { answer: buildClarifyingAnswer(req.message), steps, intent },
+      { clarification: { required: true, reason: 'Missing important context for a high-quality result.' } }
+    );
   }
 
   await runCalendarTodayTool(req.userId);
@@ -83,8 +46,24 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     agent: req.agent,
     mode: req.mode,
     context: req.context,
-    messages: [{ role: 'system', content: KIVO_SYSTEM_PROMPT }, { role: 'user', content: req.message }],
+    messages: [
+      { role: 'system', content: KIVO_SYSTEM_PROMPT },
+      { role: 'user', content: req.message }
+    ],
   });
 
-  return withStructuredData({ answer: response.content, steps: executionSteps.length ? executionSteps : plan.steps.map((s) => ({ ...s, status: 'done' })), intent }, { gmail: null, calendar: null });
+  const createDoc = shouldCreateDocumentCard(req.message, response.content);
+
+  return withStructuredData(
+    {
+      answer: response.content,
+      steps: executionSteps.length ? executionSteps : plan.steps.map((s) => ({ ...s, status: 'done' })),
+      intent,
+    },
+    {
+      gmail: null,
+      calendar: null,
+      documentCard: createDoc ? buildDocumentCard(response.content) : null,
+    }
+  );
 }
