@@ -29,6 +29,20 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getTypingDelay(token: string, index: number) {
+  const trimmed = token.trim();
+  const randomJitter = Math.floor(Math.random() * 10);
+
+  if (!trimmed) return 8;
+  if (token.includes('\n\n')) return 190 + randomJitter;
+  if (token.includes('\n')) return 120 + randomJitter;
+  if (/[.!?]$/.test(trimmed)) return 95 + randomJitter;
+  if (/[,;:]$/.test(trimmed)) return 48 + randomJitter;
+  if (index > 0 && index % 18 === 0) return 55 + randomJitter;
+
+  return 12 + randomJitter;
+}
+
 function isLikelyCurrentInfoRequest(message: string) {
   const text = message.toLowerCase();
   return [
@@ -190,12 +204,16 @@ export async function POST(req: Request) {
           send('meta', { model: result.model, provider: result.provider });
           if (result.structuredData) send('data', { structuredData: result.structuredData });
 
+          await delay(260);
+
           const tokens = result.answer.match(/\S+\s*/g) ?? [];
-          for (const token of tokens) {
+          for (let index = 0; index < tokens.length; index += 1) {
+            const token = tokens[index];
             send('token', { token });
-            await delay(10);
+            await delay(getTypingDelay(token, index));
           }
 
+          await delay(140);
           send('done', { content: result.answer, model: result.model, provider: result.provider, structuredData: result.structuredData });
           controller.close();
         } catch (error) {
