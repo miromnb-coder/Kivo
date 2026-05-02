@@ -97,6 +97,13 @@ const STORAGE_KEY = 'kivo.connector-ui-state.v1';
 const MEDIUM_HEIGHT = 0.92;
 const emptyConnectedMap: Record<ConnectorIconId, boolean> = { gmail: false, 'google-calendar': false, drive: false, 'outlook-mail': false, 'outlook-calendar': false };
 const defaultEnabledMap: Record<ConnectorIconId, boolean> = { gmail: true, 'google-calendar': true, drive: true, 'outlook-mail': true, 'outlook-calendar': true };
+const statusEndpoints: Partial<Record<ConnectorIconId, (userId: string) => string>> = {
+  gmail: (userId) => `/api/integrations/google/gmail/status?userId=${encodeURIComponent(userId)}`,
+  'google-calendar': (userId) => `/api/integrations/google/calendar/status?userId=${encodeURIComponent(userId)}`,
+  drive: (userId) => `/api/integrations/google/drive/status?userId=${encodeURIComponent(userId)}`,
+  'outlook-mail': (userId) => `/api/integrations/microsoft/outlook-mail/status?userId=${encodeURIComponent(userId)}`,
+  'outlook-calendar': (userId) => `/api/integrations/microsoft/outlook-calendar/status?userId=${encodeURIComponent(userId)}`,
+};
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 function GmailIcon() {
@@ -125,6 +132,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
   const [calendarDetailOpen, setCalendarDetailOpen] = useState(false);
   const [connectedMap, setConnectedMap] = useState<Record<ConnectorIconId, boolean>>(emptyConnectedMap);
   const [enabledMap, setEnabledMap] = useState<Record<ConnectorIconId, boolean>>(defaultEnabledMap);
+  const [loadingStatusMap, setLoadingStatusMap] = useState<Partial<Record<ConnectorIconId, boolean>>>({});
   const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const sheetRef = useRef<HTMLDivElement | null>(null);
 
@@ -165,22 +173,63 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
 
   useEffect(() => {
     if (!open || !hasLoadedStoredState) return;
-    async function syncGoogleStatuses() {
+    let cancelled = false;
+
+    async function readStatus(icon: ConnectorIconId, userId: string) {
+      const endpoint = statusEndpoints[icon];
+      if (!endpoint) return null;
+
+      try {
+        const response = await fetch(endpoint(userId), { cache: 'no-store' });
+        if (!response.ok) return null;
+        const payload = await response.json();
+        return Boolean(payload.connected);
+      } catch {
+        return null;
+      }
+    }
+
+    async function syncConnectorStatuses() {
       try {
         const { data } = await supabase.auth.getUser();
         const userId = data.user?.id;
-        if (!userId) return;
-        const [gmailRes, calendarRes] = await Promise.allSettled([
-          fetch(`/api/integrations/google/gmail/status?userId=${userId}`),
-          fetch(`/api/integrations/google/calendar/status?userId=${userId}`),
-        ]);
-        const gmailConnected = gmailRes.status === 'fulfilled' ? Boolean((await gmailRes.value.json()).connected) : false;
-        const calendarConnected = calendarRes.status === 'fulfilled' ? Boolean((await calendarRes.value.json()).connected) : false;
-        setConnectedMap((current) => ({ ...current, gmail: gmailConnected, 'google-calendar': calendarConnected }));
-        setEnabledMap((current) => ({ ...current, gmail: gmailConnected ? current.gmail : false, 'google-calendar': calendarConnected ? current['google-calendar'] : false }));
-      } catch {}
+        if (!userId || cancelled) return;
+
+        const icons = connectorConfigs.map((connector) => connector.icon);
+        setLoadingStatusMap(Object.fromEntries(icons.map((icon) => [icon, true])) as Partial<Record<ConnectorIconId, boolean>>);
+
+        const results = await Promise.all(
+          icons.map(async (icon) => [icon, await readStatus(icon, userId)] as const),
+        );
+
+        if (cancelled) return;
+
+        setConnectedMap((current) => {
+          const next = { ...current };
+          for (const [icon, connected] of results) {
+            if (connected !== null) next[icon] = connected;
+          }
+          return next;
+        });
+
+        setEnabledMap((current) => {
+          const next = { ...current };
+          for (const [icon, connected] of results) {
+            if (connected === false) next[icon] = false;
+            if (connected === true && next[icon] === undefined) next[icon] = true;
+          }
+          return next;
+        });
+      } finally {
+        if (!cancelled) setLoadingStatusMap({});
+      }
     }
-    syncGoogleStatuses();
+
+    syncConnectorStatuses();
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, hasLoadedStoredState]);
 
   if (!open) return null;
@@ -247,6 +296,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
             <div className="space-y-[10px]">
               {connectorConfigs.map((connector) => {
                 const connected = connectedMap[connector.icon];
+                const loadingStatus = loadingStatusMap[connector.icon];
                 return (
                   <button key={connector.name} type="button" onClick={() => openConnector(connector)} className="flex min-h-[72px] w-full items-center gap-[14px] rounded-[18px] border border-black/[0.055] bg-white px-[14px] py-[12px] text-left shadow-[0_10px_30px_rgba(15,23,42,0.02)] transition active:scale-[0.992]">
                     <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center"><BrandIcon icon={connector.icon} /></span>
@@ -255,7 +305,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
                       <span className="mt-[3px] block truncate text-[13.5px] leading-[1.25] tracking-[-0.025em] text-[#65666e]">{connector.icon === 'gmail' ? 'Access your email, labels and messages' : connector.icon === 'google-calendar' ? 'See events and manage your schedule' : connector.icon === 'outlook-mail' ? 'Connect your Outlook email account' : connector.icon === 'outlook-calendar' ? 'Sync and manage your Outlook events' : 'Search and access your files'}</span>
                     </span>
                     <span className={`flex h-[34px] min-w-[82px] items-center justify-center rounded-[10px] border px-[14px] text-[14px] font-semibold tracking-[-0.025em] ${connected ? 'border-[#d9dadd] bg-[#f4f4f5] text-[#5f6067]' : 'border-black/[0.12] bg-white text-[#141518]'}`}>
-                      {connected ? <span className="flex items-center gap-[5px]"><Check size={15} strokeWidth={2.1} /> Connected</span> : 'Connect'}
+                      {loadingStatus ? 'Checking' : connected ? <span className="flex items-center gap-[5px]"><Check size={15} strokeWidth={2.1} /> Connected</span> : 'Connect'}
                     </span>
                   </button>
                 );
