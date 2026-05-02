@@ -1,9 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, MessageCircle, Sparkles, User } from 'lucide-react';
+import { Bell, ChevronDown, Sparkles } from 'lucide-react';
 import { KivoCreditsSheet } from './KivoCreditsSheet';
 import { KivoAgentSelector } from './KivoAgentSelector';
+
+function KivoMenuMark() {
+  return (
+    <span className="relative block h-[28px] w-[28px]" aria-hidden="true">
+      <span className="absolute left-[6px] top-[8px] h-[3px] w-[22px] -rotate-45 rounded-full bg-[#202124]" />
+      <span className="absolute left-[0px] top-[18px] h-[3px] w-[22px] -rotate-45 rounded-full bg-[#202124]" />
+    </span>
+  );
+}
 
 export function KivoTopBar() {
   const [open, setOpen] = useState(false);
@@ -12,21 +21,21 @@ export function KivoTopBar() {
   return (
     <>
       <header className="relative z-20 flex items-center justify-between px-[20px] pt-[calc(env(safe-area-inset-top)+10px)]">
-        <div className="flex h-[40px] items-center gap-[18px]">
+        <div className="flex h-[40px] items-center gap-[20px]">
           <button
             type="button"
-            aria-label="Open profile"
+            aria-label="Open menu"
             className="flex h-[40px] w-[32px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]"
           >
-            <User size={28} strokeWidth={1.9} />
+            <KivoMenuMark />
           </button>
 
           <button
             type="button"
-            aria-label="Open conversations"
+            aria-label="Open notifications"
             className="flex h-[40px] w-[32px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]"
           >
-            <MessageCircle size={29} strokeWidth={1.9} />
+            <Bell size={29} strokeWidth={1.95} />
           </button>
         </div>
 
