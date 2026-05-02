@@ -45,6 +45,7 @@ export type KivoModelResult = {
 
 export const KIVO_MODEL_NAMES: Record<KivoModelId, string> = {
   'groq:fast': 'llama-3.3-70b-versatile',
-  'groq:compound': 'groq/compound',
+  // compound-mini is safer for mobile/chat search because it is lower latency and uses a smaller tool loop.
+  'groq:compound': 'groq/compound-mini',
   'openai:gpt-5.4-mini': 'gpt-5.4-mini',
 };
