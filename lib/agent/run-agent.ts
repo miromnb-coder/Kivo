@@ -28,35 +28,22 @@ const KIVO_SYSTEM_PROMPT = [
   'Be proactive and practical. If a complex task is missing key details, ask concise clarifying questions before doing the work.',
 ].join('\n');
 
+function safeUserMessage(message: string) {
+  return message.trim().slice(0, 1800);
+}
+
 function shouldUseWebSearch(message: string) {
   const text = message.toLowerCase().trim();
   if (!text) return false;
-
-  const currentSignals = [
-    'uusin', 'latest', 'tänään', 'today', 'nyt', 'now', 'current', 'ajankohtainen', 'news', 'uutiset',
-    'hinta', 'price', 'halvin', 'cheapest', 'saatavilla', 'available', 'osto', 'buy', 'kauppa', 'store',
-    'auki', 'open now', 'ravintola', 'restaurant', 'kahvila', 'cafe', 'hotelli', 'hotel', 'tapahtuma', 'event',
-    'near me', 'lähellä', 'paras paikka', 'best place', 'matka', 'travel', 'weather', 'sää',
-  ];
-
+  const currentSignals = ['uusin', 'latest', 'tänään', 'today', 'nyt', 'now', 'current', 'ajankohtainen', 'news', 'uutiset', 'hinta', 'price', 'halvin', 'cheapest', 'saatavilla', 'available', 'osto', 'buy', 'kauppa', 'store', 'auki', 'open now', 'ravintola', 'restaurant', 'kahvila', 'cafe', 'hotelli', 'hotel', 'tapahtuma', 'event', 'near me', 'lähellä', 'paras paikka', 'best place', 'matka', 'travel', 'weather', 'sää'];
   const researchSignals = ['etsi', 'hae', 'selvitä', 'research', 'find', 'search', 'compare', 'vertaa'];
   const locationSignals = ['jyväskylä', 'kuopio', 'helsinki', 'tokyo', 'london', 'paris', 'new york', 'san francisco', 'berlin', 'stockholm', 'osaka'];
-
   return currentSignals.some((word) => text.includes(word)) || researchSignals.some((word) => text.includes(word)) || locationSignals.some((word) => text.includes(word));
 }
 
 function detectSearchCountry(message: string) {
   const text = message.toLowerCase();
-  const pairs: Array<[string, string]> = [
-    ['jyväskylä', 'finland'], ['kuopio', 'finland'], ['helsinki', 'finland'], ['suomi', 'finland'], ['finland', 'finland'],
-    ['tokyo', 'japan'], ['osaka', 'japan'], ['japan', 'japan'],
-    ['new york', 'united states'], ['san francisco', 'united states'], ['usa', 'united states'], ['united states', 'united states'],
-    ['london', 'united kingdom'], ['uk', 'united kingdom'], ['united kingdom', 'united kingdom'],
-    ['paris', 'france'], ['france', 'france'],
-    ['berlin', 'germany'], ['germany', 'germany'],
-    ['stockholm', 'sweden'], ['sweden', 'sweden'],
-  ];
-
+  const pairs: Array<[string, string]> = [['jyväskylä', 'finland'], ['kuopio', 'finland'], ['helsinki', 'finland'], ['suomi', 'finland'], ['finland', 'finland'], ['tokyo', 'japan'], ['osaka', 'japan'], ['japan', 'japan'], ['new york', 'united states'], ['san francisco', 'united states'], ['usa', 'united states'], ['united states', 'united states'], ['london', 'united kingdom'], ['uk', 'united kingdom'], ['united kingdom', 'united kingdom'], ['paris', 'france'], ['france', 'france'], ['berlin', 'germany'], ['germany', 'germany'], ['stockholm', 'sweden'], ['sweden', 'sweden']];
   return pairs.find(([key]) => text.includes(key))?.[1];
 }
 
@@ -81,14 +68,14 @@ function shouldShowExecutionSteps(message: string) {
   return complexWords.some((word) => text.includes(word));
 }
 
-function buildExecutionSteps(message: string, options?: { calendar?: boolean; gmail?: boolean; today?: boolean; clarify?: boolean; webSearch?: boolean }): ExecutionStep[] {
+function buildExecutionSteps(message: string, options?: { calendar?: boolean; gmail?: boolean; today?: boolean; clarify?: boolean; webSearch?: boolean; fallback?: boolean }): ExecutionStep[] {
   if (options?.clarify) return [{ title: 'Tarkistetaan puuttuuko tietoja', detail: 'Kivo huomaa, että hyvä vastaus vaatii vielä tarkennuksia.', status: 'done', kind: 'think' }];
   if (!shouldShowExecutionSteps(message)) return [];
   const text = message.toLowerCase();
   const steps: ExecutionStep[] = [{ title: 'Ymmärretään pyyntö', detail: 'Kivo tunnistaa tavoitteen ja valitsee sopivan vastaustavan.', status: 'done', kind: 'think' }];
   if (options?.gmail || shouldRunGmailTool(message)) steps.push({ title: 'Tarkistetaan Gmail-konteksti', detail: 'Haetaan tärkeät viestit, laskut ja mahdolliset action itemit.', status: 'done', kind: 'tool' });
-  if (options?.calendar || text.includes('kalenteri') || text.includes('calendar') || text.includes('päivä') || text.includes('today')) steps.push({ title: 'Tarkistetaan kalenteri', detail: 'Haetaan päivän tapahtumat ja vapaat aikaikkunat.', status: 'done', kind: 'tool' });
-  if (options?.webSearch) steps.push({ title: 'Etsitään ajankohtaista tietoa verkosta', detail: 'Kivo käyttää web searchia tuoreisiin lähteisiin ja paikkakohtaiseen tietoon.', status: 'done', kind: 'search' });
+  if (options?.calendar && (text.includes('kalenteri') || text.includes('calendar') || text.includes('päivä') || text.includes('today'))) steps.push({ title: 'Tarkistetaan kalenteri', detail: 'Haetaan päivän tapahtumat ja vapaat aikaikkunat.', status: 'done', kind: 'tool' });
+  if (options?.webSearch) steps.push({ title: options.fallback ? 'Web search ei onnistunut, jatketaan turvallisesti' : 'Etsitään ajankohtaista tietoa verkosta', detail: options.fallback ? 'Kivo antaa vastauksen ilman lähteitä, jotta keskustelu ei jää jumiin.' : 'Kivo käyttää web searchia tuoreisiin lähteisiin ja paikkakohtaiseen tietoon.', status: 'done', kind: 'search' });
   else if (text.includes('etsi') || text.includes('hae') || text.includes('research') || text.includes('selvitä')) steps.push({ title: 'Kootaan tarvittava tieto', detail: 'Kerätään oleelliset tiedot ennen lopullista vastausta.', status: 'done', kind: 'search' });
   steps.push({ title: options?.today ? 'Rakennetaan päivän suunnitelma' : 'Rakennetaan vastaus', detail: 'Järjestetään tieto selkeäksi ja käyttökelpoiseksi kokonaisuudeksi.', status: 'done', kind: 'plan' });
   if (text.includes('kirjoita') || text.includes('write') || text.includes('roadmap') || text.includes('suunnitelma') || text.includes('plan')) steps.push({ title: 'Muotoillaan valmis lopputulos', detail: 'Tehdään vastauksesta helposti luettava ja jatkokäytettävä.', status: 'done', kind: 'write' });
@@ -118,6 +105,33 @@ function withStructuredData(base: Omit<AgentResult, 'structuredData'>, structure
   return { ...base, structuredData } as AgentResult;
 }
 
+async function runModelWithSafeSearch(req: AgentRequest, useWebSearch: boolean, searchCountry?: string) {
+  const safeMessage = safeUserMessage(req.message);
+  try {
+    return await runKivoModel({
+      agent: req.agent,
+      mode: req.mode,
+      context: req.context,
+      forceModel: useWebSearch ? 'groq:compound' : undefined,
+      webSearch: useWebSearch && searchCountry ? { country: searchCountry } : undefined,
+      maxTokens: useWebSearch ? 900 : 900,
+      messages: [{ role: 'system', content: KIVO_SYSTEM_PROMPT }, { role: 'user', content: safeMessage }],
+    });
+  } catch (error) {
+    if (!useWebSearch) throw error;
+    const fallbackPrompt = [KIVO_SYSTEM_PROMPT, '', 'Web search failed. Answer safely without pretending to have current sources. Be clear that live source lookup was unavailable.'].join('\n');
+    const fallback = await runKivoModel({
+      agent: req.agent,
+      mode: req.mode,
+      context: req.context,
+      forceModel: 'groq:fast',
+      maxTokens: 700,
+      messages: [{ role: 'system', content: fallbackPrompt }, { role: 'user', content: safeMessage }],
+    });
+    return { ...fallback, raw: { fallback: true, originalError: error instanceof Error ? error.message : 'Web search failed' } };
+  }
+}
+
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
   const plan = createPlan(intent, req.message);
@@ -131,25 +145,13 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const gmail = await runGmailTool(req.userId);
   const useWebSearch = shouldUseWebSearch(req.message);
   const searchCountry = useWebSearch ? detectSearchCountry(req.message) : undefined;
-  const executionSteps = buildExecutionSteps(req.message, { calendar: Boolean(calendar?.connected), gmail: shouldRunGmailTool(req.message) && Boolean(gmail?.connected), today: req.message.toLowerCase().includes('päivä') || req.message.toLowerCase().includes('today'), webSearch: useWebSearch });
-
-  const response = await runKivoModel({
-    agent: req.agent,
-    mode: req.mode,
-    context: req.context,
-    forceModel: useWebSearch ? 'groq:compound' : undefined,
-    webSearch: useWebSearch ? { country: searchCountry } : undefined,
-    maxTokens: useWebSearch ? 1300 : undefined,
-    messages: [
-      { role: 'system', content: KIVO_SYSTEM_PROMPT },
-      { role: 'user', content: req.message },
-    ],
-  });
-
+  const response = await runModelWithSafeSearch(req, useWebSearch, searchCountry);
+  const fallbackUsed = Boolean((response.raw as any)?.fallback);
+  const executionSteps = buildExecutionSteps(req.message, { calendar: Boolean(calendar?.connected), gmail: shouldRunGmailTool(req.message) && Boolean(gmail?.connected), today: req.message.toLowerCase().includes('päivä') || req.message.toLowerCase().includes('today'), webSearch: useWebSearch, fallback: fallbackUsed });
   const sources = response.sources ?? [];
-  const sourceText = sources.length ? ['','### Sources', ...sources.slice(0, 5).map((source, index) => `${index + 1}. ${source.title ?? 'Source'}${source.url ? ` — ${source.url}` : ''}`)].join('\n') : '';
+  const sourceText = sources.length ? ['', '### Sources', ...sources.slice(0, 3).map((source, index) => `${index + 1}. ${source.title ?? 'Source'}${source.url ? ` — ${source.url}` : ''}`)].join('\n') : '';
   const answer = response.content + sourceText;
   const documentCard = shouldCreateDocumentCard(req.message, answer) ? buildDocumentCard(answer) : null;
 
-  return withStructuredData({ answer, steps: executionSteps.length ? executionSteps : plan.steps.map((step) => ({ ...step, status: 'done' })), intent }, { gmail: null, calendar: null, documentCard, sources, webSearch: useWebSearch ? { used: true, country: searchCountry ?? null } : { used: false } });
+  return withStructuredData({ answer, steps: executionSteps.length ? executionSteps : plan.steps.map((step) => ({ ...step, status: 'done' })), intent, model: response.model, provider: response.provider }, { gmail: null, calendar: null, documentCard, sources, webSearch: useWebSearch ? { used: !fallbackUsed, fallback: fallbackUsed, country: searchCountry ?? null } : { used: false } });
 }
