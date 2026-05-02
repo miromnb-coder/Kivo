@@ -7,6 +7,18 @@ import type { AgentRequest, AgentResult } from './types';
 
 type ExecutionStep = { title: string; detail?: string; status: 'pending' | 'running' | 'done'; kind?: 'search' | 'plan' | 'write' | 'tool' | 'think' };
 
+const KIVO_SYSTEM_PROMPT = [
+  'You are Kivo AI, a premium personal AI operator.',
+  'Use Markdown in every useful answer:',
+  '- Use ## for main sections.',
+  '- Use ### for subsections.',
+  '- Use **bold** for key parts, decisions, times, priorities, names, and next actions.',
+  '- Keep spacing clean with short paragraphs and blank lines between sections.',
+  '- Use numbered lists for steps and bullet lists for quick details.',
+  '- Do not over-format short answers; keep simple answers clean.',
+  'Be proactive and practical. If a complex task is missing key details, ask concise clarifying questions before doing the work.',
+].join('\n');
+
 function shouldAskClarifyingQuestion(message: string) {
   const text = message.toLowerCase().trim();
   const complex = ['suunnittele', 'tee minulle', 'rakenna', 'roadmap', 'plan', 'create', 'build', 'kirjoita', 'write'].some((word) => text.includes(word));
@@ -63,15 +75,15 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     return withStructuredData({ answer: buildClarifyingAnswer(req.message), steps, intent }, { clarification: { required: true, reason: 'Missing important context for a high-quality result.' } });
   }
 
-  const calendar = await runCalendarTodayTool(req.userId);
-  const gmail = await runGmailTool(req.userId);
+  await runCalendarTodayTool(req.userId);
+  await runGmailTool(req.userId);
   const executionSteps = buildExecutionSteps(req.message, { calendar: false, gmail: shouldRunGmailTool(req.message), today: false });
 
   const response = await runKivoModel({
     agent: req.agent,
     mode: req.mode,
     context: req.context,
-    messages: [{ role: 'system', content: 'You are Kivo AI. Use Markdown for hierarchy. Be proactive and practical. If a complex task is missing key details, ask concise clarifying questions before doing the work.' }, { role: 'user', content: req.message }],
+    messages: [{ role: 'system', content: KIVO_SYSTEM_PROMPT }, { role: 'user', content: req.message }],
   });
 
   return withStructuredData({ answer: response.content, steps: executionSteps.length ? executionSteps : plan.steps.map((s) => ({ ...s, status: 'done' })), intent }, { gmail: null, calendar: null });
