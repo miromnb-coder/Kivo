@@ -142,6 +142,10 @@ function KivoMarkdown({ content }: { content: string }) {
   );
 }
 
+function shouldShowExecutionSteps(message: KivoChatMessage) {
+  return Boolean(message.browserPreview || message.structuredData?.showExecutionSteps || message.structuredData?.documentCard);
+}
+
 export function KivoChatMessages({ messages, loading }: any) {
   const [openDoc, setOpenDoc] = useState<any>(null);
 
@@ -150,7 +154,7 @@ export function KivoChatMessages({ messages, loading }: any) {
   return (
     <div className="absolute inset-x-0 top-[94px] bottom-[142px] z-10 overflow-y-auto px-[18px] pb-[24px] pt-[12px] overscroll-contain">
       <div className="mx-auto flex w-full max-w-[430px] flex-col gap-[18px]">
-        {messages.map((message: any) => {
+        {messages.map((message: KivoChatMessage) => {
           const isUser = message.role === 'user';
 
           if (isUser) {
@@ -164,13 +168,14 @@ export function KivoChatMessages({ messages, loading }: any) {
           }
 
           const assistantText = message.content || (loading ? 'Kivo is thinking…' : '');
+          const showExecutionSteps = shouldShowExecutionSteps(message);
 
           return (
             <div key={message.id} className="flex justify-start">
               <div className="w-full px-[18px] py-[6px]">
                 <KivoDocumentCard document={message.structuredData?.documentCard} onOpen={(doc) => setOpenDoc(doc)} />
                 <KivoMiniBrowserPreview preview={message.browserPreview} />
-                <KivoExecutionSteps steps={message.steps} />
+                {showExecutionSteps ? <KivoExecutionSteps steps={message.steps} /> : null}
                 <KivoMarkdown content={assistantText} />
                 <KivoMiniTable table={message.structuredData?.miniTable} />
 
