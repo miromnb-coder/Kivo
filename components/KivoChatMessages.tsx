@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KivoMiniTable } from './KivoMiniTable';
 import { KivoDocumentCard } from './KivoDocumentCard';
 import { KivoExecutionSteps } from './KivoExecutionSteps';
@@ -140,7 +140,7 @@ function KivoMarkdown({ content, streaming = false }: { content: string; streami
   const lines = content.split('\n');
 
   return (
-    <div className="space-y-[6px]">
+    <div className="animate-[kivoAnswerIn_180ms_ease-out] space-y-[6px] [@keyframes_kivoAnswerIn]:from{opacity:0;transform:translateY(4px)} [@keyframes_kivoAnswerIn]:to{opacity:1;transform:translateY(0)]">
       {lines.map((line, index) => {
         const isLastLine = index === lines.length - 1;
 
@@ -168,7 +168,7 @@ function KivoAssistantHeader() {
 
 function KivoThinkingState() {
   return (
-    <p className="text-[17px] leading-[1.45] tracking-[-0.025em] text-[#73747b]" aria-label="Kivo is thinking">
+    <p className="animate-[kivoThinkingIn_160ms_ease-out] text-[17px] leading-[1.45] tracking-[-0.025em] text-[#73747b] [@keyframes_kivoThinkingIn]:from{opacity:0;transform:translateY(3px)} [@keyframes_kivoThinkingIn]:to{opacity:1;transform:translateY(0)]" aria-label="Kivo is thinking">
       Kivo is thinking ...
     </p>
   );
@@ -180,11 +180,30 @@ function shouldShowExecutionSteps(message: KivoChatMessage) {
 
 export function KivoChatMessages({ messages, loading }: any) {
   const [openDoc, setOpenDoc] = useState<any>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const previousContentLengthRef = useRef(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    const latestMessage = messages[messages.length - 1];
+    const latestContentLength = latestMessage?.content?.length ?? 0;
+    const contentGrew = latestContentLength !== previousContentLengthRef.current;
+    previousContentLengthRef.current = latestContentLength;
+
+    if (!el || !contentGrew) return;
+
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const isNearBottom = distanceFromBottom < 96;
+
+    if (isNearBottom) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages]);
 
   if (messages.length === 0) return null;
 
   return (
-    <div className="absolute inset-x-0 top-[94px] bottom-[142px] z-10 overflow-y-auto px-[18px] pb-[24px] pt-[12px] overscroll-contain">
+    <div ref={scrollRef} className="absolute inset-x-0 top-[94px] bottom-[142px] z-10 overflow-y-auto px-[18px] pb-[24px] pt-[12px] overscroll-contain">
       <div className="mx-auto flex w-full max-w-[430px] flex-col gap-[26px]">
         {messages.map((message: KivoChatMessage, index: number) => {
           const isUser = message.role === 'user';
