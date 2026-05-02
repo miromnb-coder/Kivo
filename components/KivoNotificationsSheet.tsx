@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { BarChart3, Bell, ChevronLeft, Code2, MessageCircle, Sparkles, Zap } from 'lucide-react';
 
-const FEATURE_IMAGE_SRC = '/notifications/kivo-email-calendar.PNG';
+const FEATURE_IMAGE_SRC = '/notifications/kivo-email-calendar.jpg';
 
 const notifications = [
   {
