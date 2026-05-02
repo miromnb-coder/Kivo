@@ -15,13 +15,10 @@ export function selectModel(input: KivoModelInput): KivoModelId {
 export async function runKivoModel(input: KivoModelInput): Promise<KivoModelResult> {
   const model = selectModel(input);
 
-  if (model === 'groq:fast') {
-    return runGroq(input);
-  }
+  if (model === 'groq:fast') return runGroq({ ...input, forceModel: 'groq:fast' });
+  if (model === 'groq:compound') return runGroq({ ...input, forceModel: 'groq:compound' });
 
-  if (model === 'openai:gpt-5.4-mini') {
-    return runOpenAI(input);
-  }
+  if (model === 'openai:gpt-5.4-mini') return runOpenAI(input);
 
   throw new Error(`Unknown model: ${model}`);
 }
