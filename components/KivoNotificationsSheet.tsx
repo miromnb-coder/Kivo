@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { BarChart3, Bell, ChevronLeft, Code2, MessageCircle, Sparkles, Zap } from 'lucide-react';
 
+const FEATURE_IMAGE_SRC = '/notifications/kivo-email-calendar.PNG';
+
 const notifications = [
   {
     group: 'Today',
@@ -60,7 +62,7 @@ export function KivoNotificationsSheet() {
               className="block w-full overflow-hidden rounded-[24px] bg-white text-left shadow-[0_18px_55px_rgba(15,23,42,0.055)] ring-1 ring-black/[0.035] transition active:scale-[0.992]"
             >
               <img
-                src="/notifications/kivo-email-calendar.png"
+                src={FEATURE_IMAGE_SRC}
                 alt="Connect your email and calendar to Kivo"
                 className="block h-auto w-full"
               />
