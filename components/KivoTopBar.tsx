@@ -5,7 +5,11 @@ import { useState } from 'react';
 import { Bell, ChevronDown, Menu, UserRound } from 'lucide-react';
 import { KivoAgentSelector } from './KivoAgentSelector';
 
-export function KivoTopBar() {
+type KivoTopBarProps = {
+  onOpenMenu?: () => void;
+};
+
+export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
   const [agentOpen, setAgentOpen] = useState(false);
 
   return (
@@ -14,6 +18,7 @@ export function KivoTopBar() {
         <button
           type="button"
           aria-label="Open menu"
+          onClick={onOpenMenu}
           className="flex h-[40px] w-[40px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]"
         >
           <Menu size={31} strokeWidth={2.25} />
@@ -30,19 +35,10 @@ export function KivoTopBar() {
         </button>
 
         <div className="flex h-[40px] items-center gap-[14px]">
-          <Link
-            href="/notifications"
-            aria-label="Open notifications"
-            className="relative flex h-[40px] w-[40px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]"
-          >
+          <Link href="/notifications" aria-label="Open notifications" className="relative flex h-[40px] w-[40px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]">
             <Bell size={29} strokeWidth={1.95} />
           </Link>
-
-          <Link
-            href="/profile"
-            aria-label="Open profile"
-            className="flex h-[40px] w-[40px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]"
-          >
+          <Link href="/profile" aria-label="Open profile" className="flex h-[40px] w-[40px] items-center justify-center rounded-full text-[#202124] transition active:scale-[0.96]">
             <UserRound size={29} strokeWidth={1.95} />
           </Link>
         </div>
