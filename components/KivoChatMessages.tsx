@@ -7,6 +7,7 @@ import { KivoDocumentCard } from './KivoDocumentCard';
 import { KivoExecutionSteps } from './KivoExecutionSteps';
 import { KivoDocumentScreen } from './KivoDocumentScreen';
 import { KivoMiniBrowserPreview } from './KivoMiniBrowserPreview';
+import { createSupabaseBrowser } from '@/lib/supabase/client';
 
 export type KivoChatMessage = {
   id: string;
@@ -196,9 +197,10 @@ function KivoMarkdown({ content, streaming = false }: { content: string; streami
 
 function KivoAssistantHeader() { return <div className="mb-[12px] flex items-center gap-[8px] text-[#202024]"><span className="flex h-[24px] w-[24px] items-center justify-center text-[20px] leading-none" aria-hidden="true">✦</span><span className="font-serif text-[28px] font-semibold leading-none tracking-[-0.045em]">kivo</span></div>; }
 
-function KivoAssistantActions({ content, disabled = false }: { content: string; disabled?: boolean }) {
+function KivoAssistantActions({ messageId, content, disabled = false }: { messageId: string; content: string; disabled?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+  const [feedbackSaved, setFeedbackSaved] = useState(false);
 
   async function copyResponse() {
     if (!content.trim()) return;
@@ -215,6 +217,32 @@ function KivoAssistantActions({ content, disabled = false }: { content: string; 
     const utterance = new SpeechSynthesisUtterance(content);
     utterance.rate = 0.96;
     window.speechSynthesis.speak(utterance);
+  }
+
+  async function saveFeedback(nextFeedback: 'up' | 'down') {
+    if (disabled) return;
+    const nextValue = feedback === nextFeedback ? null : nextFeedback;
+    setFeedback(nextValue);
+    setFeedbackSaved(false);
+
+    if (!nextValue) return;
+
+    try {
+      const supabase = createSupabaseBrowser();
+      const { data } = await supabase.auth.getUser();
+      const { error } = await supabase.from('kivo_response_feedback').insert({
+        user_id: data.user?.id ?? null,
+        message_id: messageId,
+        feedback: nextValue,
+        content_preview: content.slice(0, 500),
+      });
+
+      if (error) throw error;
+      setFeedbackSaved(true);
+      window.setTimeout(() => setFeedbackSaved(false), 1300);
+    } catch (error) {
+      console.warn('Could not save Kivo feedback.', error);
+    }
   }
 
   async function shareResponse() {
@@ -240,10 +268,10 @@ function KivoAssistantActions({ content, disabled = false }: { content: string; 
       <button type="button" aria-label="Read response aloud" title="Read aloud" onClick={readResponse} disabled={disabled || !content.trim()} className={baseButtonClass}>
         <Volume2 className="h-[20px] w-[20px]" strokeWidth={2.05} />
       </button>
-      <button type="button" aria-label="Good response" title="Good response" onClick={() => setFeedback((current) => (current === 'up' ? null : 'up'))} disabled={disabled} className={`${baseButtonClass} ${feedback === 'up' ? 'bg-black/[0.06] text-[#202024]' : ''}`}>
+      <button type="button" aria-label="Good response" title="Good response" onClick={() => saveFeedback('up')} disabled={disabled} className={`${baseButtonClass} ${feedback === 'up' ? 'bg-black/[0.06] text-[#202024]' : ''}`}>
         <ThumbsUp className="h-[20px] w-[20px]" strokeWidth={2.05} />
       </button>
-      <button type="button" aria-label="Bad response" title="Bad response" onClick={() => setFeedback((current) => (current === 'down' ? null : 'down'))} disabled={disabled} className={`${baseButtonClass} ${feedback === 'down' ? 'bg-black/[0.06] text-[#202024]' : ''}`}>
+      <button type="button" aria-label="Bad response" title="Bad response" onClick={() => saveFeedback('down')} disabled={disabled} className={`${baseButtonClass} ${feedback === 'down' ? 'bg-black/[0.06] text-[#202024]' : ''}`}>
         <ThumbsDown className="h-[20px] w-[20px]" strokeWidth={2.05} />
       </button>
       <button type="button" aria-label="Share response" title="Share" onClick={shareResponse} disabled={disabled || !content.trim()} className={baseButtonClass}>
@@ -253,6 +281,7 @@ function KivoAssistantActions({ content, disabled = false }: { content: string; 
         <MoreHorizontal className="h-[22px] w-[22px]" strokeWidth={2.05} />
       </button>
       {copied ? <span className="ml-[2px] text-[12px] font-medium tracking-[-0.02em] text-[#8b8c92]">Copied</span> : null}
+      {feedbackSaved ? <span className="ml-[2px] text-[12px] font-medium tracking-[-0.02em] text-[#8b8c92]">Saved</span> : null}
     </div>
   );
 }
@@ -319,5 +348,5 @@ export function KivoChatMessages({ messages, loading }: any) {
   }, [messages]);
 
   if (messages.length === 0) return null;
-  return <div className="absolute inset-x-0 top-[94px] bottom-[142px] z-10"><div ref={scrollRef} className="h-full overflow-y-auto px-[18px] pb-[24px] pt-[12px] overscroll-contain"><div className="mx-auto flex w-full max-w-[430px] flex-col gap-[26px]">{messages.map((message: KivoChatMessage, index: number) => { const isUser = message.role === 'user'; if (isUser) return <div key={message.id} className="flex justify-end"><div className="max-w-[78%] rounded-[18px] bg-white px-[18px] py-[11px] text-[17px] leading-[1.35] tracking-[-0.025em] text-[#202024] shadow-[0_1px_0_rgba(0,0,0,0.025)]">{message.content}</div></div>; const isLatestMessage = index === messages.length - 1; const isActiveAssistant = loading && isLatestMessage && !message.error; const isThinking = isActiveAssistant && !message.content; const isStreaming = isActiveAssistant && Boolean(message.content); const showExecutionSteps = shouldShowExecutionSteps(message); return <div key={message.id} className="flex justify-start"><div className="w-full px-[8px] py-[2px]"><KivoAssistantHeader /><KivoDocumentCard document={message.structuredData?.documentCard} onOpen={(doc) => setOpenDoc(doc)} /><KivoMiniBrowserPreview preview={message.browserPreview} />{showExecutionSteps ? <KivoExecutionSteps steps={message.steps} /> : null}{isThinking ? <KivoThinkingState /> : null}{message.content ? <KivoMarkdown content={message.content} streaming={isStreaming} /> : null}<KivoMiniTable table={message.structuredData?.miniTable} />{message.error ? <div className="mt-[12px] rounded-[16px] bg-[#f4f4f5] px-[13px] py-[10px] text-[14px] tracking-[-0.02em] text-[#6f7077]">{message.error}</div> : null}{message.content || message.error ? <KivoAssistantActions content={message.content || message.error || ''} disabled={isActiveAssistant} /> : null}</div></div>; })}</div></div><ScrollToBottomButton visible={showScrollButton} onClick={() => scrollToBottom('smooth')} />{openDoc ? <KivoDocumentScreen document={openDoc} onClose={() => setOpenDoc(null)} /> : null}</div>;
+  return <div className="absolute inset-x-0 top-[94px] bottom-[142px] z-10"><div ref={scrollRef} className="h-full overflow-y-auto px-[18px] pb-[24px] pt-[12px] overscroll-contain"><div className="mx-auto flex w-full max-w-[430px] flex-col gap-[26px]">{messages.map((message: KivoChatMessage, index: number) => { const isUser = message.role === 'user'; if (isUser) return <div key={message.id} className="flex justify-end"><div className="max-w-[78%] rounded-[18px] bg-white px-[18px] py-[11px] text-[17px] leading-[1.35] tracking-[-0.025em] text-[#202024] shadow-[0_1px_0_rgba(0,0,0,0.025)]">{message.content}</div></div>; const isLatestMessage = index === messages.length - 1; const isActiveAssistant = loading && isLatestMessage && !message.error; const isThinking = isActiveAssistant && !message.content; const isStreaming = isActiveAssistant && Boolean(message.content); const showExecutionSteps = shouldShowExecutionSteps(message); return <div key={message.id} className="flex justify-start"><div className="w-full px-[8px] py-[2px]"><KivoAssistantHeader /><KivoDocumentCard document={message.structuredData?.documentCard} onOpen={(doc) => setOpenDoc(doc)} /><KivoMiniBrowserPreview preview={message.browserPreview} />{showExecutionSteps ? <KivoExecutionSteps steps={message.steps} /> : null}{isThinking ? <KivoThinkingState /> : null}{message.content ? <KivoMarkdown content={message.content} streaming={isStreaming} /> : null}<KivoMiniTable table={message.structuredData?.miniTable} />{message.error ? <div className="mt-[12px] rounded-[16px] bg-[#f4f4f5] px-[13px] py-[10px] text-[14px] tracking-[-0.02em] text-[#6f7077]">{message.error}</div> : null}{message.content || message.error ? <KivoAssistantActions messageId={message.id} content={message.content || message.error || ''} disabled={isActiveAssistant} /> : null}</div></div>; })}</div></div><ScrollToBottomButton visible={showScrollButton} onClick={() => scrollToBottom('smooth')} />{openDoc ? <KivoDocumentScreen document={openDoc} onClose={() => setOpenDoc(null)} /> : null}</div>;
 }
