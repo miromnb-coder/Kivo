@@ -26,6 +26,8 @@ type GmailIntegration = {
   expires_at: string | null;
 };
 
+const GMAIL_PROVIDER_KEYS = ['gmail', 'google_gmail', 'google_mail', 'email'];
+
 function classifyMessages(messages: GmailMessageSummary[]) {
   const importantKeywords = ['invoice', 'bill', 'receipt', 'payment', 'subscription', 'renewal', 'security', 'alert', 'verify', 'lasku', 'maksu', 'turvallisuus'];
   const billKeywords = ['invoice', 'bill', 'payment', 'receipt', 'subscription', 'renewal', 'lasku', 'maksu'];
@@ -71,6 +73,36 @@ function buildGmailInsight(messages: GmailMessageSummary[], important: GmailMess
 function tokenNeedsRefresh(expiresAt: string | null) {
   if (!expiresAt) return false;
   return new Date(expiresAt).getTime() <= Date.now() + 60_000;
+}
+
+async function findGmailIntegration(userId: string): Promise<GmailIntegration | null> {
+  const supabase = createSupabaseServer();
+
+  const exact = await supabase
+    .from('kivo_integrations')
+    .select('id, access_token, refresh_token, expires_at')
+    .eq('user_id', userId)
+    .in('provider', GMAIL_PROVIDER_KEYS)
+    .not('access_token', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (exact.data?.access_token) return exact.data as GmailIntegration;
+
+  // Safe fallback for older Google connect flows that stored one shared Google row.
+  // Calendar already has fallback behavior, but Gmail previously did not.
+  const googleFallback = await supabase
+    .from('kivo_integrations')
+    .select('id, access_token, refresh_token, expires_at')
+    .eq('user_id', userId)
+    .eq('provider', 'google')
+    .not('access_token', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return (googleFallback.data as GmailIntegration | null) ?? null;
 }
 
 async function refreshGmailAccessToken(integration: GmailIntegration): Promise<string | null> {
@@ -140,14 +172,7 @@ export async function runGmailTool(userId?: string): Promise<GmailToolResult> {
     return { connected: false, messages: [], important: [], bills: [], lowPriority: [], error: 'User not signed in' };
   }
 
-  const { data } = await createSupabaseServer()
-    .from('kivo_integrations')
-    .select('id, access_token, refresh_token, expires_at')
-    .eq('user_id', userId)
-    .eq('provider', 'gmail')
-    .maybeSingle();
-
-  const integration = data as GmailIntegration | null;
+  const integration = await findGmailIntegration(userId);
 
   if (!integration?.access_token) {
     return { connected: false, messages: [], important: [], bills: [], lowPriority: [] };
