@@ -44,6 +44,8 @@ type KivoSidebarOverlayProps = {
   onDeleteConversation: (conversationId: string) => void;
 };
 
+type DragMode = 'idle' | 'horizontal' | 'vertical';
+
 function SidebarItem({ icon, label, badge }: { icon: ReactNode; label: string; badge?: string }) {
   return (
     <button type="button" className="flex h-[39px] w-full items-center gap-[18px] rounded-[14px] px-[6px] text-left text-[16px] tracking-[-0.025em] text-[#17181b] active:scale-[0.99]">
@@ -84,7 +86,9 @@ export function KivoSidebarOverlay({
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartXRef = useRef(0);
+  const dragStartYRef = useRef(0);
   const dragStartTimeRef = useRef(0);
+  const dragModeRef = useRef<DragMode>('idle');
 
   const visibleConversations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -124,26 +128,51 @@ export function KivoSidebarOverlay({
   }
 
   function handlePointerDown(event: PointerEvent<HTMLElement>) {
-    setIsDragging(true);
     dragStartXRef.current = event.clientX;
+    dragStartYRef.current = event.clientY;
     dragStartTimeRef.current = Date.now();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    dragModeRef.current = 'idle';
+    setIsDragging(true);
   }
 
   function handlePointerMove(event: PointerEvent<HTMLElement>) {
     if (!isDragging) return;
-    const delta = event.clientX - dragStartXRef.current;
-    setDragX(Math.min(0, delta));
+
+    const deltaX = event.clientX - dragStartXRef.current;
+    const deltaY = event.clientY - dragStartYRef.current;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (dragModeRef.current === 'idle') {
+      if (absY > 10 && absY > absX * 1.15) {
+        dragModeRef.current = 'vertical';
+        setDragX(0);
+        return;
+      }
+
+      if (deltaX < -18 && absX > absY * 1.45) {
+        dragModeRef.current = 'horizontal';
+      }
+    }
+
+    if (dragModeRef.current !== 'horizontal') return;
+
+    event.preventDefault();
+    setDragX(Math.min(0, deltaX));
   }
 
   function handlePointerUp(event: PointerEvent<HTMLElement>) {
     if (!isDragging) return;
-    const delta = event.clientX - dragStartXRef.current;
-    const elapsed = Math.max(1, Date.now() - dragStartTimeRef.current);
-    const velocity = delta / elapsed;
-    setIsDragging(false);
 
-    if (delta < -96 || velocity < -0.55) {
+    const deltaX = event.clientX - dragStartXRef.current;
+    const elapsed = Math.max(1, Date.now() - dragStartTimeRef.current);
+    const velocity = deltaX / elapsed;
+    const shouldClose = dragModeRef.current === 'horizontal' && (deltaX < -128 || velocity < -0.78);
+
+    setIsDragging(false);
+    dragModeRef.current = 'idle';
+
+    if (shouldClose) {
       setDragX(-420);
       window.setTimeout(() => {
         setDragX(0);
