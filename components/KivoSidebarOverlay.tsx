@@ -295,7 +295,7 @@ export function KivoSidebarOverlay({
           </section>
         </div>
 
-        <div className="shrink-0 px-[28px] pb-[calc(env(safe-area-inset-bottom)+28px)]">
+        <div className="shrink-0 px-[28px] pb-[calc(env(safe-area-inset-bottom)+8px)]">
           <button type="button" className="flex h-[52px] w-full items-center gap-[13px] rounded-[16px] bg-white/80 px-[16px] text-left shadow-[0_10px_28px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.045] active:scale-[0.99]">
             <span className="flex h-[29px] w-[29px] items-center justify-center text-[#111114]"><Gift size={23} strokeWidth={1.9} /></span>
             <span className="min-w-0 flex-1"><span className="block truncate text-[14.5px] font-medium tracking-[-0.025em] text-[#111114]">Invite friends to Kivo</span><span className="block truncate text-[12.5px] tracking-[-0.02em] text-[#8d8e95]">Get 500 credits each</span></span>
