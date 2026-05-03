@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowDown } from 'lucide-react';
 import { KivoMiniTable } from './KivoMiniTable';
 import { KivoDocumentCard } from './KivoDocumentCard';
 import { KivoExecutionSteps } from './KivoExecutionSteps';
@@ -203,11 +204,59 @@ function KivoThinkingState() {
 
 function shouldShowExecutionSteps(message: KivoChatMessage) { return Boolean(message.browserPreview || message.structuredData?.showExecutionSteps || message.structuredData?.documentCard); }
 
+function ScrollToBottomButton({ visible, onClick }: { visible: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="Scroll to latest message"
+      onClick={onClick}
+      className={`absolute bottom-[118px] right-[24px] z-30 flex h-[46px] w-[46px] items-center justify-center rounded-full border border-black/[0.08] bg-white/85 text-[#202024] shadow-[0_14px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl transition duration-200 active:scale-95 ${visible ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-2 scale-95 opacity-0'}`}
+    >
+      <ArrowDown className="h-[21px] w-[21px]" strokeWidth={2.35} />
+    </button>
+  );
+}
+
 export function KivoChatMessages({ messages, loading }: any) {
   const [openDoc, setOpenDoc] = useState<any>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const previousContentLengthRef = useRef(0);
-  useEffect(() => { const el = scrollRef.current; const latestMessage = messages[messages.length - 1]; const latestContentLength = latestMessage?.content?.length ?? 0; const contentGrew = latestContentLength !== previousContentLengthRef.current; previousContentLengthRef.current = latestContentLength; if (!el || !contentGrew) return; const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight; if (distanceFromBottom < 96) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); }, [messages]);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+    setShowScrollButton(false);
+  };
+
+  const updateScrollButton = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollButton(distanceFromBottom > 120);
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateScrollButton();
+    el.addEventListener('scroll', updateScrollButton, { passive: true });
+    return () => el.removeEventListener('scroll', updateScrollButton);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    const latestMessage = messages[messages.length - 1];
+    const latestContentLength = latestMessage?.content?.length ?? 0;
+    const contentGrew = latestContentLength !== previousContentLengthRef.current;
+    previousContentLengthRef.current = latestContentLength;
+    if (!el || !contentGrew) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom < 140) scrollToBottom('smooth');
+    else setShowScrollButton(true);
+  }, [messages]);
+
   if (messages.length === 0) return null;
-  return <div ref={scrollRef} className="absolute inset-x-0 top-[94px] bottom-[142px] z-10 overflow-y-auto px-[18px] pb-[24px] pt-[12px] overscroll-contain"><div className="mx-auto flex w-full max-w-[430px] flex-col gap-[26px]">{messages.map((message: KivoChatMessage, index: number) => { const isUser = message.role === 'user'; if (isUser) return <div key={message.id} className="flex justify-end"><div className="max-w-[78%] rounded-[18px] bg-white px-[18px] py-[11px] text-[17px] leading-[1.35] tracking-[-0.025em] text-[#202024] shadow-[0_1px_0_rgba(0,0,0,0.025)]">{message.content}</div></div>; const isLatestMessage = index === messages.length - 1; const isActiveAssistant = loading && isLatestMessage && !message.error; const isThinking = isActiveAssistant && !message.content; const isStreaming = isActiveAssistant && Boolean(message.content); const showExecutionSteps = shouldShowExecutionSteps(message); return <div key={message.id} className="flex justify-start"><div className="w-full px-[8px] py-[2px]"><KivoAssistantHeader /><KivoDocumentCard document={message.structuredData?.documentCard} onOpen={(doc) => setOpenDoc(doc)} /><KivoMiniBrowserPreview preview={message.browserPreview} />{showExecutionSteps ? <KivoExecutionSteps steps={message.steps} /> : null}{isThinking ? <KivoThinkingState /> : null}{message.content ? <KivoMarkdown content={message.content} streaming={isStreaming} /> : null}<KivoMiniTable table={message.structuredData?.miniTable} />{message.error ? <div className="mt-[12px] rounded-[16px] bg-[#f4f4f5] px-[13px] py-[10px] text-[14px] tracking-[-0.02em] text-[#6f7077]">{message.error}</div> : null}</div></div>; })}</div>{openDoc ? <KivoDocumentScreen document={openDoc} onClose={() => setOpenDoc(null)} /> : null}</div>;
+  return <div className="absolute inset-x-0 top-[94px] bottom-[142px] z-10"><div ref={scrollRef} className="h-full overflow-y-auto px-[18px] pb-[24px] pt-[12px] overscroll-contain"><div className="mx-auto flex w-full max-w-[430px] flex-col gap-[26px]">{messages.map((message: KivoChatMessage, index: number) => { const isUser = message.role === 'user'; if (isUser) return <div key={message.id} className="flex justify-end"><div className="max-w-[78%] rounded-[18px] bg-white px-[18px] py-[11px] text-[17px] leading-[1.35] tracking-[-0.025em] text-[#202024] shadow-[0_1px_0_rgba(0,0,0,0.025)]">{message.content}</div></div>; const isLatestMessage = index === messages.length - 1; const isActiveAssistant = loading && isLatestMessage && !message.error; const isThinking = isActiveAssistant && !message.content; const isStreaming = isActiveAssistant && Boolean(message.content); const showExecutionSteps = shouldShowExecutionSteps(message); return <div key={message.id} className="flex justify-start"><div className="w-full px-[8px] py-[2px]"><KivoAssistantHeader /><KivoDocumentCard document={message.structuredData?.documentCard} onOpen={(doc) => setOpenDoc(doc)} /><KivoMiniBrowserPreview preview={message.browserPreview} />{showExecutionSteps ? <KivoExecutionSteps steps={message.steps} /> : null}{isThinking ? <KivoThinkingState /> : null}{message.content ? <KivoMarkdown content={message.content} streaming={isStreaming} /> : null}<KivoMiniTable table={message.structuredData?.miniTable} />{message.error ? <div className="mt-[12px] rounded-[16px] bg-[#f4f4f5] px-[13px] py-[10px] text-[14px] tracking-[-0.02em] text-[#6f7077]">{message.error}</div> : null}</div></div>; })}</div></div><ScrollToBottomButton visible={showScrollButton} onClick={() => scrollToBottom('smooth')} />{openDoc ? <KivoDocumentScreen document={openDoc} onClose={() => setOpenDoc(null)} /> : null}</div>;
 }
