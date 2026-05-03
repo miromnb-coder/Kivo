@@ -17,7 +17,6 @@ import {
   Sparkles,
   Trash2,
   Wrench,
-  X,
 } from 'lucide-react';
 
 export type SidebarFilter = 'all' | 'favorites' | 'scheduled';
@@ -47,18 +46,18 @@ type KivoSidebarOverlayProps = {
 
 function SidebarItem({ icon, label, badge }: { icon: ReactNode; label: string; badge?: string }) {
   return (
-    <button type="button" className="flex h-[40px] w-full items-center gap-[18px] rounded-[14px] px-[6px] text-left text-[17px] tracking-[-0.025em] text-[#17181b] active:scale-[0.99]">
-      <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center text-[#6d6e74]">{icon}</span>
+    <button type="button" className="flex h-[39px] w-full items-center gap-[18px] rounded-[14px] px-[6px] text-left text-[16px] tracking-[-0.025em] text-[#17181b] active:scale-[0.99]">
+      <span className="flex h-[25px] w-[25px] shrink-0 items-center justify-center text-[#6d6e74]">{icon}</span>
       <span className="flex-1">{label}</span>
-      {badge ? <span className="flex h-[30px] min-w-[30px] items-center justify-center rounded-full bg-[#efeff1] px-[9px] text-[16px] text-[#1f2023]">{badge}</span> : null}
+      {badge ? <span className="flex h-[29px] min-w-[29px] items-center justify-center rounded-full bg-[#efeff1] px-[9px] text-[15px] text-[#1f2023]">{badge}</span> : null}
     </button>
   );
 }
 
 function BottomNavItem({ icon, label, active = false }: { icon: ReactNode; label: string; active?: boolean }) {
   return (
-    <button type="button" className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-[3px] text-[11px] tracking-[-0.02em] ${active ? 'text-[#111114]' : 'text-[#606168]'}`}>
-      <span className="flex h-[28px] items-center justify-center">{icon}</span>
+    <button type="button" className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] text-[10.5px] tracking-[-0.02em] ${active ? 'text-[#111114]' : 'text-[#606168]'}`}>
+      <span className="flex h-[25px] items-center justify-center">{icon}</span>
       <span>{label}</span>
     </button>
   );
@@ -127,91 +126,81 @@ export function KivoSidebarOverlay({
       <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 bg-black/22 backdrop-blur-[7px]" />
 
       <aside className="absolute left-0 top-0 flex h-full w-[82%] max-w-[390px] flex-col overflow-hidden rounded-r-[30px] bg-white/92 shadow-[22px_0_70px_rgba(15,23,42,0.16)] backdrop-blur-2xl">
-        <div className="flex shrink-0 items-center justify-between px-[22px] pt-[calc(env(safe-area-inset-top)+22px)]">
-          <div className="flex items-center gap-[13px]">
-            <div className="flex h-[48px] w-[48px] items-center justify-center rounded-[14px] bg-black text-white shadow-[0_8px_18px_rgba(0,0,0,0.1)]">
-              <Sparkles size={25} fill="white" strokeWidth={2.3} />
-            </div>
-            <span className="text-[25px] font-semibold leading-none tracking-[-0.055em] text-[#111114]">Kivo</span>
-          </div>
+        <div className="flex shrink-0 items-center justify-between px-[28px] pt-[calc(env(safe-area-inset-top)+44px)]">
+          <span className="text-[24px] font-semibold leading-none tracking-[-0.055em] text-[#111114]">Kivo</span>
 
-          <div className="flex items-center gap-[18px]">
-            <div className="flex h-[38px] items-center gap-[8px] rounded-full bg-white/85 px-[16px] text-[16px] font-medium tracking-[-0.025em] text-[#202024] shadow-[0_1px_0_rgba(0,0,0,0.04)] ring-1 ring-black/[0.035]">
-              <Sparkles size={16} strokeWidth={2.2} />
-              <span>226</span>
-            </div>
-            <button type="button" onClick={onClose} aria-label="Close menu" className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-white/80 text-[#111114] shadow-[0_1px_0_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] active:scale-[0.96]">
-              <X size={24} strokeWidth={2.2} />
-            </button>
+          <div className="flex h-[36px] items-center gap-[8px] rounded-full bg-white/85 px-[16px] text-[15.5px] font-semibold tracking-[-0.025em] text-[#202024] shadow-[0_1px_0_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04]">
+            <Sparkles size={15} strokeWidth={2.2} />
+            <span>226</span>
           </div>
         </div>
 
-        <div className="mt-[22px] px-[22px]">
-          <label className="flex h-[54px] items-center gap-[14px] rounded-[18px] bg-white/88 px-[16px] text-[17px] tracking-[-0.025em] text-[#8e9097] shadow-[0_1px_0_rgba(0,0,0,0.035)] ring-1 ring-black/[0.035]">
-            <Search size={25} strokeWidth={2.1} className="shrink-0 text-[#202024]" />
-            <input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search conversations" className="min-w-0 flex-1 bg-transparent text-[17px] tracking-[-0.025em] text-[#202024] outline-none placeholder:text-[#8e9097]" />
+        <div className="mt-[26px] px-[28px]">
+          <label className="flex h-[50px] items-center gap-[13px] rounded-[16px] bg-white/88 px-[14px] text-[16px] tracking-[-0.025em] text-[#8e9097] shadow-[0_1px_0_rgba(0,0,0,0.035)] ring-1 ring-black/[0.035]">
+            <Search size={23} strokeWidth={2.1} className="shrink-0 text-[#202024]" />
+            <input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search conversations" className="min-w-0 flex-1 bg-transparent text-[16px] tracking-[-0.025em] text-[#202024] outline-none placeholder:text-[#8e9097]" />
           </label>
         </div>
 
-        <div className="mt-[14px] px-[22px]">
-          <button type="button" onClick={onNewChat} className="flex h-[54px] w-full items-center rounded-[18px] bg-white/88 px-[18px] text-left text-[17px] tracking-[-0.025em] text-[#111114] shadow-[0_1px_0_rgba(0,0,0,0.035)] ring-1 ring-black/[0.035] active:scale-[0.99]">
-            <span className="mr-[16px] text-[29px] font-light leading-none">+</span>
+        <div className="mt-[14px] px-[28px]">
+          <button type="button" onClick={onNewChat} className="flex h-[50px] w-full items-center rounded-[16px] bg-white/88 px-[16px] text-left text-[16px] tracking-[-0.025em] text-[#111114] shadow-[0_1px_0_rgba(0,0,0,0.035)] ring-1 ring-black/[0.035] active:scale-[0.99]">
+            <span className="mr-[15px] text-[27px] font-light leading-none">+</span>
             <span className="flex-1">New chat</span>
-            <span className="mr-[5px] rounded-[9px] bg-[#eeeef1] px-[8px] py-[5px] text-[14px] text-[#606168]">⌘</span>
-            <span className="rounded-[9px] bg-[#eeeef1] px-[8px] py-[5px] text-[14px] text-[#606168]">K</span>
+            <span className="mr-[5px] rounded-[9px] bg-[#eeeef1] px-[8px] py-[4px] text-[13px] text-[#606168]">⌘</span>
+            <span className="rounded-[9px] bg-[#eeeef1] px-[8px] py-[4px] text-[13px] text-[#606168]">K</span>
           </button>
         </div>
 
-        <div className="mt-[14px] flex shrink-0 gap-[8px] px-[22px]">
+        <div className="mt-[14px] flex shrink-0 gap-[8px] px-[28px]">
           {(['all', 'favorites', 'scheduled'] as SidebarFilter[]).map((item) => (
-            <button key={item} type="button" onClick={() => onFilterChange(item)} className={`h-[36px] rounded-full px-[18px] text-[15px] capitalize ${filter === item ? 'bg-black text-white' : 'bg-white/55 text-[#77787f] ring-1 ring-black/[0.06]'}`}>{item}</button>
+            <button key={item} type="button" onClick={() => onFilterChange(item)} className={`h-[34px] rounded-full px-[17px] text-[14px] capitalize ${filter === item ? 'bg-black text-white' : 'bg-white/55 text-[#77787f] ring-1 ring-black/[0.06]'}`}>{item}</button>
           ))}
         </div>
 
-        <div className="mx-[22px] mt-[20px] h-px shrink-0 bg-black/[0.07]" />
+        <div className="mx-[28px] mt-[19px] h-px shrink-0 bg-black/[0.07]" />
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-[22px] pb-[12px] pt-[16px]">
-          <div className="space-y-[8px]">
-            <SidebarItem icon={<MessageCircle size={24} strokeWidth={1.9} />} label="Chat" />
-            <SidebarItem icon={<Bot size={24} strokeWidth={1.9} />} label="Agents" />
-            <SidebarItem icon={<SlidersHorizontal size={24} strokeWidth={1.9} />} label="Tools" />
-            <SidebarItem icon={<Bell size={25} strokeWidth={1.9} />} label="Notifications" badge="3" />
+        <div className="min-h-0 flex-1 overflow-y-auto px-[28px] pb-[12px] pt-[14px]">
+          <div className="space-y-[7px]">
+            <SidebarItem icon={<MessageCircle size={23} strokeWidth={1.9} />} label="Chat" />
+            <SidebarItem icon={<Bot size={23} strokeWidth={1.9} />} label="Agents" />
+            <SidebarItem icon={<SlidersHorizontal size={23} strokeWidth={1.9} />} label="Tools" />
+            <SidebarItem icon={<Bell size={24} strokeWidth={1.9} />} label="Notifications" badge="3" />
           </div>
 
-          <div className="mt-[18px] h-px bg-black/[0.07]" />
+          <div className="mt-[17px] h-px bg-black/[0.07]" />
 
-          <section className="mt-[16px]">
-            <h3 className="mb-[10px] text-[13px] font-semibold uppercase tracking-[0.09em] text-[#8b8c92]">Projects</h3>
+          <section className="mt-[15px]">
+            <h3 className="mb-[9px] text-[12px] font-semibold uppercase tracking-[0.14em] text-[#8b8c92]">Projects</h3>
             <div className="space-y-[4px]">
-              <SidebarItem icon={<FolderPlus size={23} strokeWidth={1.85} />} label="New project" />
-              <button type="button" className="flex h-[44px] w-full items-center gap-[18px] rounded-[13px] bg-black/[0.045] px-[6px] text-left text-[16px] tracking-[-0.025em] text-[#17181b]">
-                <span className="flex h-[26px] w-[26px] items-center justify-center text-[#56575d]"><Folder size={24} strokeWidth={1.85} /></span>
+              <SidebarItem icon={<FolderPlus size={22} strokeWidth={1.85} />} label="New project" />
+              <button type="button" className="flex h-[41px] w-full items-center gap-[18px] rounded-[13px] bg-black/[0.045] px-[6px] text-left text-[16px] tracking-[-0.025em] text-[#17181b]">
+                <span className="flex h-[25px] w-[25px] items-center justify-center text-[#56575d]"><Folder size={23} strokeWidth={1.85} /></span>
                 <span>Kivo new</span>
               </button>
-              <SidebarItem icon={<Folder size={23} strokeWidth={1.85} />} label="Kivo" />
+              <SidebarItem icon={<Folder size={22} strokeWidth={1.85} />} label="Kivo" />
             </div>
           </section>
 
-          <div className="mt-[16px] h-px bg-black/[0.07]" />
+          <div className="mt-[15px] h-px bg-black/[0.07]" />
 
-          <section className="mt-[16px]">
-            <h3 className="mb-[10px] text-[13px] font-semibold uppercase tracking-[0.09em] text-[#8b8c92]">Recent conversations</h3>
+          <section className="mt-[15px]">
+            <h3 className="mb-[9px] text-[12px] font-semibold uppercase tracking-[0.14em] text-[#8b8c92]">Recent conversations</h3>
             {visibleConversations.length ? (
-              <div className="space-y-[7px]">
+              <div className="space-y-[6px]">
                 {visibleConversations.map((conversation) => {
                   const active = conversation.id === activeConversationId;
                   const menuOpen = menuConversationId === conversation.id;
                   return (
-                    <div key={conversation.id} className={`relative flex h-[34px] items-center rounded-[10px] px-[4px] ${active ? 'bg-black/[0.045]' : ''}`}>
-                      <button type="button" onClick={() => onOpenConversation(conversation.id)} className="flex min-w-0 flex-1 items-center gap-[14px] text-left text-[14px] tracking-[-0.025em] text-[#17181b]">
-                        <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center text-[#707177]"><MessageCircle size={16} strokeWidth={1.8} /></span>
+                    <div key={conversation.id} className={`relative flex h-[32px] items-center rounded-[10px] px-[4px] ${active ? 'bg-black/[0.045]' : ''}`}>
+                      <button type="button" onClick={() => onOpenConversation(conversation.id)} className="flex min-w-0 flex-1 items-center gap-[13px] text-left text-[13.5px] tracking-[-0.025em] text-[#17181b]">
+                        <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center text-[#707177]"><MessageCircle size={15} strokeWidth={1.8} /></span>
                         <span className="truncate">{conversation.title}</span>
                       </button>
                       <button type="button" aria-label="Conversation options" onClick={() => setMenuConversationId(menuOpen ? null : conversation.id)} className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full text-[#707177] active:scale-[0.96]">
-                        <MoreHorizontal size={18} strokeWidth={2} />
+                        <MoreHorizontal size={17} strokeWidth={2} />
                       </button>
                       {menuOpen ? (
-                        <div className="absolute right-[2px] top-[32px] z-20 w-[158px] overflow-hidden rounded-[16px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.14)] ring-1 ring-black/[0.06]">
+                        <div className="absolute right-[2px] top-[31px] z-20 w-[158px] overflow-hidden rounded-[16px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.14)] ring-1 ring-black/[0.06]">
                           <button type="button" onClick={() => openRename(conversation)} className="flex h-[42px] w-full items-center px-[14px] text-left text-[14px] tracking-[-0.02em] text-[#17181b]">Rename</button>
                           <button type="button" onClick={() => openDelete(conversation)} className="flex h-[42px] w-full items-center gap-[8px] px-[14px] text-left text-[14px] tracking-[-0.02em] text-red-600"><Trash2 size={15} />Delete</button>
                         </div>
@@ -226,19 +215,19 @@ export function KivoSidebarOverlay({
           </section>
         </div>
 
-        <div className="shrink-0 px-[22px] pb-[calc(env(safe-area-inset-bottom)+12px)]">
-          <button type="button" className="flex h-[62px] w-full items-center gap-[14px] rounded-[18px] bg-white/80 px-[18px] text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] ring-1 ring-black/[0.045] active:scale-[0.99]">
-            <span className="flex h-[34px] w-[34px] items-center justify-center text-[#111114]"><Gift size={25} strokeWidth={1.9} /></span>
-            <span className="min-w-0 flex-1"><span className="block truncate text-[16px] font-medium tracking-[-0.025em] text-[#111114]">Invite friends to Kivo</span><span className="block truncate text-[13px] tracking-[-0.02em] text-[#8d8e95]">Get 500 credits each</span></span>
-            <span className="text-[26px] font-light text-[#77787f]">›</span>
+        <div className="shrink-0 px-[28px] pb-[calc(env(safe-area-inset-bottom)+28px)]">
+          <button type="button" className="flex h-[52px] w-full items-center gap-[13px] rounded-[16px] bg-white/80 px-[16px] text-left shadow-[0_10px_28px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.045] active:scale-[0.99]">
+            <span className="flex h-[29px] w-[29px] items-center justify-center text-[#111114]"><Gift size={23} strokeWidth={1.9} /></span>
+            <span className="min-w-0 flex-1"><span className="block truncate text-[14.5px] font-medium tracking-[-0.025em] text-[#111114]">Invite friends to Kivo</span><span className="block truncate text-[12.5px] tracking-[-0.02em] text-[#8d8e95]">Get 500 credits each</span></span>
+            <span className="text-[24px] font-light text-[#77787f]">›</span>
           </button>
 
-          <div className="mt-[12px] flex h-[52px] items-center justify-between px-[8px]">
-            <BottomNavItem active icon={<Home size={27} strokeWidth={1.9} />} label="Home" />
-            <BottomNavItem icon={<MessageCircle size={25} strokeWidth={1.9} />} label="Messages" />
-            <BottomNavItem icon={<Wrench size={24} strokeWidth={1.9} />} label="Discover" />
-            <BottomNavItem icon={<FlaskConical size={25} strokeWidth={1.9} />} label="Labs" />
-            <BottomNavItem icon={<Settings2 size={26} strokeWidth={1.9} />} label="Settings" />
+          <div className="mt-[8px] flex h-[50px] items-center justify-between rounded-[17px] bg-white/70 px-[8px] shadow-[0_8px_24px_rgba(15,23,42,0.03)] ring-1 ring-black/[0.045]">
+            <BottomNavItem active icon={<Home size={24} strokeWidth={1.9} />} label="Home" />
+            <BottomNavItem icon={<MessageCircle size={23} strokeWidth={1.9} />} label="Messages" />
+            <BottomNavItem icon={<Wrench size={23} strokeWidth={1.9} />} label="Discover" />
+            <BottomNavItem icon={<FlaskConical size={23} strokeWidth={1.9} />} label="Labs" />
+            <BottomNavItem icon={<Settings2 size={24} strokeWidth={1.9} />} label="Settings" />
           </div>
         </div>
       </aside>
