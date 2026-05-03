@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import {
   Bell,
   Bot,
@@ -81,6 +81,10 @@ export function KivoSidebarOverlay({
   const [renamingConversation, setRenamingConversation] = useState<KivoConversation | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [deletingConversation, setDeletingConversation] = useState<KivoConversation | null>(null);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartXRef = useRef(0);
+  const dragStartTimeRef = useRef(0);
 
   const visibleConversations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -119,13 +123,60 @@ export function KivoSidebarOverlay({
     setDeletingConversation(null);
   }
 
+  function handlePointerDown(event: PointerEvent<HTMLElement>) {
+    setIsDragging(true);
+    dragStartXRef.current = event.clientX;
+    dragStartTimeRef.current = Date.now();
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLElement>) {
+    if (!isDragging) return;
+    const delta = event.clientX - dragStartXRef.current;
+    setDragX(Math.min(0, delta));
+  }
+
+  function handlePointerUp(event: PointerEvent<HTMLElement>) {
+    if (!isDragging) return;
+    const delta = event.clientX - dragStartXRef.current;
+    const elapsed = Math.max(1, Date.now() - dragStartTimeRef.current);
+    const velocity = delta / elapsed;
+    setIsDragging(false);
+
+    if (delta < -96 || velocity < -0.55) {
+      setDragX(-420);
+      window.setTimeout(() => {
+        setDragX(0);
+        onClose();
+      }, 170);
+      return;
+    }
+
+    setDragX(0);
+  }
+
   if (!open) return null;
+
+  const overlayOpacity = Math.max(0.04, 1 - Math.min(Math.abs(dragX) / 260, 0.78));
 
   return (
     <div className="fixed inset-0 z-[60]">
-      <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 bg-black/22 backdrop-blur-[7px]" />
+      <button
+        type="button"
+        aria-label="Close menu"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/22 backdrop-blur-[7px] transition-opacity duration-300 ease-out"
+        style={{ opacity: overlayOpacity }}
+      />
 
-      <aside className="absolute left-0 top-0 flex h-full w-[82%] max-w-[390px] flex-col overflow-hidden rounded-r-[30px] bg-white/92 shadow-[22px_0_70px_rgba(15,23,42,0.16)] backdrop-blur-2xl">
+      <aside
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className={`absolute left-0 top-0 flex h-full w-[82%] max-w-[390px] touch-pan-y select-none flex-col overflow-hidden rounded-r-[30px] bg-white/92 shadow-[22px_0_70px_rgba(15,23,42,0.16)] backdrop-blur-2xl will-change-transform ${isDragging ? '' : 'transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]'}`}
+        style={{ transform: `translate3d(${dragX}px,0,0)` }}
+      >
         <div className="flex shrink-0 items-center justify-between px-[28px] pt-[calc(env(safe-area-inset-top)+44px)]">
           <span className="text-[24px] font-semibold leading-none tracking-[-0.055em] text-[#111114]">Kivo</span>
 
