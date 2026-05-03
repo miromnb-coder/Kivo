@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, ChevronDown, FileText, Globe2, Loader2, MousePointer2, PenLine, Search, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Check, ChevronUp, FileText, Globe2, Loader2, MousePointer2, PenLine, Search, Sparkles } from 'lucide-react';
 
 export type KivoExecutionStep = {
   id?: string;
@@ -33,119 +34,120 @@ function normalizeSteps(steps?: KivoExecutionStep[] | null) {
     .slice(0, 7);
 }
 
-function PendingIcon({ kind }: { kind: KivoExecutionStep['kind'] }) {
-  if (kind === 'browser') return <Globe2 size={15} strokeWidth={2.2} />;
-  if (kind === 'search') return <Search size={15} strokeWidth={2.2} />;
-  if (kind === 'read') return <FileText size={15} strokeWidth={2.2} />;
-  if (kind === 'click' || kind === 'tool') return <MousePointer2 size={15} strokeWidth={2.2} />;
-  if (kind === 'write') return <PenLine size={15} strokeWidth={2.2} />;
-  if (kind === 'plan') return <FileText size={15} strokeWidth={2.2} />;
-  return <Sparkles size={15} strokeWidth={2.2} />;
-}
-
-function StepIcon({ step }: { step: ReturnType<typeof normalizeSteps>[number] }) {
-  if (step.status === 'done') {
+function StepStatusDot({ status }: { status: string }) {
+  if (status === 'done') {
     return (
-      <span className="relative z-10 flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-[#111114] text-white shadow-[0_10px_24px_rgba(0,0,0,0.14)] transition-all duration-300">
-        <Check size={17} strokeWidth={2.7} />
+      <span className="mt-[4px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[#c9c9cc] text-white">
+        <Check size={12} strokeWidth={2.7} />
       </span>
     );
   }
 
-  if (step.status === 'running') {
+  if (status === 'running') {
     return (
-      <span className="relative z-10 flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-white text-[#111114] shadow-[0_12px_28px_rgba(15,23,42,0.13)] ring-1 ring-black/[0.06] transition-all duration-300">
-        <span className="absolute inset-[-5px] rounded-full bg-[#2563eb]/10 blur-[6px] animate-pulse" />
-        <Loader2 size={16} strokeWidth={2.4} className="relative animate-spin" />
+      <span className="mt-[6px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-[#d7d7db] bg-transparent">
+        <span className="h-[8px] w-[8px] rounded-full bg-[#2b8cff] shadow-[0_0_10px_rgba(43,140,255,0.55)] animate-pulse" />
       </span>
     );
   }
 
-  return (
-    <span className="relative z-10 flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-[#f1f1f3] text-[#9899a1] ring-1 ring-black/[0.035] transition-all duration-300">
-      <PendingIcon kind={step.kind} />
-    </span>
-  );
+  return <span className="mt-[6px] h-[18px] w-[18px] shrink-0 rounded-full border-[2px] border-[#d5d5d9] bg-transparent" />;
 }
 
-function statusLabel(status: string) {
-  if (status === 'done') return 'Done';
-  if (status === 'running') return 'In progress';
-  return 'Pending';
+function ToolIcon({ kind }: { kind: KivoExecutionStep['kind'] }) {
+  if (kind === 'browser') return <Globe2 size={15} strokeWidth={2.1} />;
+  if (kind === 'search') return <Search size={15} strokeWidth={2.1} />;
+  if (kind === 'read') return <FileText size={15} strokeWidth={2.1} />;
+  if (kind === 'click' || kind === 'tool') return <MousePointer2 size={15} strokeWidth={2.1} />;
+  if (kind === 'write') return <PenLine size={15} strokeWidth={2.1} />;
+  if (kind === 'plan') return <FileText size={15} strokeWidth={2.1} />;
+  return <Sparkles size={15} strokeWidth={2.1} />;
 }
 
-function getHeaderTitle(steps: ReturnType<typeof normalizeSteps>) {
-  const active = steps.find((step) => step.status === 'running');
-  if (active?.kind === 'browser' || active?.kind === 'search' || steps.some((step) => step.kind === 'browser' || step.kind === 'search')) return 'Browsing the web';
-  return 'Kivo is working';
+function toolLabel(step: ReturnType<typeof normalizeSteps>[number]) {
+  if (step.kind === 'search' || step.kind === 'browser') return step.title;
+  if (step.kind === 'tool') return step.title;
+  if (step.kind === 'read') return step.title;
+  if (step.kind === 'write') return step.title;
+  return step.detail || step.title;
 }
 
-function getHeaderSubtitle(steps: ReturnType<typeof normalizeSteps>) {
-  const active = steps.find((step) => step.status === 'running');
-  if (active?.detail) return active.detail;
-  if (active?.title) return active.title;
-  return 'Following the task step by step';
+function ActiveStatusLabel({ kind }: { kind: KivoExecutionStep['kind'] }) {
+  if (kind === 'browser' || kind === 'search') return <>Thinking</>;
+  if (kind === 'tool' || kind === 'click') return <>Using terminal</>;
+  if (kind === 'read') return <>Reading</>;
+  if (kind === 'write') return <>Writing</>;
+  return <>Thinking</>;
 }
 
 export function KivoExecutionSteps({ steps }: Props) {
   const safeSteps = normalizeSteps(steps);
+  const [open, setOpen] = useState(true);
+
   if (!safeSteps.length) return null;
 
-  const doneCount = safeSteps.filter((s) => s.status === 'done').length;
-  const hasRunning = safeSteps.some((s) => s.status === 'running');
-  const headerTitle = getHeaderTitle(safeSteps);
-  const headerSubtitle = getHeaderSubtitle(safeSteps);
+  const primaryStep = safeSteps.find((step) => step.status === 'running') ?? safeSteps[0];
+  const detailStep = safeSteps.find((step) => step.detail) ?? primaryStep;
+  const activeStep = safeSteps.find((step) => step.status === 'running');
 
   return (
-    <section className="my-[16px] overflow-hidden rounded-[28px] border border-black/[0.055] bg-white/78 p-[16px] shadow-[0_20px_55px_rgba(15,23,42,0.065)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-[12px] border-b border-black/[0.055] pb-[14px]">
-        <div className="flex min-w-0 items-start gap-[12px]">
-          <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[16px] bg-[#f0f0ff] text-[#111114] ring-1 ring-black/[0.035]">
-            <Globe2 size={21} strokeWidth={2.05} />
-          </span>
-          <div className="min-w-0">
-            <div className="truncate text-[19px] font-semibold leading-[1.12] tracking-[-0.045em] text-[#141518]">{headerTitle}</div>
-            <div className="mt-[4px] line-clamp-2 text-[14.5px] leading-[1.25] tracking-[-0.025em] text-[#666771]">{headerSubtitle}</div>
+    <section className="my-[14px] text-[#202024]">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-start gap-[10px] text-left active:scale-[0.995]"
+        aria-expanded={open}
+      >
+        <StepStatusDot status={primaryStep.status} />
+        <div className="min-w-0 flex-1">
+          <div className="text-[18px] font-semibold leading-[1.24] tracking-[-0.035em] text-[#252529]">
+            {primaryStep.title}
           </div>
         </div>
+        <ChevronUp className={`mt-[6px] h-[18px] w-[18px] shrink-0 text-[#9a9aa0] transition-transform duration-200 ${open ? '' : 'rotate-180'}`} strokeWidth={2.1} />
+      </button>
 
-        <div className="flex shrink-0 items-center gap-[8px] rounded-full bg-[#f4f4f5] px-[11px] py-[7px] text-[13.5px] font-semibold tracking-[-0.02em] text-[#4f5058]">
-          <span className={`h-[8px] w-[8px] rounded-full ${hasRunning ? 'bg-[#2563eb] animate-pulse' : 'bg-[#58a96b]'}`} />
-          {hasRunning ? 'In progress' : 'Done'}
-          <ChevronDown size={15} strokeWidth={2.2} />
+      {open ? (
+        <div className="ml-[42px] mt-[12px] space-y-[11px]">
+          {detailStep.detail ? (
+            <p className="text-[15.5px] leading-[1.45] tracking-[-0.02em] text-[#6f7077]">
+              {detailStep.detail}
+            </p>
+          ) : null}
+
+          {safeSteps.slice(0, 4).map((step, index) => {
+            const isResultCard = index === 0 && (step.kind === 'tool' || step.kind === 'browser' || step.kind === 'search');
+
+            if (isResultCard && step.status === 'running') {
+              return (
+                <div key={step.id || `${step.title}-${index}`} className="flex min-h-[58px] items-center gap-[12px] rounded-[17px] bg-white px-[14px] py-[10px] text-[#252529] shadow-[0_1px_0_rgba(0,0,0,0.035)] ring-1 ring-black/[0.045]">
+                  <span className="flex h-[24px] w-[24px] shrink-0 items-center justify-center text-[#8b8c92]">
+                    <ToolIcon kind={step.kind} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[17px] font-semibold tracking-[-0.03em]">{step.title}</span>
+                  <Loader2 className="h-[18px] w-[18px] shrink-0 animate-spin text-[#8b8c92]" strokeWidth={2.2} />
+                </div>
+              );
+            }
+
+            return (
+              <div key={step.id || `${step.title}-${index}`} className="inline-flex max-w-full items-center gap-[8px] rounded-full bg-[#eeeeef] px-[12px] py-[7px] text-[14.5px] font-medium leading-none tracking-[-0.025em] text-[#696a71] ring-1 ring-black/[0.035]">
+                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center text-[#8b8c92]">
+                  <ToolIcon kind={step.kind} />
+                </span>
+                <span className="truncate">{toolLabel(step)}</span>
+              </div>
+            );
+          })}
         </div>
-      </div>
+      ) : null}
 
-      <div className="relative mt-[16px] space-y-[0px]">
-        <div className="absolute left-[16px] top-[34px] bottom-[34px] w-px bg-gradient-to-b from-black/[0.06] via-black/[0.08] to-transparent" />
-
-        {safeSteps.map((step, index) => {
-          const isActive = step.status === 'running';
-          const isDone = step.status === 'done';
-
-          return (
-            <div key={step.id || `${step.title}-${index}`} className="relative flex gap-[13px] py-[9px]">
-              <StepIcon step={step} />
-              <div className="min-w-0 flex-1 pt-[2px]">
-                <div className={`truncate text-[16px] font-semibold leading-[1.18] tracking-[-0.035em] transition-colors ${isActive ? 'text-[#111114]' : isDone ? 'text-[#2d2e33]' : 'text-[#8e8f97]'}`}>
-                  {step.title}
-                </div>
-                <div className={`mt-[4px] text-[13.5px] font-medium tracking-[-0.02em] transition-colors ${isActive ? 'text-[#6a6b73]' : 'text-[#9d9ea6]'}`}>
-                  {step.detail || statusLabel(step.status)}
-                </div>
-              </div>
-              <div className="flex w-[26px] shrink-0 items-start justify-end pt-[4px]">
-                {isDone ? <span className="flex h-[19px] w-[19px] items-center justify-center rounded-full bg-[#58a96b] text-white"><Check size={13} strokeWidth={2.6} /></span> : isActive ? <span className="h-[19px] w-[19px] rounded-full border-[3px] border-[#2563eb]/25 border-t-[#2563eb] animate-spin" /> : null}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-[14px] flex items-center justify-between border-t border-black/[0.045] pt-[13px] text-[13.5px] tracking-[-0.025em] text-[#6c6d75]">
-        <span>{doneCount}/{safeSteps.length} steps completed</span>
-        <span>{hasRunning ? 'Working live' : 'Ready'}</span>
-      </div>
+      {activeStep ? (
+        <div className="ml-[42px] mt-[13px] flex items-center gap-[10px] text-[16.5px] leading-none tracking-[-0.025em] text-[#8a8b92]">
+          <span className="h-[10px] w-[10px] rounded-[3px] bg-[#2b8cff] shadow-[0_0_10px_rgba(43,140,255,0.48)] animate-pulse" />
+          <ActiveStatusLabel kind={activeStep.kind} />
+        </div>
+      ) : null}
     </section>
   );
 }
