@@ -1,7 +1,7 @@
 import { runKivoModel } from '@/lib/ai/model-router';
 import { createPlan } from './planner';
-import { runCalendarTodayTool } from './tools/calendar';
-import { runGmailTool, shouldRunGmailTool } from './tools/gmail';
+import { formatCalendarTodayForPrompt, runCalendarTodayTool } from './tools/calendar';
+import { runGmailTool, shouldRunGmailTool, type GmailToolResult } from './tools/gmail';
 import { routeIntent } from './router';
 import type { AgentRequest, AgentResult } from './types';
 
@@ -53,12 +53,6 @@ const KIVO_SYSTEM_PROMPT = [
   '- End with a short next action when useful.',
   '- Do not combine formats just to look fancy.',
   '- Do not use more than 3 different formats in a short answer.',
-  '- For long practical answers, prefer this structure:',
-  '  1. Direct answer',
-  '  2. Key points as bullets',
-  '  3. Table only if comparison helps',
-  '  4. Step-by-step plan',
-  '  5. Next action',
   '',
   'Adaptive response rules:',
   '- Adapt the answer depth to the user’s message.',
@@ -91,14 +85,11 @@ const KIVO_SYSTEM_PROMPT = [
   '- If using a table, keep it simple and valid.',
   '- If the answer is short, use plain text instead of unnecessary markdown.',
   '',
-  'Response quality:',
-  '- Answer directly first.',
-  '- Then add structure only if useful.',
-  '- Be practical and specific.',
-  '- When giving steps, make them actionable.',
-  '- When uncertain, say so clearly.',
-  '- When web search is used, mention uncertainty and sources when relevant.',
-  '- If important details are missing for a complex task, ask a short clarifying question.',
+  'Private tool context rules:',
+  '- If Gmail or Calendar context is provided, use it only to answer the user’s request.',
+  '- Do not say Gmail or Calendar is unavailable when connected context is provided.',
+  '- If a tool context says reconnect is needed or there is an error, explain that clearly and briefly.',
+  '- Do not invent emails, senders, calendar events, times, or counts that are not in the tool context.',
   '',
   'Language:',
   '- Reply in the same language as the user unless they ask otherwise.',
@@ -216,12 +207,57 @@ function buildDocumentCard(answer: string) {
   return { title: stripMarkdown(titleLine).slice(0, 80) || 'Kivo document', type: 'Markdown', content: answer };
 }
 
+function formatGmailForPrompt(result: GmailToolResult) {
+  if (!result.connected) return 'Gmail tool: Gmail is not connected.';
+  if (result.error) return `Gmail tool error: ${result.error}`;
+  if (!result.messages.length) return 'Gmail tool: Connected, but no recent messages were found.';
+
+  const lines = [
+    `Gmail tool: User has ${result.messages.length} recent message(s).`,
+    `Important: ${result.important.length}. Bills/payments: ${result.bills.length}. Low priority: ${result.lowPriority.length}.`,
+  ];
+
+  if (result.insight?.summary) lines.push(`Insight: ${result.insight.summary}`);
+
+  lines.push(
+    ...result.messages.slice(0, 8).map((message, index) => {
+      const parts = [`${index + 1}. ${message.subject}`, `from ${message.from}`];
+      if (message.date) parts.push(`date ${message.date}`);
+      if (message.snippet) parts.push(`snippet: ${message.snippet}`);
+      return `- ${parts.join(' | ')}`;
+    }),
+  );
+
+  return lines.join('\n');
+}
+
+function buildPrivateToolContext(calendar: Awaited<ReturnType<typeof runCalendarTodayTool>>, gmail: GmailToolResult, options: { includeCalendar: boolean; includeGmail: boolean }) {
+  const sections: string[] = [];
+
+  if (options.includeCalendar) sections.push(formatCalendarTodayForPrompt(calendar));
+  if (options.includeGmail) sections.push(formatGmailForPrompt(gmail));
+
+  if (!sections.length) return '';
+
+  return [
+    'Private user tool context:',
+    'Use this context only when it is relevant to the user request. Do not reveal raw tokens or internal implementation details.',
+    ...sections,
+  ].join('\n\n');
+}
+
 function withStructuredData(base: Omit<AgentResult, 'structuredData'>, structuredData: any): AgentResult {
   return { ...base, structuredData } as AgentResult;
 }
 
-async function runModelWithSafeSearch(req: AgentRequest, useWebSearch: boolean, searchCountry?: string) {
+async function runModelWithSafeSearch(req: AgentRequest, useWebSearch: boolean, searchCountry?: string, toolContext?: string) {
   const safeMessage = safeUserMessage(req.message);
+  const messages = [
+    { role: 'system' as const, content: KIVO_SYSTEM_PROMPT },
+    ...(toolContext ? [{ role: 'system' as const, content: toolContext }] : []),
+    { role: 'user' as const, content: safeMessage },
+  ];
+
   try {
     return await runKivoModel({
       agent: req.agent,
@@ -230,18 +266,23 @@ async function runModelWithSafeSearch(req: AgentRequest, useWebSearch: boolean, 
       forceModel: useWebSearch ? 'groq:compound' : undefined,
       webSearch: useWebSearch && searchCountry ? { country: searchCountry } : undefined,
       maxTokens: useWebSearch ? 900 : 900,
-      messages: [{ role: 'system', content: KIVO_SYSTEM_PROMPT }, { role: 'user', content: safeMessage }],
+      messages,
     });
   } catch (error) {
     if (!useWebSearch) throw error;
     const fallbackPrompt = [KIVO_SYSTEM_PROMPT, '', 'Web search failed. Answer safely without pretending to have current sources. Be clear that live source lookup was unavailable.'].join('\n');
+    const fallbackMessages = [
+      { role: 'system' as const, content: fallbackPrompt },
+      ...(toolContext ? [{ role: 'system' as const, content: toolContext }] : []),
+      { role: 'user' as const, content: safeMessage },
+    ];
     const fallback = await runKivoModel({
       agent: req.agent,
       mode: req.mode,
       context: req.context,
       forceModel: 'groq:fast',
       maxTokens: 700,
-      messages: [{ role: 'system', content: fallbackPrompt }, { role: 'user', content: safeMessage }],
+      messages: fallbackMessages,
     });
     return { ...fallback, raw: { fallback: true, originalError: error instanceof Error ? error.message : 'Web search failed' } };
   }
@@ -257,17 +298,34 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     return withStructuredData({ answer, steps, intent }, { clarification: { required: true, reason: 'Missing important context for a high-quality result.' } });
   }
 
-  const calendar = await runCalendarTodayTool(req.userId);
-  const gmail = await runGmailTool(req.userId);
+  const messageText = req.message.toLowerCase();
+  const includeCalendar = ['calendar', 'kalenteri', 'today', 'tänään', 'tanaan', 'schedule', 'aikataulu', 'event', 'tapahtuma', 'meeting', 'kokous', 'päivä', 'paiva', 'vapaa', 'free time'].some((word) => messageText.includes(word));
+  const includeGmail = shouldRunGmailTool(req.message);
+
+  const [calendar, gmail] = await Promise.all([
+    includeCalendar ? runCalendarTodayTool(req.userId) : Promise.resolve({ connected: false, events: [] }),
+    includeGmail ? runGmailTool(req.userId) : Promise.resolve({ connected: false, messages: [], important: [], bills: [], lowPriority: [] }),
+  ]);
+
+  const toolContext = buildPrivateToolContext(calendar, gmail, { includeCalendar, includeGmail });
   const useWebSearch = shouldUseWebSearch(req.message);
   const searchCountry = useWebSearch ? detectSearchCountry(req.message) : undefined;
-  const response = await runModelWithSafeSearch(req, useWebSearch, searchCountry);
+  const response = await runModelWithSafeSearch(req, useWebSearch, searchCountry, toolContext);
   const fallbackUsed = Boolean((response.raw as any)?.fallback);
-  const executionSteps = buildExecutionSteps(req.message, { calendar: Boolean(calendar?.connected), gmail: shouldRunGmailTool(req.message) && Boolean(gmail?.connected), today: req.message.toLowerCase().includes('päivä') || req.message.toLowerCase().includes('today'), webSearch: useWebSearch, fallback: fallbackUsed });
+  const executionSteps = buildExecutionSteps(req.message, { calendar: includeCalendar && Boolean(calendar?.connected), gmail: includeGmail && Boolean(gmail?.connected), today: messageText.includes('päivä') || messageText.includes('today') || messageText.includes('tänään'), webSearch: useWebSearch, fallback: fallbackUsed });
   const sources = response.sources ?? [];
   const sourceText = sources.length ? ['', '### Sources', ...sources.slice(0, 3).map((source, index) => `${index + 1}. ${source.title ?? 'Source'}${source.url ? ` — ${source.url}` : ''}`)].join('\n') : '';
   const answer = response.content + sourceText;
   const documentCard = shouldCreateDocumentCard(req.message, answer) ? buildDocumentCard(answer) : null;
 
-  return withStructuredData({ answer, steps: executionSteps.length ? executionSteps : plan.steps.map((step) => ({ ...step, status: 'done' })), intent, model: response.model, provider: response.provider }, { gmail: null, calendar: null, documentCard, sources, webSearch: useWebSearch ? { used: !fallbackUsed, fallback: fallbackUsed, country: searchCountry ?? null } : { used: false } });
+  return withStructuredData(
+    { answer, steps: executionSteps.length ? executionSteps : plan.steps.map((step) => ({ ...step, status: 'done' })), intent, model: response.model, provider: response.provider },
+    {
+      gmail: includeGmail ? gmail : null,
+      calendar: includeCalendar ? calendar : null,
+      documentCard,
+      sources,
+      webSearch: useWebSearch ? { used: !fallbackUsed, fallback: fallbackUsed, country: searchCountry ?? null } : { used: false },
+    },
+  );
 }
