@@ -125,17 +125,54 @@ function detectSearchCountry(message: string) {
   return pairs.find(([key]) => text.includes(key))?.[1];
 }
 
-function shouldAskClarifyingQuestion(message: string) {
-  const text = message.toLowerCase().trim();
-  const complex = ['suunnittele', 'tee minulle', 'rakenna', 'roadmap', 'plan', 'create', 'build', 'kirjoita', 'write'].some((word) => text.includes(word));
-  if (!complex) return false;
-  if (text.includes('tänään') || text.includes('today') || text.includes('gmail') || text.includes('sähköposti') || text.includes('kalenteri')) return false;
-  const hasEnoughContext = ['budjetti', 'budget', 'aika', 'time', 'kaupunki', 'city', 'tavoite', 'goal', 'tyyli', 'style', 'deadline', 'jyväskylä', 'helsinki', 'kuopio', 'tokyo', 'london', 'paris'].some((word) => text.includes(word));
-  return text.length < 90 && !hasEnoughContext;
+function isClearlyExecutableRequest(text: string) {
+  const executableSignals = ['taulukko', 'table', 'lista', 'list', 'vertaa', 'compare', 'yhteenveto', 'summary', 'esimerkki', 'example', 'koodi', 'code', 'selitä', 'explain', 'kerro', 'tell', 'anna', 'give'];
+  return executableSignals.some((word) => text.includes(word));
 }
 
-function buildClarifyingAnswer() {
-  return ['## Tarvitsen vielä vähän tarkennusta', '', '**Voin tehdä tämän, mutta jotta lopputulos olisi oikeasti hyvä, tarvitsen pari asiaa ensin.**', '', '1. Mikä on tärkein tavoite?', '2. Onko tähän jokin aika, paikka, budjetti tai deadline?', '3. Haluatko lopputuloksen lyhyenä suunnitelmana vai valmiina tekstinä?', '', 'Kun vastaat näihin, teen siitä heti paremman kokonaisuuden.'].join('\n');
+function shouldAskClarifyingQuestion(message: string) {
+  const text = message.toLowerCase().trim();
+  if (!text) return false;
+  if (isClearlyExecutableRequest(text)) return false;
+  if (text.includes('tänään') || text.includes('today') || text.includes('gmail') || text.includes('sähköposti') || text.includes('kalenteri')) return false;
+
+  const complex = ['suunnittele', 'rakenna', 'roadmap', 'plan', 'build', 'strategia', 'strategy'].some((word) => text.includes(word));
+  if (!complex) return false;
+
+  const hasEnoughContext = ['budjetti', 'budget', 'aika', 'time', 'kaupunki', 'city', 'tavoite', 'goal', 'tyyli', 'style', 'deadline', 'kohderyhmä', 'audience', 'jyväskylä', 'helsinki', 'kuopio', 'tokyo', 'london', 'paris'].some((word) => text.includes(word));
+  const veryShort = text.split(/\s+/).length < 7;
+  const vague = ['jotain', 'jonkun', 'hyvä', 'parempi', 'paras', 'tämmöinen', 'tällainen'].some((word) => text.includes(word));
+
+  return !hasEnoughContext && (veryShort || vague);
+}
+
+async function buildClarifyingAnswer(req: AgentRequest) {
+  const safeMessage = safeUserMessage(req.message);
+  const clarificationPrompt = [
+    KIVO_SYSTEM_PROMPT,
+    '',
+    'You are not answering the task yet. You are asking for missing details.',
+    'Ask 1-3 highly specific clarifying questions tailored to the user’s exact request.',
+    'Do not use a generic template.',
+    'Do not ask about budget, time, place, or deadline unless those details are truly relevant.',
+    'If possible, include one short sentence explaining why the detail matters.',
+    'Use the same language as the user.',
+  ].join('\n');
+
+  try {
+    const response = await runKivoModel({
+      agent: req.agent,
+      mode: req.mode,
+      context: req.context,
+      forceModel: 'groq:fast',
+      maxTokens: 260,
+      messages: [{ role: 'system', content: clarificationPrompt }, { role: 'user', content: safeMessage }],
+    });
+
+    return response.content.trim();
+  } catch {
+    return '## Tarkennan yhden asian\n\nHaluatko, että teen tästä **yleisen version** vai **sinun omaan tilanteeseesi sopivan version**?';
+  }
 }
 
 function shouldShowExecutionSteps(message: string) {
@@ -147,7 +184,7 @@ function shouldShowExecutionSteps(message: string) {
 }
 
 function buildExecutionSteps(message: string, options?: { calendar?: boolean; gmail?: boolean; today?: boolean; clarify?: boolean; webSearch?: boolean; fallback?: boolean }): ExecutionStep[] {
-  if (options?.clarify) return [{ title: 'Tarkistetaan puuttuuko tietoja', detail: 'Kivo huomaa, että hyvä vastaus vaatii vielä tarkennuksia.', status: 'done', kind: 'think' }];
+  if (options?.clarify) return [{ title: 'Tarkennetaan pyyntöä', detail: 'Kivo kysyy vain ne tiedot, joita juuri tähän tehtävään tarvitaan.', status: 'done', kind: 'think' }];
   if (!shouldShowExecutionSteps(message)) return [];
   const text = message.toLowerCase();
   const steps: ExecutionStep[] = [{ title: 'Ymmärretään pyyntö', detail: 'Kivo tunnistaa tavoitteen ja valitsee sopivan vastaustavan.', status: 'done', kind: 'think' }];
@@ -216,7 +253,8 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const needsClarification = shouldAskClarifyingQuestion(req.message);
   if (needsClarification) {
     const steps = buildExecutionSteps(req.message, { clarify: true });
-    return withStructuredData({ answer: buildClarifyingAnswer(), steps, intent }, { clarification: { required: true, reason: 'Missing important context for a high-quality result.' } });
+    const answer = await buildClarifyingAnswer(req);
+    return withStructuredData({ answer, steps, intent }, { clarification: { required: true, reason: 'Missing important context for a high-quality result.' } });
   }
 
   const calendar = await runCalendarTodayTool(req.userId);
