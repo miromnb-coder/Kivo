@@ -44,10 +44,10 @@ function KivoSidebarOverlay({ open, onClose }: { open: boolean; onClose: () => v
 
   return (
     <div className="fixed inset-0 z-[60]">
-      <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 bg-black/20 backdrop-blur-[7px]" />
+      <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 bg-black/22 backdrop-blur-[7px]" />
 
-      <aside className="absolute left-[10px] top-[10px] flex h-[calc(100%-20px)] w-[calc(100%-20px)] max-w-[390px] flex-col overflow-hidden rounded-[30px] bg-white/90 shadow-[0_22px_70px_rgba(15,23,42,0.12)] backdrop-blur-2xl">
-        <div className="flex shrink-0 items-center justify-between px-[22px] pt-[22px]">
+      <aside className="absolute left-0 top-0 flex h-full w-[82%] max-w-[390px] flex-col overflow-hidden rounded-r-[30px] bg-white/92 shadow-[22px_0_70px_rgba(15,23,42,0.16)] backdrop-blur-2xl">
+        <div className="flex shrink-0 items-center justify-between px-[22px] pt-[calc(env(safe-area-inset-top)+22px)]">
           <div className="flex items-center gap-[13px]">
             <div className="flex h-[48px] w-[48px] items-center justify-center rounded-[14px] bg-black text-white shadow-[0_8px_18px_rgba(0,0,0,0.1)]">
               <Sparkles size={25} fill="white" strokeWidth={2.3} />
