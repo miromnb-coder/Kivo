@@ -36,6 +36,7 @@ export async function GET(req: Request) {
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('access_type', 'offline');
   authUrl.searchParams.set('prompt', 'consent');
+  authUrl.searchParams.set('include_granted_scopes', 'true');
   authUrl.searchParams.set('scope', GMAIL_SCOPES.join(' '));
   authUrl.searchParams.set('state', state);
 
