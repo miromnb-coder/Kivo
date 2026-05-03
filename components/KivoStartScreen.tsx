@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import { KivoComposer } from './KivoComposer';
 import { KivoTopBar } from './KivoTopBar';
@@ -57,6 +57,10 @@ export function KivoStartScreen() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [sidebarQuery, setSidebarQuery] = useState('');
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>('all');
+  const edgeSwipeStartXRef = useRef(0);
+  const edgeSwipeStartYRef = useRef(0);
+  const edgeSwipeStartTimeRef = useRef(0);
+  const [edgeSwipeActive, setEdgeSwipeActive] = useState(false);
 
   async function getUserId() {
     const supabase = createSupabaseBrowser();
@@ -87,6 +91,39 @@ export function KivoStartScreen() {
   useEffect(() => {
     refreshConversations();
   }, []);
+
+  function openSidebar() {
+    refreshConversations();
+    setSidebarOpen(true);
+  }
+
+  function handleEdgePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (sidebarOpen || loading) return;
+    edgeSwipeStartXRef.current = event.clientX;
+    edgeSwipeStartYRef.current = event.clientY;
+    edgeSwipeStartTimeRef.current = Date.now();
+    setEdgeSwipeActive(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleEdgePointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (!edgeSwipeActive || sidebarOpen) return;
+    const deltaX = event.clientX - edgeSwipeStartXRef.current;
+    const deltaY = Math.abs(event.clientY - edgeSwipeStartYRef.current);
+    if (deltaX > 46 && deltaY < 42) {
+      setEdgeSwipeActive(false);
+      openSidebar();
+    }
+  }
+
+  function handleEdgePointerUp(event: PointerEvent<HTMLDivElement>) {
+    if (!edgeSwipeActive) return;
+    const deltaX = event.clientX - edgeSwipeStartXRef.current;
+    const elapsed = Math.max(1, Date.now() - edgeSwipeStartTimeRef.current);
+    const velocity = deltaX / elapsed;
+    setEdgeSwipeActive(false);
+    if (deltaX > 34 && velocity > 0.28) openSidebar();
+  }
 
   async function createConversation(userId: string, firstMessage: string) {
     const supabase = createSupabaseBrowser();
@@ -329,8 +366,19 @@ export function KivoStartScreen() {
     <main className="relative min-h-screen overflow-hidden bg-[#f3f3f5]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,#ffffff_0%,#f5f5f6_60%,#f0f0f2_100%)]" />
       <div className="relative z-10 mx-auto min-h-screen w-full max-w-[430px] overflow-hidden">
+        {!sidebarOpen ? (
+          <div
+            aria-hidden="true"
+            onPointerDown={handleEdgePointerDown}
+            onPointerMove={handleEdgePointerMove}
+            onPointerUp={handleEdgePointerUp}
+            onPointerCancel={handleEdgePointerUp}
+            className="fixed left-0 top-0 z-[45] h-full w-[22px] touch-pan-y bg-transparent"
+          />
+        ) : null}
+
         <div className="fixed left-1/2 top-0 z-50 w-full max-w-[430px] -translate-x-1/2">
-          <KivoTopBar onOpenMenu={() => { refreshConversations(); setSidebarOpen(true); }} />
+          <KivoTopBar onOpenMenu={openSidebar} />
         </div>
 
         <KivoChatMessages messages={messages} loading={loading} />
