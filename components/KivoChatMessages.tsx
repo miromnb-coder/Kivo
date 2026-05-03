@@ -210,7 +210,7 @@ function ScrollToBottomButton({ visible, onClick }: { visible: boolean; onClick:
       type="button"
       aria-label="Scroll to latest message"
       onClick={onClick}
-      className={`absolute bottom-[118px] right-[24px] z-30 flex h-[46px] w-[46px] items-center justify-center rounded-full border border-black/[0.08] bg-white/85 text-[#202024] shadow-[0_14px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl transition duration-200 active:scale-95 ${visible ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-2 scale-95 opacity-0'}`}
+      className={`absolute bottom-[20px] right-[24px] z-30 flex h-[46px] w-[46px] items-center justify-center rounded-full border border-black/[0.08] bg-white/85 text-[#202024] shadow-[0_14px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl transition duration-200 active:scale-95 ${visible ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-2 scale-95 opacity-0'}`}
     >
       <ArrowDown className="h-[21px] w-[21px]" strokeWidth={2.35} />
     </button>
