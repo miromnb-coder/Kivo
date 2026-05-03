@@ -6,65 +6,12 @@ import { KivoComposer } from './KivoComposer';
 import { KivoTopBar } from './KivoTopBar';
 import { KivoChatMessages, type KivoChatMessage } from './KivoChatMessages';
 
-type StreamStep = {
-  id?: string;
-  title?: string;
-  label?: string;
-  detail?: string;
-  status?: string;
-  kind?: string;
-};
-
-type BrowserPreviewEvent = {
-  url?: string;
-  title?: string;
-  action?: 'open' | 'search' | 'read' | 'click' | 'type' | 'scroll' | 'extract' | 'done';
-  actionLabel?: string;
-  screenshotUrl?: string;
-  highlight?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-  cursor?: {
-    x: number;
-    y: number;
-  };
-  status?: 'idle' | 'running' | 'done';
-};
-
-function getStepKey(step: StreamStep) {
-  return step.id || step.title || step.label || 'step';
-}
-
-function mergeStep(prevSteps: StreamStep[] = [], nextStep: StreamStep) {
-  const key = getStepKey(nextStep);
-  const index = prevSteps.findIndex((step) => getStepKey(step) === key);
-
-  if (index === -1) return [...prevSteps, nextStep];
-
-  return prevSteps.map((step, stepIndex) =>
-    stepIndex === index
-      ? {
-          ...step,
-          ...nextStep,
-        }
-      : step,
-  );
-}
-
-function mergeBrowserPreview(prevPreview: BrowserPreviewEvent | undefined, nextPreview: BrowserPreviewEvent) {
-  return {
-    ...(prevPreview ?? {}),
-    ...nextPreview,
-  };
-}
-
 export function KivoStartScreen() {
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
   const [messages, setMessages] = useState<KivoChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   async function handleSend(message: string) {
     const userMsg: KivoChatMessage = {
@@ -93,9 +40,7 @@ export function KivoStartScreen() {
       const { data } = await supabase.auth.getUser();
       const userId = data.user?.id;
 
-      if (!userId) {
-        throw new Error('Please sign in again to use Kivo memory.');
-      }
+      if (!userId) throw new Error('Please sign in again to use Kivo memory.');
 
       const res = await fetch('/api/agent', {
         method: 'POST',
@@ -131,94 +76,15 @@ export function KivoStartScreen() {
           const data = JSON.parse(dataLine.replace('data: ', ''));
 
           if (event === 'token') {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + data.token } : m)),
-            );
-          }
-
-          if (event === 'step') {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? {
-                      ...m,
-                      steps: mergeStep(m.steps ?? [], data),
-                    }
-                  : m,
-              ),
-            );
-          }
-
-          if (event === 'browser') {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? {
-                      ...m,
-                      browserPreview: mergeBrowserPreview(m.browserPreview, data),
-                    }
-                  : m,
-              ),
-            );
-          }
-
-          if (event === 'meta') {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, model: data.model, provider: data.provider } : m)),
-            );
-          }
-
-          if (event === 'data') {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, structuredData: data.structuredData } : m)),
-            );
-          }
-
-          if (event === 'error') {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? {
-                      ...m,
-                      steps: undefined,
-                      content: '',
-                      error: data.message ?? 'Kivo could not answer right now.',
-                    }
-                  : m,
-              ),
-            );
-            setLoading(false);
+            setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + data.token } : m)));
           }
 
           if (event === 'done') {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? {
-                      ...m,
-                      structuredData: data.structuredData ?? m.structuredData,
-                      browserPreview: m.browserPreview ? { ...m.browserPreview, status: 'done', action: 'done', actionLabel: 'Browser task complete' } : m.browserPreview,
-                    }
-                  : m,
-              ),
-            );
             setLoading(false);
           }
         }
       }
     } catch (error) {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? {
-                ...m,
-                steps: undefined,
-                content: '',
-                error: error instanceof Error ? error.message : 'Kivo could not answer right now.',
-              }
-            : m,
-        ),
-      );
       setLoading(false);
     }
   }
@@ -228,19 +94,59 @@ export function KivoStartScreen() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,#ffffff_0%,#f5f5f6_60%,#f0f0f2_100%)]" />
 
       <div className="relative z-10 mx-auto min-h-screen w-full max-w-[430px] overflow-hidden">
-        <div className="fixed left-1/2 top-0 z-50 w-full max-w-[430px] -translate-x-1/2 bg-transparent">
-          <KivoTopBar />
+
+        <div className="fixed left-1/2 top-0 z-50 w-full max-w-[430px] -translate-x-1/2">
+          <KivoTopBar onOpenMenu={() => setSidebarOpen(true)} />
         </div>
 
         <KivoChatMessages messages={messages} loading={loading} />
 
-        <section
-          className={`absolute left-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-[36px] text-center transition-all duration-300 ease-out ${
-            isKeyboardMode || messages.length > 0 ? 'top-[20%] scale-[0.9] opacity-0 pointer-events-none' : 'top-[51%] scale-100 opacity-100'
-          }`}
-        >
-          <h1 className="mx-auto max-w-[320px] text-[32px] leading-[1.2] tracking-[-0.04em] text-[#202024]">How can I help you today?</h1>
-          <p className="mt-[18px] text-[17px] tracking-[-0.02em] text-[#b2b2b7]">Your personal AI assistant</p>
+        {/* SIDEBAR OVERLAY */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-[60]">
+            {/* backdrop */}
+            <div
+              className="absolute inset-0 bg-black/20 backdrop-blur-[6px]"
+              onClick={() => setSidebarOpen(false)}
+            />
+
+            {/* panel */}
+            <div className="absolute left-0 top-0 h-full w-[88%] max-w-[360px] bg-white/90 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.08)] rounded-r-[28px] p-[18px] flex flex-col gap-[16px]">
+
+              {/* HEADER */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-[10px]">
+                  <div className="h-[36px] w-[36px] rounded-[10px] bg-black flex items-center justify-center text-white">⚡</div>
+                  <span className="text-[18px] font-semibold">Kivo</span>
+                </div>
+                <button onClick={() => setSidebarOpen(false)} className="h-[32px] w-[32px] rounded-full bg-black/5">✕</button>
+              </div>
+
+              {/* SEARCH */}
+              <div className="h-[42px] rounded-full bg-black/5 px-[14px] flex items-center text-[14px] text-black/50">
+                Search conversations
+              </div>
+
+              {/* NEW CHAT */}
+              <div className="h-[44px] rounded-[14px] bg-black/5 flex items-center px-[14px] gap-[10px]">
+                + New chat
+              </div>
+
+              {/* MENU LIST */}
+              <div className="flex flex-col gap-[14px] text-[15px]">
+                <div>Chat</div>
+                <div>Agents</div>
+                <div>Tools</div>
+                <div>Notifications</div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        <section className={`absolute left-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-[36px] text-center transition-all duration-300 ease-out ${isKeyboardMode || messages.length > 0 ? 'top-[20%] scale-[0.9] opacity-0 pointer-events-none' : 'top-[51%]'}`}>
+          <h1 className="text-[32px]">How can I help you today?</h1>
+          <p className="text-[17px] text-black/40">Your personal AI assistant</p>
         </section>
 
         <KivoComposer onFocusChange={setIsKeyboardMode} onSubmitMessage={handleSend} disabled={loading} />
