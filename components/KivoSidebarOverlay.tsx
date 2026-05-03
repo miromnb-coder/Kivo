@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   Bell,
   Bot,
@@ -10,10 +10,12 @@ import {
   Gift,
   Home,
   MessageCircle,
+  MoreHorizontal,
   Search,
   Settings2,
   SlidersHorizontal,
   Sparkles,
+  Trash2,
   Wrench,
   X,
 } from 'lucide-react';
@@ -39,6 +41,8 @@ type KivoSidebarOverlayProps = {
   onQueryChange: (query: string) => void;
   onNewChat: () => void;
   onOpenConversation: (conversationId: string) => void;
+  onRenameConversation: (conversationId: string, title: string) => void;
+  onDeleteConversation: (conversationId: string) => void;
 };
 
 function SidebarItem({ icon, label, badge }: { icon: ReactNode; label: string; badge?: string }) {
@@ -71,7 +75,14 @@ export function KivoSidebarOverlay({
   onQueryChange,
   onNewChat,
   onOpenConversation,
+  onRenameConversation,
+  onDeleteConversation,
 }: KivoSidebarOverlayProps) {
+  const [menuConversationId, setMenuConversationId] = useState<string | null>(null);
+  const [renamingConversation, setRenamingConversation] = useState<KivoConversation | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [deletingConversation, setDeletingConversation] = useState<KivoConversation | null>(null);
+
   const visibleConversations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return conversations
@@ -83,6 +94,31 @@ export function KivoSidebarOverlay({
       })
       .slice(0, 40);
   }, [conversations, filter, query]);
+
+  function openRename(conversation: KivoConversation) {
+    setMenuConversationId(null);
+    setRenamingConversation(conversation);
+    setRenameValue(conversation.title);
+  }
+
+  function submitRename() {
+    const title = renameValue.trim();
+    if (!renamingConversation || !title) return;
+    onRenameConversation(renamingConversation.id, title);
+    setRenamingConversation(null);
+    setRenameValue('');
+  }
+
+  function openDelete(conversation: KivoConversation) {
+    setMenuConversationId(null);
+    setDeletingConversation(conversation);
+  }
+
+  function confirmDelete() {
+    if (!deletingConversation) return;
+    onDeleteConversation(deletingConversation.id);
+    setDeletingConversation(null);
+  }
 
   if (!open) return null;
 
@@ -164,11 +200,23 @@ export function KivoSidebarOverlay({
               <div className="space-y-[7px]">
                 {visibleConversations.map((conversation) => {
                   const active = conversation.id === activeConversationId;
+                  const menuOpen = menuConversationId === conversation.id;
                   return (
-                    <button key={conversation.id} type="button" onClick={() => onOpenConversation(conversation.id)} className={`flex h-[32px] w-full items-center gap-[14px] rounded-[10px] px-[4px] text-left text-[14px] tracking-[-0.025em] ${active ? 'bg-black/[0.045] text-[#111114]' : 'text-[#17181b]'}`}>
-                      <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center text-[#707177]"><MessageCircle size={16} strokeWidth={1.8} /></span>
-                      <span className="truncate">{conversation.title}</span>
-                    </button>
+                    <div key={conversation.id} className={`relative flex h-[34px] items-center rounded-[10px] px-[4px] ${active ? 'bg-black/[0.045]' : ''}`}>
+                      <button type="button" onClick={() => onOpenConversation(conversation.id)} className="flex min-w-0 flex-1 items-center gap-[14px] text-left text-[14px] tracking-[-0.025em] text-[#17181b]">
+                        <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center text-[#707177]"><MessageCircle size={16} strokeWidth={1.8} /></span>
+                        <span className="truncate">{conversation.title}</span>
+                      </button>
+                      <button type="button" aria-label="Conversation options" onClick={() => setMenuConversationId(menuOpen ? null : conversation.id)} className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full text-[#707177] active:scale-[0.96]">
+                        <MoreHorizontal size={18} strokeWidth={2} />
+                      </button>
+                      {menuOpen ? (
+                        <div className="absolute right-[2px] top-[32px] z-20 w-[158px] overflow-hidden rounded-[16px] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.14)] ring-1 ring-black/[0.06]">
+                          <button type="button" onClick={() => openRename(conversation)} className="flex h-[42px] w-full items-center px-[14px] text-left text-[14px] tracking-[-0.02em] text-[#17181b]">Rename</button>
+                          <button type="button" onClick={() => openDelete(conversation)} className="flex h-[42px] w-full items-center gap-[8px] px-[14px] text-left text-[14px] tracking-[-0.02em] text-red-600"><Trash2 size={15} />Delete</button>
+                        </div>
+                      ) : null}
+                    </div>
                   );
                 })}
               </div>
@@ -194,6 +242,32 @@ export function KivoSidebarOverlay({
           </div>
         </div>
       </aside>
+
+      {renamingConversation ? (
+        <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/25 px-[24px] backdrop-blur-[5px]">
+          <div className="w-full max-w-[330px] rounded-[24px] bg-white p-[18px] shadow-[0_24px_70px_rgba(15,23,42,0.2)]">
+            <h3 className="text-[19px] font-semibold tracking-[-0.035em] text-[#111114]">Rename chat</h3>
+            <input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} autoFocus className="mt-[14px] h-[48px] w-full rounded-[16px] bg-black/[0.045] px-[14px] text-[16px] outline-none" />
+            <div className="mt-[16px] flex justify-end gap-[10px]">
+              <button type="button" onClick={() => setRenamingConversation(null)} className="h-[40px] rounded-full px-[16px] text-[14px] text-[#6d6e74]">Cancel</button>
+              <button type="button" onClick={submitRename} className="h-[40px] rounded-full bg-black px-[18px] text-[14px] text-white">Save</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deletingConversation ? (
+        <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/25 px-[24px] backdrop-blur-[5px]">
+          <div className="w-full max-w-[330px] rounded-[24px] bg-white p-[18px] shadow-[0_24px_70px_rgba(15,23,42,0.2)]">
+            <h3 className="text-[19px] font-semibold tracking-[-0.035em] text-[#111114]">Delete chat?</h3>
+            <p className="mt-[8px] text-[14px] leading-[1.45] text-[#707177]">This will permanently delete “{deletingConversation.title}”.</p>
+            <div className="mt-[16px] flex justify-end gap-[10px]">
+              <button type="button" onClick={() => setDeletingConversation(null)} className="h-[40px] rounded-full px-[16px] text-[14px] text-[#6d6e74]">Cancel</button>
+              <button type="button" onClick={confirmDelete} className="h-[40px] rounded-full bg-red-600 px-[18px] text-[14px] text-white">Delete</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
