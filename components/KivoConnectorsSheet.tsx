@@ -254,12 +254,34 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
     setSelectedConnector(connector);
   }
 
-  function connectConnector(connector: ConnectorConfig) {
+  async function connectConnector(connector: ConnectorConfig) {
+    if (connector.icon === 'drive') {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+      if (!userId) return;
+      window.location.href = `/api/integrations/google/drive/connect?userId=${encodeURIComponent(userId)}`;
+      return;
+    }
+
     setConnectedMap((current) => ({ ...current, [connector.icon]: true }));
     setEnabledMap((current) => ({ ...current, [connector.icon]: true }));
   }
 
-  function disconnectConnector(connector: ConnectorConfig) {
+  async function disconnectConnector(connector: ConnectorConfig) {
+    if (connector.icon === 'drive') {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+      if (!userId) return;
+
+      const response = await fetch('/api/integrations/google/drive/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) return;
+    }
+
     setConnectedMap((current) => ({ ...current, [connector.icon]: false }));
     setEnabledMap((current) => ({ ...current, [connector.icon]: false }));
   }
@@ -315,7 +337,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
         </div>
       </div>
 
-      {selectedConnector ? <KivoConnectorDetail open onBack={() => setSelectedConnector(null)} onClose={closeWithAnimation} icon={<BrandIcon icon={selectedConnector.icon} large />} title={selectedConnector.title} description={selectedConnector.description} connectorType={selectedConnector.connectorType} author={selectedConnector.author} buttonLabel={selectedConnector.buttonLabel} capabilities={selectedConnector.capabilities} isConnected={connectedMap[selectedConnector.icon]} onConnect={() => { connectConnector(selectedConnector); setSelectedConnector(null); }} onDisconnect={() => { disconnectConnector(selectedConnector); setSelectedConnector(null); }} /> : null}
+      {selectedConnector ? <KivoConnectorDetail open onBack={() => setSelectedConnector(null)} onClose={closeWithAnimation} icon={<BrandIcon icon={selectedConnector.icon} large />} title={selectedConnector.title} description={selectedConnector.description} connectorType={selectedConnector.connectorType} author={selectedConnector.author} buttonLabel={selectedConnector.buttonLabel} capabilities={selectedConnector.capabilities} isConnected={connectedMap[selectedConnector.icon]} onConnect={() => { void connectConnector(selectedConnector); }} onDisconnect={() => { void disconnectConnector(selectedConnector); setSelectedConnector(null); }} /> : null}
       <KivoGmailConnectorDetail open={gmailDetailOpen} onBack={() => setGmailDetailOpen(false)} onClose={closeWithAnimation} />
       <KivoCalendarConnectorDetail open={calendarDetailOpen} onBack={() => setCalendarDetailOpen(false)} onClose={closeWithAnimation} />
     </div>
