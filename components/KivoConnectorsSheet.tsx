@@ -133,12 +133,51 @@ function isMicrosoftConnector(icon: ConnectorIconId) {
 
 function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boolean }) {
   const size = large ? 'h-[42px] w-[42px]' : 'h-[32px] w-[32px]';
-  const base = `${size} flex items-center justify-center rounded-[9px] font-bold`;
-  if (icon === 'gmail') return <span className={`${base} text-[22px]`}>M</span>;
-  if (icon === 'google-calendar') return <span className={`${base} bg-white text-[18px]`}>31</span>;
+  const base = `${size} flex items-center justify-center overflow-hidden rounded-[8px]`;
+
+  if (icon === 'gmail') {
+    return (
+      <span className={`${base} bg-white`}>
+        <svg viewBox="0 0 48 48" className="h-[26px] w-[26px]" aria-hidden="true">
+          <path fill="#4285F4" d="M43 37H34V20.8L24 28.3 14 20.8V37H5V11h6.2L24 20.6 36.8 11H43v26Z" />
+          <path fill="#34A853" d="M5 11h6.2L24 20.6v7.7L5 14.1V11Z" />
+          <path fill="#FBBC04" d="M43 11v3.1L24 28.3v-7.7L36.8 11H43Z" />
+          <path fill="#EA4335" d="M5 14.1 14 20.8V37H5V14.1Zm38 0V37h-9V20.8l9-6.7Z" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (icon === 'google-calendar') {
+    return (
+      <span className={`${base} bg-white`}>
+        <svg viewBox="0 0 48 48" className="h-[27px] w-[27px]" aria-hidden="true">
+          <path fill="#4285F4" d="M10 10h28v28H10z" />
+          <path fill="#34A853" d="M10 29h28v9H10z" />
+          <path fill="#FBBC04" d="M10 20h28v9H10z" />
+          <path fill="#EA4335" d="M10 10h28v10H10z" />
+          <path fill="#fff" d="M14 15h20v19H14z" />
+          <text x="24" y="30" textAnchor="middle" fontSize="13" fontWeight="700" fill="#4285F4">31</text>
+        </svg>
+      </span>
+    );
+  }
+
   if (icon === 'drive') return <span className={`${base} text-[20px]`}>△</span>;
-  if (icon === 'outlook-mail') return <span className={`${base} bg-[#0a63d8] text-[12px] text-white`}>O</span>;
-  return <span className={`${base} bg-[#22a8e8] text-[17px] text-white`}>▦</span>;
+
+  if (icon === 'outlook-mail') {
+    return (
+      <span className={`${base} bg-white`}>
+        <span className="flex h-[27px] w-[27px] items-center justify-center rounded-[5px] bg-[#0a63d8] text-[12px] font-bold text-white">O</span>
+      </span>
+    );
+  }
+
+  return (
+    <span className={`${base} bg-white`}>
+      <span className="flex h-[27px] w-[27px] items-center justify-center rounded-[5px] bg-[#22a8e8] text-[15px] font-bold text-white">▦</span>
+    </span>
+  );
 }
 
 export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps) {
@@ -156,12 +195,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
     setGmailDetailOpen(false);
     setCalendarDetailOpen(false);
     const frame = requestAnimationFrame(() => setIsVisible(true));
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      cancelAnimationFrame(frame);
-      document.body.style.overflow = originalOverflow;
-    };
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   useEffect(() => {
@@ -207,7 +241,7 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
     setSelectedConnector(null);
     setGmailDetailOpen(false);
     setCalendarDetailOpen(false);
-    window.setTimeout(onClose, 180);
+    window.setTimeout(onClose, 160);
   }
 
   function openConnector(connector: ConnectorConfig) {
@@ -266,53 +300,60 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
   }
 
   return (
-    <div className="fixed inset-0 z-[95]">
-      <button type="button" aria-label="Close connectors" onClick={closeWithAnimation} className={`absolute inset-0 bg-black/20 backdrop-blur-[3px] transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />
-      <div className={`absolute inset-x-0 bottom-0 mx-auto h-[92vh] w-full max-w-[430px] overflow-hidden rounded-t-[28px] bg-[#fbfbfc] shadow-[0_-16px_40px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-[110px]'}`}>
-        <div className="h-full overflow-y-auto px-[22px] pb-[calc(env(safe-area-inset-bottom)+28px)] pt-[28px] [-webkit-overflow-scrolling:touch]">
-          <header className="relative pr-[58px]">
-            <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute right-0 top-0 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#f0f0f1] text-[#111] transition active:scale-[0.96]"><X size={22} strokeWidth={2.1} /></button>
-            <h2 className="text-[31px] font-semibold leading-none tracking-[-0.055em] text-[#111114]">Connectors</h2>
-            <p className="mt-[20px] max-w-[340px] text-[18px] leading-[1.42] tracking-[-0.035em] text-[#5f6067]">Connect your apps and services to give Kivo access to your data and tools.</p>
-          </header>
+    <div className="fixed inset-0 z-[95] pointer-events-none">
+      <button type="button" aria-label="Close connectors" onClick={closeWithAnimation} className={`absolute inset-0 pointer-events-auto bg-white/0 backdrop-blur-[0px] transition duration-160 ${isVisible ? 'backdrop-blur-[1.5px]' : ''}`} />
 
-          <div className="mt-[32px] grid grid-cols-2 gap-[14px]">
-            <button type="button" className="relative min-h-[136px] rounded-[20px] border border-black/[0.055] bg-white p-[16px] text-left shadow-[0_12px_34px_rgba(15,23,42,0.025)] transition active:scale-[0.99]">
-              <span className="flex h-[44px] w-[44px] items-center justify-center rounded-[13px] bg-[#f2f2f3] text-[#1f2023]"><Plus size={25} strokeWidth={2.1} /></span>
-              <ChevronRight size={23} strokeWidth={2.2} className="absolute right-[14px] top-[25px] text-[#44454a]" />
-              <span className="mt-[28px] block text-[18px] font-semibold tracking-[-0.035em] text-[#141518]">Add connector</span>
-              <span className="mt-[10px] block text-[16px] leading-[1.25] tracking-[-0.035em] text-[#686971]">Connect a new app or service</span>
-            </button>
+      <div className={`absolute inset-x-0 bottom-[116px] mx-auto w-[332px] max-w-[calc(100vw-48px)] origin-bottom pointer-events-auto transition duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[12px] scale-[0.965] opacity-0'}`}>
+        <div className="relative overflow-visible">
+          <div className="absolute left-1/2 bottom-[-14px] h-[28px] w-[28px] -translate-x-1/2 rotate-45 rounded-[5px] bg-white/94 ring-1 ring-black/[0.018]" />
 
-            <button type="button" className="relative min-h-[136px] rounded-[20px] border border-black/[0.055] bg-white p-[16px] text-left shadow-[0_12px_34px_rgba(15,23,42,0.025)] transition active:scale-[0.99]">
-              <span className="flex h-[44px] w-[44px] items-center justify-center rounded-[13px] bg-[#f2f2f3] text-[#1f2023]"><SlidersHorizontal size={24} strokeWidth={2.1} /></span>
-              <ChevronRight size={23} strokeWidth={2.2} className="absolute right-[14px] top-[25px] text-[#44454a]" />
-              <span className="mt-[28px] block text-[18px] font-semibold tracking-[-0.035em] text-[#141518]">Manage connectors</span>
-              <span className="mt-[10px] block text-[16px] leading-[1.25] tracking-[-0.035em] text-[#686971]">View and edit your connections</span>
-            </button>
-          </div>
+          <div className="relative max-h-[61vh] overflow-hidden rounded-[24px] bg-white/94 shadow-[0_18px_54px_rgba(15,23,42,0.075)] ring-1 ring-black/[0.03] backdrop-blur-2xl">
+            <div className="px-[22px] pb-[16px] pt-[22px]">
+              <header className="relative pr-[44px]">
+                <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute right-0 top-[-3px] flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#f2f2f3] text-[#111] transition active:scale-[0.96]"><X size={21} strokeWidth={2.1} /></button>
+                <h2 className="text-[23px] font-semibold leading-none tracking-[-0.055em] text-[#111114]">Connectors</h2>
+                <p className="mt-[16px] max-w-[250px] text-[13.5px] leading-[1.35] tracking-[-0.025em] text-[#686971]">Connect your apps and services to give Kivo access to your data and tools.</p>
+              </header>
 
-          <section className="mt-[32px]">
-            <h3 className="mb-[14px] text-[13px] font-semibold uppercase tracking-[0.06em] text-[#696a72]">Available connectors</h3>
-            <div className="space-y-[10px]">
-              {connectorConfigs.map((connector) => {
-                const connected = connectedMap[connector.icon];
-                const loadingStatus = loadingStatusMap[connector.icon];
-                return (
-                  <button key={connector.name} type="button" onClick={() => openConnector(connector)} className="flex min-h-[72px] w-full items-center gap-[14px] rounded-[18px] border border-black/[0.055] bg-white px-[14px] py-[12px] text-left shadow-[0_10px_30px_rgba(15,23,42,0.02)] transition active:scale-[0.992]">
-                    <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center"><BrandIcon icon={connector.icon} /></span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[17px] font-semibold tracking-[-0.035em] text-[#141518]">{connector.name}</span>
-                      <span className="mt-[3px] block truncate text-[13.5px] leading-[1.25] tracking-[-0.025em] text-[#65666e]">{connector.icon === 'gmail' ? 'Access your email, labels and messages' : connector.icon === 'google-calendar' ? 'See events and manage your schedule' : connector.icon === 'outlook-mail' ? 'Connect your Outlook email account' : connector.icon === 'outlook-calendar' ? 'Sync and manage your Outlook events' : connector.icon === 'drive' ? 'Search and access your files' : 'Connect your data'}</span>
-                    </span>
-                    <span className={`flex h-[34px] min-w-[82px] items-center justify-center rounded-[10px] border px-[14px] text-[14px] font-semibold tracking-[-0.025em] ${connected ? 'border-[#d9dadd] bg-[#f4f4f5] text-[#5f6067]' : 'border-black/[0.12] bg-white text-[#141518]'}`}>
-                      {loadingStatus ? 'Checking' : connected ? <span className="flex items-center gap-[5px]"><Check size={15} strokeWidth={2.1} /> Connected</span> : 'Connect'}
-                    </span>
-                  </button>
-                );
-              })}
+              <div className="mt-[22px] grid grid-cols-2 gap-[10px]">
+                <button type="button" className="relative min-h-[116px] rounded-[17px] border border-black/[0.055] bg-white p-[13px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.018)] transition active:scale-[0.99]">
+                  <span className="flex h-[40px] w-[40px] items-center justify-center rounded-[12px] bg-[#f2f2f3] text-[#1f2023]"><Plus size={23} strokeWidth={2.1} /></span>
+                  <ChevronRight size={21} strokeWidth={2.2} className="absolute right-[12px] top-[24px] text-[#70727a]" />
+                  <span className="mt-[25px] block text-[14.5px] font-semibold tracking-[-0.035em] text-[#141518]">Add connector</span>
+                  <span className="mt-[8px] block text-[12.5px] leading-[1.3] tracking-[-0.025em] text-[#686971]">Connect a new app or service</span>
+                </button>
+
+                <button type="button" className="relative min-h-[116px] rounded-[17px] border border-black/[0.055] bg-white p-[13px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.018)] transition active:scale-[0.99]">
+                  <span className="flex h-[40px] w-[40px] items-center justify-center rounded-[12px] bg-[#f2f2f3] text-[#1f2023]"><SlidersHorizontal size={22} strokeWidth={2.1} /></span>
+                  <ChevronRight size={21} strokeWidth={2.2} className="absolute right-[12px] top-[24px] text-[#70727a]" />
+                  <span className="mt-[25px] block text-[14.5px] font-semibold tracking-[-0.035em] text-[#141518]">Manage connectors</span>
+                  <span className="mt-[8px] block text-[12.5px] leading-[1.3] tracking-[-0.025em] text-[#686971]">View and edit your connections</span>
+                </button>
+              </div>
             </div>
-          </section>
+
+            <section className="px-[22px] pb-[18px]">
+              <h3 className="mb-[10px] text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7b7d85]">Available connectors</h3>
+              <div className="max-h-[236px] space-y-[8px] overflow-y-auto pr-[1px] [-webkit-overflow-scrolling:touch]">
+                {connectorConfigs.map((connector) => {
+                  const connected = connectedMap[connector.icon];
+                  const loadingStatus = loadingStatusMap[connector.icon];
+                  return (
+                    <button key={connector.name} type="button" onClick={() => openConnector(connector)} className="flex min-h-[54px] w-full items-center gap-[12px] rounded-[15px] border border-black/[0.055] bg-white px-[11px] py-[8px] text-left shadow-[0_8px_22px_rgba(15,23,42,0.016)] transition active:scale-[0.992]">
+                      <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center"><BrandIcon icon={connector.icon} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-semibold tracking-[-0.035em] text-[#141518]">{connector.name}</span>
+                        <span className="mt-[2px] block truncate text-[11.5px] leading-[1.2] tracking-[-0.02em] text-[#686971]">{connector.icon === 'gmail' ? 'Access your email, ...' : connector.icon === 'google-calendar' ? 'See events and ma...' : connector.icon === 'outlook-mail' ? 'Connect your Outlook e...' : connector.icon === 'outlook-calendar' ? 'Sync and manage your O...' : connector.icon === 'drive' ? 'Search and access files' : 'Connect your data'}</span>
+                      </span>
+                      <span className={`flex h-[31px] min-w-[82px] items-center justify-center rounded-[12px] px-[10px] text-[12px] font-semibold tracking-[-0.025em] ${connected ? 'bg-[#f2f2f4] text-[#313238]' : 'border border-black/[0.1] bg-white text-[#141518]'}`}>
+                        {loadingStatus ? 'Checking' : connected ? <span className="flex items-center gap-[5px]"><Check size={13} strokeWidth={2.1} /> Connected</span> : 'Connect'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
         </div>
       </div>
 
