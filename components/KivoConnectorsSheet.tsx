@@ -56,10 +56,10 @@ const emptyConnectedMap: Record<ConnectorIconId, boolean> = {
 const brandIconConfigs: Record<ConnectorIconId, BrandIconConfig> = {
   gmail: {
     label: 'Gmail',
-    imageSrc: 'https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png',
-    imageClassName: 'h-[25px] w-[25px]',
+    imageSrc: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png',
+    imageClassName: 'h-[28px] w-[28px]',
     fallback: (
-      <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
+      <svg viewBox="0 0 48 48" className="h-[28px] w-[28px]" aria-hidden="true">
         <path fill="#4285F4" d="M43 37H34V20.8L24 28.3 14 20.8V37H5V11h6.2L24 20.6 36.8 11H43v26Z" />
         <path fill="#34A853" d="M5 11h6.2L24 20.6v7.7L5 14.1V11Z" />
         <path fill="#FBBC04" d="M43 11v3.1L24 28.3v-7.7L36.8 11H43Z" />
@@ -69,10 +69,10 @@ const brandIconConfigs: Record<ConnectorIconId, BrandIconConfig> = {
   },
   'google-calendar': {
     label: 'Google Calendar',
-    imageSrc: 'https://www.gstatic.com/images/branding/product/1x/calendar_48dp.png',
-    imageClassName: 'h-[25px] w-[25px]',
+    imageSrc: 'https://www.gstatic.com/images/branding/product/2x/calendar_2020q4_48dp.png',
+    imageClassName: 'h-[28px] w-[28px]',
     fallback: (
-      <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
+      <svg viewBox="0 0 48 48" className="h-[28px] w-[28px]" aria-hidden="true">
         <path fill="#4285F4" d="M10 10h28v28H10z" />
         <path fill="#34A853" d="M10 29h28v9H10z" />
         <path fill="#FBBC04" d="M10 20h28v9H10z" />
@@ -84,10 +84,10 @@ const brandIconConfigs: Record<ConnectorIconId, BrandIconConfig> = {
   },
   drive: {
     label: 'Google Drive',
-    imageSrc: 'https://www.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png',
-    imageClassName: 'h-[25px] w-[25px]',
+    imageSrc: 'https://www.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png',
+    imageClassName: 'h-[28px] w-[28px]',
     fallback: (
-      <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
+      <svg viewBox="0 0 48 48" className="h-[28px] w-[28px]" aria-hidden="true">
         <path fill="#1FA463" d="M18.4 6h11.2l14.1 24.4H32.4L18.4 6Z" />
         <path fill="#FFD04B" d="M18.4 6 4.3 30.4l5.6 9.6L24 15.6 18.4 6Z" />
         <path fill="#4688F1" d="M9.9 40h28.2l5.6-9.6H15.5L9.9 40Z" />
@@ -96,15 +96,15 @@ const brandIconConfigs: Record<ConnectorIconId, BrandIconConfig> = {
   },
   'outlook-mail': {
     label: 'Outlook Mail',
-    imageSrc: 'https://res.cdn.office.net/assets/mail/filehandler/16.0.18623.41616/Outlook_32x32.png',
-    imageClassName: 'h-[26px] w-[26px]',
-    fallback: <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] bg-[#0a63d8] text-[12px] font-bold text-white">O</span>,
+    imageSrc: 'https://res.cdn.office.net/assets/mail/filehandler/16.0.19029.20068/Outlook_64x64.png',
+    imageClassName: 'h-[28px] w-[28px]',
+    fallback: <span className="flex h-[28px] w-[28px] items-center justify-center rounded-[6px] bg-[#0a63d8] text-[13px] font-bold text-white">O</span>,
   },
   'outlook-calendar': {
     label: 'Outlook Calendar',
-    imageSrc: 'https://res.cdn.office.net/assets/calendar/filehandler/16.0.18623.41616/Calendar_32x32.png',
-    imageClassName: 'h-[26px] w-[26px]',
-    fallback: <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] bg-[#22a8e8] text-[15px] font-bold text-white">▦</span>,
+    imageSrc: 'https://res.cdn.office.net/assets/calendar/filehandler/16.0.19029.20068/Calendar_64x64.png',
+    imageClassName: 'h-[28px] w-[28px]',
+    fallback: <span className="flex h-[28px] w-[28px] items-center justify-center rounded-[6px] bg-[#22a8e8] text-[16px] font-bold text-white">▦</span>,
   },
 };
 
@@ -196,11 +196,11 @@ function isMicrosoftConnector(icon: ConnectorIconId) {
 function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boolean }) {
   const [hasImageError, setHasImageError] = useState(false);
   const config = brandIconConfigs[icon];
-  const size = large ? 'h-[42px] w-[42px]' : 'h-[32px] w-[32px]';
-  const imageSize = large ? 'h-[32px] w-[32px]' : config.imageClassName ?? 'h-[25px] w-[25px]';
+  const size = large ? 'h-[44px] w-[44px]' : 'h-[34px] w-[34px]';
+  const imageSize = large ? 'h-[34px] w-[34px]' : config.imageClassName ?? 'h-[28px] w-[28px]';
 
   return (
-    <span className={`${size} flex items-center justify-center overflow-hidden rounded-[8px] bg-white shadow-[0_2px_7px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.025]`}>
+    <span className={`${size} flex items-center justify-center overflow-hidden rounded-[9px] bg-white shadow-[0_2px_7px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.025]`}>
       {!hasImageError ? (
         <img
           src={config.imageSrc}
