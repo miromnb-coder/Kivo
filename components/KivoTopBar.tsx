@@ -44,7 +44,7 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 flex h-[calc(env(safe-area-inset-top)+54px)] items-start justify-between bg-[#f7f7f8] px-[30px] pt-[calc(env(safe-area-inset-top)+6px)]">
+      <header className="fixed inset-x-0 top-0 z-40 flex h-[calc(env(safe-area-inset-top)+54px)] items-start justify-between bg-inherit px-[30px] pt-[calc(env(safe-area-inset-top)+6px)]">
         <button
           type="button"
           aria-label="Open menu"
