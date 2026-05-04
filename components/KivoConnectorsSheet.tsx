@@ -138,7 +138,7 @@ function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boo
   if (icon === 'gmail') {
     return (
       <span className={`${base} bg-white`}>
-        <svg viewBox="0 0 48 48" className="h-[26px] w-[26px]" aria-hidden="true">
+        <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
           <path fill="#4285F4" d="M43 37H34V20.8L24 28.3 14 20.8V37H5V11h6.2L24 20.6 36.8 11H43v26Z" />
           <path fill="#34A853" d="M5 11h6.2L24 20.6v7.7L5 14.1V11Z" />
           <path fill="#FBBC04" d="M43 11v3.1L24 28.3v-7.7L36.8 11H43Z" />
@@ -151,7 +151,7 @@ function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boo
   if (icon === 'google-calendar') {
     return (
       <span className={`${base} bg-white`}>
-        <svg viewBox="0 0 48 48" className="h-[27px] w-[27px]" aria-hidden="true">
+        <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
           <path fill="#4285F4" d="M10 10h28v28H10z" />
           <path fill="#34A853" d="M10 29h28v9H10z" />
           <path fill="#FBBC04" d="M10 20h28v9H10z" />
@@ -168,14 +168,14 @@ function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boo
   if (icon === 'outlook-mail') {
     return (
       <span className={`${base} bg-white`}>
-        <span className="flex h-[27px] w-[27px] items-center justify-center rounded-[5px] bg-[#0a63d8] text-[12px] font-bold text-white">O</span>
+        <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] bg-[#0a63d8] text-[12px] font-bold text-white">O</span>
       </span>
     );
   }
 
   return (
     <span className={`${base} bg-white`}>
-      <span className="flex h-[27px] w-[27px] items-center justify-center rounded-[5px] bg-[#22a8e8] text-[15px] font-bold text-white">▦</span>
+      <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] bg-[#22a8e8] text-[15px] font-bold text-white">▦</span>
     </span>
   );
 }
@@ -303,16 +303,16 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
     <div className="fixed inset-0 z-[95] pointer-events-none">
       <button type="button" aria-label="Close connectors" onClick={closeWithAnimation} className={`absolute inset-0 pointer-events-auto bg-white/0 backdrop-blur-[0px] transition duration-160 ${isVisible ? 'backdrop-blur-[1.5px]' : ''}`} />
 
-      <div className={`absolute inset-x-0 bottom-[116px] mx-auto w-[332px] max-w-[calc(100vw-48px)] origin-bottom pointer-events-auto transition duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[12px] scale-[0.965] opacity-0'}`}>
+      <div className={`absolute inset-x-0 bottom-[126px] mx-auto w-[332px] max-w-[calc(100vw-48px)] origin-bottom pointer-events-auto transition duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[12px] scale-[0.965] opacity-0'}`}>
         <div className="relative overflow-visible">
           <div className="absolute left-1/2 bottom-[-14px] h-[28px] w-[28px] -translate-x-1/2 rotate-45 rounded-[5px] bg-white/94 ring-1 ring-black/[0.018]" />
 
-          <div className="relative max-h-[61vh] overflow-hidden rounded-[24px] bg-white/94 shadow-[0_18px_54px_rgba(15,23,42,0.075)] ring-1 ring-black/[0.03] backdrop-blur-2xl">
+          <div className="relative max-h-[58vh] overflow-hidden rounded-[24px] bg-white/94 shadow-[0_18px_54px_rgba(15,23,42,0.075)] ring-1 ring-black/[0.03] backdrop-blur-2xl">
             <div className="px-[22px] pb-[16px] pt-[22px]">
               <header className="relative pr-[44px]">
-                <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute right-0 top-[-3px] flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#f2f2f3] text-[#111] transition active:scale-[0.96]"><X size={21} strokeWidth={2.1} /></button>
+                <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute right-0 top-[-4px] flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#f2f2f3] text-[#111] transition active:scale-[0.96]"><X size={21} strokeWidth={2.1} /></button>
                 <h2 className="text-[23px] font-semibold leading-none tracking-[-0.055em] text-[#111114]">Connectors</h2>
-                <p className="mt-[16px] max-w-[250px] text-[13.5px] leading-[1.35] tracking-[-0.025em] text-[#686971]">Connect your apps and services to give Kivo access to your data and tools.</p>
+                <p className="mt-[16px] max-w-[270px] text-[13.5px] leading-[1.35] tracking-[-0.025em] text-[#686971]">Connect your apps and services to give Kivo access to your data and tools.</p>
               </header>
 
               <div className="mt-[22px] grid grid-cols-2 gap-[10px]">
