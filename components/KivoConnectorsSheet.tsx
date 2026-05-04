@@ -308,33 +308,33 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
           <div className="absolute left-1/2 bottom-[-14px] h-[28px] w-[28px] -translate-x-1/2 rotate-45 rounded-[5px] bg-white/94 ring-1 ring-black/[0.018]" />
 
           <div className="relative max-h-[58vh] overflow-hidden rounded-[24px] bg-white/94 shadow-[0_18px_54px_rgba(15,23,42,0.075)] ring-1 ring-black/[0.03] backdrop-blur-2xl">
-            <div className="px-[22px] pb-[12px] pt-[20px]">
+            <div className="px-[22px] pb-[10px] pt-[20px]">
               <header className="relative pr-[44px]">
                 <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute right-0 top-[-4px] flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#f2f2f3] text-[#111] transition active:scale-[0.96]"><X size={21} strokeWidth={2.1} /></button>
                 <h2 className="text-[23px] font-semibold leading-none tracking-[-0.055em] text-[#111114]">Connectors</h2>
-                <p className="mt-[12px] max-w-[270px] text-[13px] leading-[1.32] tracking-[-0.025em] text-[#686971]">Connect your apps and services to give Kivo access to your data and tools.</p>
+                <p className="mt-[10px] max-w-[270px] text-[13px] leading-[1.28] tracking-[-0.025em] text-[#686971]">Connect your apps and services to give Kivo access to your data and tools.</p>
               </header>
 
-              <div className="mt-[16px] grid grid-cols-2 gap-[10px]">
-                <button type="button" className="relative min-h-[102px] rounded-[17px] border border-black/[0.055] bg-white p-[12px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.018)] transition active:scale-[0.99]">
-                  <span className="flex h-[36px] w-[36px] items-center justify-center rounded-[11px] bg-[#f2f2f3] text-[#1f2023]"><Plus size={21} strokeWidth={2.1} /></span>
-                  <ChevronRight size={20} strokeWidth={2.2} className="absolute right-[12px] top-[22px] text-[#70727a]" />
-                  <span className="mt-[18px] block text-[14px] font-semibold tracking-[-0.035em] text-[#141518]">Add connector</span>
-                  <span className="mt-[6px] block text-[12px] leading-[1.25] tracking-[-0.025em] text-[#686971]">Connect a new app or service</span>
+              <div className="mt-[14px] grid grid-cols-2 gap-[10px]">
+                <button type="button" className="relative min-h-[78px] rounded-[16px] border border-black/[0.055] bg-white p-[11px] text-left shadow-[0_8px_22px_rgba(15,23,42,0.016)] transition active:scale-[0.99]">
+                  <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[10px] bg-[#f2f2f3] text-[#1f2023]"><Plus size={19} strokeWidth={2.1} /></span>
+                  <ChevronRight size={19} strokeWidth={2.2} className="absolute right-[11px] top-[17px] text-[#70727a]" />
+                  <span className="mt-[10px] block text-[13.5px] font-semibold tracking-[-0.035em] text-[#141518]">Add connector</span>
+                  <span className="mt-[3px] block truncate text-[11.5px] tracking-[-0.025em] text-[#686971]">Connect a new app</span>
                 </button>
 
-                <button type="button" className="relative min-h-[102px] rounded-[17px] border border-black/[0.055] bg-white p-[12px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.018)] transition active:scale-[0.99]">
-                  <span className="flex h-[36px] w-[36px] items-center justify-center rounded-[11px] bg-[#f2f2f3] text-[#1f2023]"><SlidersHorizontal size={20} strokeWidth={2.1} /></span>
-                  <ChevronRight size={20} strokeWidth={2.2} className="absolute right-[12px] top-[22px] text-[#70727a]" />
-                  <span className="mt-[18px] block text-[14px] font-semibold tracking-[-0.035em] text-[#141518]">Manage connectors</span>
-                  <span className="mt-[6px] block text-[12px] leading-[1.25] tracking-[-0.025em] text-[#686971]">View and edit your connections</span>
+                <button type="button" className="relative min-h-[78px] rounded-[16px] border border-black/[0.055] bg-white p-[11px] text-left shadow-[0_8px_22px_rgba(15,23,42,0.016)] transition active:scale-[0.99]">
+                  <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[10px] bg-[#f2f2f3] text-[#1f2023]"><SlidersHorizontal size={18} strokeWidth={2.1} /></span>
+                  <ChevronRight size={19} strokeWidth={2.2} className="absolute right-[11px] top-[17px] text-[#70727a]" />
+                  <span className="mt-[10px] block text-[13.5px] font-semibold tracking-[-0.035em] text-[#141518]">Manage</span>
+                  <span className="mt-[3px] block truncate text-[11.5px] tracking-[-0.025em] text-[#686971]">Edit connections</span>
                 </button>
               </div>
             </div>
 
-            <section className="px-[22px] pb-[18px]">
-              <h3 className="mb-[8px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#7b7d85]">Available connectors</h3>
-              <div className="max-h-[276px] space-y-[8px] overflow-y-auto pr-[1px] [-webkit-overflow-scrolling:touch]">
+            <section className="flex min-h-0 flex-1 flex-col px-[22px] pb-[10px]">
+              <h3 className="mb-[7px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#7b7d85]">Available connectors</h3>
+              <div className="max-h-[330px] space-y-[8px] overflow-y-auto overscroll-contain pb-[22px] pr-[1px] [-webkit-overflow-scrolling:touch]">
                 {connectorConfigs.map((connector) => {
                   const connected = connectedMap[connector.icon];
                   const loadingStatus = loadingStatusMap[connector.icon];
