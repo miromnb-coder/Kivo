@@ -68,46 +68,46 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
             className="absolute inset-0 bg-transparent"
           />
 
-          <div className="absolute right-[30px] top-[calc(env(safe-area-inset-top)+75px)] w-[306px] overflow-visible">
-            <div className="absolute right-[18px] top-[-18px] h-[34px] w-[34px] rotate-45 rounded-[7px] bg-white/92 shadow-[0_8px_22px_rgba(15,23,42,0.045)] ring-1 ring-black/[0.025]" />
+          <div className="absolute right-[28px] top-[calc(env(safe-area-inset-top)+68px)] w-[282px] overflow-visible">
+            <div className="absolute right-[15px] top-[-15px] h-[30px] w-[30px] rotate-45 rounded-[7px] bg-white/92 shadow-[0_8px_20px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02]" />
 
-            <div className="relative overflow-hidden rounded-[25px] bg-white/92 shadow-[0_22px_70px_rgba(15,23,42,0.09)] ring-1 ring-black/[0.035] backdrop-blur-2xl">
-              <button type="button" onClick={() => setMoreOpen(false)} className="flex h-[58px] w-full items-center gap-[22px] px-[28px] text-left text-[17px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
-                <Sparkles size={22} strokeWidth={1.9} />
+            <div className="relative overflow-hidden rounded-[23px] bg-white/92 shadow-[0_20px_60px_rgba(15,23,42,0.075)] ring-1 ring-black/[0.03] backdrop-blur-2xl">
+              <button type="button" onClick={() => setMoreOpen(false)} className="flex h-[48px] w-full items-center gap-[19px] px-[24px] text-left text-[15px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
+                <Sparkles size={19} strokeWidth={1.9} />
                 <span className="flex-1">New chat</span>
-                <span className="text-[30px] font-light leading-none">+</span>
+                <span className="text-[27px] font-light leading-none">+</span>
               </button>
 
-              <div className="mx-[28px] h-px bg-black/[0.055]" />
+              <div className="mx-[24px] h-px bg-black/[0.045]" />
 
-              <Link href="/upgrade" onClick={() => setMoreOpen(false)} className="flex h-[58px] w-full items-center gap-[22px] px-[28px] text-left text-[17px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
-                <CircleDollarSign size={22} strokeWidth={1.9} />
+              <Link href="/upgrade" onClick={() => setMoreOpen(false)} className="flex h-[48px] w-full items-center gap-[19px] px-[24px] text-left text-[15px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
+                <CircleDollarSign size={19} strokeWidth={1.9} />
                 <span className="flex-1">Credits</span>
-                <span className="rounded-full bg-[#eeeeF2] px-[13px] py-[5px] text-[15px] font-medium text-[#666872]">397</span>
+                <span className="rounded-full bg-[#eeeeF2] px-[11px] py-[4px] text-[13px] font-medium text-[#666872]">397</span>
               </Link>
 
-              <div className="mx-[28px] h-px bg-black/[0.055]" />
+              <div className="mx-[24px] h-px bg-black/[0.045]" />
 
-              <Link href="/notifications" onClick={() => setMoreOpen(false)} className="flex h-[58px] w-full items-center gap-[22px] px-[28px] text-left text-[17px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
-                <Bell size={22} strokeWidth={1.9} />
+              <Link href="/notifications" onClick={() => setMoreOpen(false)} className="flex h-[48px] w-full items-center gap-[19px] px-[24px] text-left text-[15px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
+                <Bell size={19} strokeWidth={1.9} />
                 <span className="flex-1">Notifications</span>
-                <span className="h-[11px] w-[11px] rounded-full bg-black" />
+                <span className="h-[9px] w-[9px] rounded-full bg-black" />
               </Link>
 
-              <div className="mx-[28px] h-px bg-black/[0.055]" />
+              <div className="mx-[24px] h-px bg-black/[0.045]" />
 
-              <Link href="/tools" onClick={() => setMoreOpen(false)} className="flex h-[58px] w-full items-center gap-[22px] px-[28px] text-left text-[17px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
-                <Grid2X2 size={22} strokeWidth={1.9} />
+              <Link href="/tools" onClick={() => setMoreOpen(false)} className="flex h-[48px] w-full items-center gap-[19px] px-[24px] text-left text-[15px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
+                <Grid2X2 size={19} strokeWidth={1.9} />
                 <span className="flex-1">Tools</span>
-                <span className="text-[32px] font-light leading-none">›</span>
+                <span className="text-[29px] font-light leading-none">›</span>
               </Link>
 
-              <div className="mx-[28px] h-px bg-black/[0.055]" />
+              <div className="mx-[24px] h-px bg-black/[0.045]" />
 
-              <Link href="/settings" onClick={() => setMoreOpen(false)} className="flex h-[58px] w-full items-center gap-[22px] px-[28px] text-left text-[17px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
-                <Settings size={22} strokeWidth={1.9} />
+              <Link href="/settings" onClick={() => setMoreOpen(false)} className="flex h-[48px] w-full items-center gap-[19px] px-[24px] text-left text-[15px] font-medium tracking-[-0.025em] text-[#16171a] active:scale-[0.99]">
+                <Settings size={19} strokeWidth={1.9} />
                 <span className="flex-1">Settings</span>
-                <span className="text-[32px] font-light leading-none">›</span>
+                <span className="text-[29px] font-light leading-none">›</span>
               </Link>
             </div>
           </div>
