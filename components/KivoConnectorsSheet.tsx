@@ -307,8 +307,8 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
         <div className="relative overflow-visible">
           <div className="absolute left-1/2 bottom-[-14px] h-[28px] w-[28px] -translate-x-1/2 rotate-45 rounded-[5px] bg-white/94 ring-1 ring-black/[0.018]" />
 
-          <div className="relative max-h-[58vh] overflow-hidden rounded-[24px] bg-white/94 shadow-[0_18px_54px_rgba(15,23,42,0.075)] ring-1 ring-black/[0.03] backdrop-blur-2xl">
-            <div className="px-[22px] pb-[10px] pt-[20px]">
+          <div className="relative flex max-h-[58vh] flex-col overflow-hidden rounded-[24px] bg-white/94 shadow-[0_18px_54px_rgba(15,23,42,0.075)] ring-1 ring-black/[0.03] backdrop-blur-2xl">
+            <div className="shrink-0 px-[22px] pb-[10px] pt-[20px]">
               <header className="relative pr-[44px]">
                 <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute right-0 top-[-4px] flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#f2f2f3] text-[#111] transition active:scale-[0.96]"><X size={21} strokeWidth={2.1} /></button>
                 <h2 className="text-[23px] font-semibold leading-none tracking-[-0.055em] text-[#111114]">Connectors</h2>
@@ -333,8 +333,8 @@ export function KivoConnectorsSheet({ open, onClose }: KivoConnectorsSheetProps)
             </div>
 
             <section className="flex min-h-0 flex-1 flex-col px-[22px] pb-[10px]">
-              <h3 className="mb-[7px] text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#7b7d85]">Available connectors</h3>
-              <div className="max-h-[330px] space-y-[8px] overflow-y-auto overscroll-contain pb-[22px] pr-[1px] [-webkit-overflow-scrolling:touch]">
+              <h3 className="mb-[7px] shrink-0 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#7b7d85]">Available connectors</h3>
+              <div className="min-h-0 flex-1 touch-pan-y space-y-[8px] overflow-y-scroll overscroll-contain pb-[32px] pr-[1px] [-webkit-overflow-scrolling:touch]">
                 {connectorConfigs.map((connector) => {
                   const connected = connectedMap[connector.icon];
                   const loadingStatus = loadingStatusMap[connector.icon];
