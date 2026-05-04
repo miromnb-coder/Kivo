@@ -1,102 +1,255 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Clock3, MessageCircle, MoreVertical, Search, Sparkles, Trash2 } from 'lucide-react';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import { KivoTopBar } from './KivoTopBar';
 
-function groupByDate(conversations: any[]) {
-  const today: any[] = [];
-  const yesterday: any[] = [];
-  const week: any[] = [];
+type ConversationRow = {
+  id: string;
+  title: string | null;
+  updated_at: string;
+  created_at?: string | null;
+  is_favorite?: boolean | null;
+  status?: string | null;
+  preview?: string | null;
+  last_role?: string | null;
+};
 
+type Group = {
+  title: string;
+  items: ConversationRow[];
+};
+
+function cleanPreview(value?: string | null) {
+  const cleaned = (value ?? '').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return 'Open this conversation';
+  return cleaned.length > 82 ? `${cleaned.slice(0, 82).trim()}…` : cleaned;
+}
+
+function formatTime(value: string) {
+  const date = new Date(value);
   const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
 
-  conversations.forEach((c) => {
-    const date = new Date(c.updated_at);
-    const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+  if (diffDays <= 0) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
 
-    if (diff < 1) today.push(c);
-    else if (diff < 2) yesterday.push(c);
-    else week.push(c);
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function createGroups(conversations: ConversationRow[]): Group[] {
+  const now = new Date();
+  const today: ConversationRow[] = [];
+  const yesterday: ConversationRow[] = [];
+  const week: ConversationRow[] = [];
+  const older: ConversationRow[] = [];
+
+  conversations.forEach((conversation) => {
+    const date = new Date(conversation.updated_at);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfYesterday = startOfToday - 86400000;
+    const time = date.getTime();
+
+    if (time >= startOfToday) today.push(conversation);
+    else if (time >= startOfYesterday) yesterday.push(conversation);
+    else if (now.getTime() - time < 7 * 86400000) week.push(conversation);
+    else older.push(conversation);
   });
 
-  return { today, yesterday, week };
+  return [
+    { title: 'Today', items: today },
+    { title: 'Yesterday', items: yesterday },
+    { title: 'Previous 7 days', items: week },
+    { title: 'Older', items: older },
+  ].filter((group) => group.items.length > 0);
 }
 
 export function KivoHistoryScreen() {
-  const [conversations, setConversations] = useState<any[]>([]);
+  const router = useRouter();
+  const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createSupabaseBrowser();
-      const { data } = await supabase
-        .from('kivo_conversations')
-        .select('*')
-        .order('updated_at', { ascending: false });
+  async function loadConversations() {
+    setLoading(true);
+    const supabase = createSupabaseBrowser();
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
 
-      setConversations(data || []);
+    if (!userId) {
+      setConversations([]);
+      setLoading(false);
+      return;
     }
 
-    load();
+    const { data: conversationData } = await supabase
+      .from('kivo_conversations')
+      .select('id,title,updated_at,created_at,is_favorite,status')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(80);
+
+    const rows = (conversationData ?? []) as ConversationRow[];
+
+    const withPreviews = await Promise.all(
+      rows.map(async (conversation) => {
+        const { data: messageData } = await supabase
+          .from('kivo_messages')
+          .select('content,role,created_at')
+          .eq('conversation_id', conversation.id)
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        return {
+          ...conversation,
+          preview: messageData?.content ?? null,
+          last_role: messageData?.role ?? null,
+        };
+      }),
+    );
+
+    setConversations(withPreviews);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadConversations();
   }, []);
 
   const filtered = useMemo(() => {
-    return conversations.filter((c) =>
-      c.title?.toLowerCase().includes(query.toLowerCase())
-    );
+    const q = query.trim().toLowerCase();
+    if (!q) return conversations;
+
+    return conversations.filter((conversation) => {
+      const title = conversation.title?.toLowerCase() ?? '';
+      const preview = conversation.preview?.toLowerCase() ?? '';
+      return title.includes(q) || preview.includes(q);
+    });
   }, [conversations, query]);
 
-  const { today, yesterday, week } = useMemo(() => groupByDate(filtered), [filtered]);
+  const groups = useMemo(() => createGroups(filtered), [filtered]);
 
-  function Item({ c }: any) {
+  function openConversation(conversationId: string) {
+    router.push(`/chat?conversationId=${encodeURIComponent(conversationId)}`);
+  }
+
+  async function deleteConversation(conversationId: string) {
+    const confirmed = window.confirm('Delete this conversation?');
+    if (!confirmed) return;
+
+    setDeletingId(conversationId);
+    const supabase = createSupabaseBrowser();
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+
+    if (!userId) {
+      setDeletingId(null);
+      return;
+    }
+
+    await supabase.from('kivo_conversations').delete().eq('id', conversationId).eq('user_id', userId);
+    setConversations((current) => current.filter((conversation) => conversation.id !== conversationId));
+    setDeletingId(null);
+  }
+
+  function ConversationItem({ conversation }: { conversation: ConversationRow }) {
     return (
-      <div className="flex items-center gap-[12px] rounded-[18px] bg-white px-[14px] py-[12px] shadow-[0_1px_0_rgba(0,0,0,0.03)]">
-        <div className="h-[36px] w-[36px] rounded-full bg-[#f2f2f3] flex items-center justify-center">💬</div>
-        <div className="flex-1">
-          <div className="text-[15px] font-medium text-[#202024]">{c.title}</div>
-          <div className="text-[13px] text-[#8b8c92] truncate">Last updated</div>
-        </div>
+      <div className="group flex min-h-[76px] items-center gap-[13px] border-b border-black/[0.045] bg-white/72 px-[14px] py-[11px] last:border-b-0 transition active:scale-[0.997]">
+        <button type="button" onClick={() => openConversation(conversation.id)} className="flex min-w-0 flex-1 items-center gap-[13px] text-left">
+          <span className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[#f2f2f3] text-[#15161a] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+            <MessageCircle size={20} strokeWidth={1.9} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-[7px]">
+              <span className="truncate text-[15.5px] font-semibold tracking-[-0.035em] text-[#15161a]">
+                {conversation.title || 'New conversation'}
+              </span>
+              {conversation.status === 'running' ? <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-[#202024]" /> : null}
+            </span>
+            <span className="mt-[4px] block truncate text-[13px] leading-[1.2] tracking-[-0.025em] text-[#70727a]">
+              {cleanPreview(conversation.preview)}
+            </span>
+          </span>
+          <span className="ml-[6px] shrink-0 text-[12.5px] font-medium tracking-[-0.02em] text-[#8c8e96]">
+            {formatTime(conversation.updated_at)}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          aria-label="Delete conversation"
+          disabled={deletingId === conversation.id}
+          onClick={() => deleteConversation(conversation.id)}
+          className="flex h-[34px] w-[28px] shrink-0 items-center justify-center rounded-full text-[#8c8e96] transition hover:bg-black/[0.04] hover:text-[#202024] active:scale-95 disabled:opacity-40"
+        >
+          {deletingId === conversation.id ? <MoreVertical size={18} /> : <Trash2 size={17} strokeWidth={1.9} />}
+        </button>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#f3f3f5]">
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50">
+    <main className="relative min-h-screen overflow-hidden bg-[#f3f3f5] text-[#202024]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,#ffffff_0%,#f5f5f6_60%,#f0f0f2_100%)]" />
+
+      <div className="fixed left-1/2 top-0 z-50 w-full max-w-[430px] -translate-x-1/2">
         <KivoTopBar />
       </div>
 
-      <div className="pt-[100px] px-[18px] pb-[40px] max-w-[430px] mx-auto">
-        <h1 className="text-[28px] font-semibold text-[#202024] mb-[16px]">History</h1>
+      <div className="relative z-10 mx-auto min-h-screen w-full max-w-[430px] px-[28px] pb-[40px] pt-[126px]">
+        <h1 className="text-[32px] font-semibold leading-none tracking-[-0.06em] text-[#15161a]">History</h1>
 
-        <input
-          placeholder="Search conversations..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full mb-[20px] h-[44px] px-[14px] rounded-[22px] bg-white outline-none"
-        />
+        <label className="mt-[28px] flex h-[48px] items-center gap-[11px] rounded-[24px] bg-white/80 px-[15px] shadow-[0_14px_34px_rgba(15,23,42,0.032)] ring-1 ring-black/[0.025] backdrop-blur-xl">
+          <Search size={19} strokeWidth={1.9} className="text-[#8b8d94]" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search conversations..."
+            className="min-w-0 flex-1 bg-transparent text-[15px] tracking-[-0.025em] text-[#202024] outline-none placeholder:text-[#9b9ca3]"
+          />
+        </label>
 
-        {today.length > 0 && (
-          <section className="mb-[20px]">
-            <div className="text-[13px] text-[#8b8c92] mb-[10px]">Today</div>
-            <div className="space-y-[8px]">{today.map((c) => <Item key={c.id} c={c} />)}</div>
-          </section>
+        {loading ? (
+          <div className="mt-[34px] space-y-[12px]">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="h-[76px] animate-pulse rounded-[24px] bg-white/70" />
+            ))}
+          </div>
+        ) : groups.length ? (
+          <div className="mt-[30px] space-y-[28px]">
+            {groups.map((group) => (
+              <section key={group.title}>
+                <h2 className="mb-[10px] text-[15px] font-medium tracking-[-0.03em] text-[#73747b]">{group.title}</h2>
+                <div className="overflow-hidden rounded-[24px] bg-white/76 shadow-[0_14px_38px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.025] backdrop-blur-xl">
+                  {group.items.map((conversation) => (
+                    <ConversationItem key={conversation.id} conversation={conversation} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-[44px] rounded-[28px] bg-white/72 px-[22px] py-[28px] text-center shadow-[0_14px_38px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.025]">
+            <div className="mx-auto flex h-[46px] w-[46px] items-center justify-center rounded-[16px] bg-[#f2f2f3] text-[#202024]">
+              <Clock3 size={22} strokeWidth={1.9} />
+            </div>
+            <h2 className="mt-[14px] text-[18px] font-semibold tracking-[-0.04em] text-[#15161a]">No conversations found</h2>
+            <p className="mt-[6px] text-[13.5px] leading-[1.35] tracking-[-0.025em] text-[#777981]">Your previous Kivo conversations will appear here.</p>
+          </div>
         )}
 
-        {yesterday.length > 0 && (
-          <section className="mb-[20px]">
-            <div className="text-[13px] text-[#8b8c92] mb-[10px]">Yesterday</div>
-            <div className="space-y-[8px]">{yesterday.map((c) => <Item key={c.id} c={c} />)}</div>
-          </section>
-        )}
-
-        {week.length > 0 && (
-          <section>
-            <div className="text-[13px] text-[#8b8c92] mb-[10px]">Previous 7 days</div>
-            <div className="space-y-[8px]">{week.map((c) => <Item key={c.id} c={c} />)}</div>
-          </section>
-        )}
+        <p className="mt-[26px] text-center text-[12.5px] tracking-[-0.02em] text-[#8c8e96]">
+          Conversations are private and secure.
+        </p>
       </div>
     </main>
   );
