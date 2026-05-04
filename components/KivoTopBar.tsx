@@ -42,6 +42,10 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
     setMoreOpen(true);
   }
 
+  function toggleAgentMenu() {
+    setAgentOpen((value) => !value);
+  }
+
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-40 flex h-[calc(env(safe-area-inset-top)+54px)] items-start justify-between bg-inherit px-[30px] pt-[calc(env(safe-area-inset-top)+6px)]">
@@ -59,7 +63,7 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
 
         <button
           type="button"
-          onClick={() => setAgentOpen(true)}
+          onClick={toggleAgentMenu}
           className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+2px)] flex h-[40px] -translate-x-1/2 items-center gap-[8px] rounded-full bg-white/84 px-[15px] text-[#111113] shadow-[0_12px_32px_rgba(15,23,42,0.045)] backdrop-blur-xl transition duration-200 active:scale-[0.98]"
           aria-label="Open Kivo selector"
         >
