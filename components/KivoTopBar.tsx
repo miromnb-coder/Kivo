@@ -44,7 +44,7 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 flex h-[calc(env(safe-area-inset-top)+72px)] items-start justify-between bg-[#f7f7f8]/92 px-[30px] pt-[calc(env(safe-area-inset-top)+8px)] shadow-[0_1px_0_rgba(15,23,42,0.025)] backdrop-blur-2xl">
+      <header className="fixed inset-x-0 top-0 z-40 flex h-[calc(env(safe-area-inset-top)+54px)] items-start justify-between bg-[#f7f7f8] px-[30px] pt-[calc(env(safe-area-inset-top)+6px)]">
         <button
           type="button"
           aria-label="Open menu"
@@ -60,13 +60,13 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
         <button
           type="button"
           onClick={() => setAgentOpen(true)}
-          className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+4px)] flex h-[42px] -translate-x-1/2 items-center gap-[8px] rounded-full bg-white/84 px-[16px] text-[#111113] shadow-[0_14px_36px_rgba(15,23,42,0.05)] backdrop-blur-xl transition duration-200 active:scale-[0.98]"
+          className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+2px)] flex h-[40px] -translate-x-1/2 items-center gap-[8px] rounded-full bg-white/84 px-[15px] text-[#111113] shadow-[0_12px_32px_rgba(15,23,42,0.045)] backdrop-blur-xl transition duration-200 active:scale-[0.98]"
           aria-label="Open Kivo selector"
         >
           <span className="text-[9.5px] leading-none text-[#7C8CFF]" aria-hidden="true">✦</span>
-          <span className="text-[19px] font-semibold tracking-[-0.055em]">Kivo</span>
-          <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#f3f3f5] text-[#19191c]">
-            <ChevronDown size={12.5} strokeWidth={2.5} />
+          <span className="text-[18.5px] font-semibold tracking-[-0.055em]">Kivo</span>
+          <span className="flex h-[21px] w-[21px] items-center justify-center rounded-full bg-[#f3f3f5] text-[#19191c]">
+            <ChevronDown size={12} strokeWidth={2.5} />
           </span>
         </button>
 
@@ -89,7 +89,7 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
             className={`absolute inset-0 bg-white/0 backdrop-blur-[0px] transition duration-150 ${moreVisible ? 'backdrop-blur-[1.5px]' : ''}`}
           />
 
-          <div className={`absolute right-[18px] top-[calc(env(safe-area-inset-top)+61px)] w-[250px] origin-top-right overflow-visible transition duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${moreVisible ? 'translate-y-0 scale-100 opacity-100' : '-translate-y-[6px] scale-[0.965] opacity-0'}`}>
+          <div className={`absolute right-[18px] top-[calc(env(safe-area-inset-top)+57px)] w-[250px] origin-top-right overflow-visible transition duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${moreVisible ? 'translate-y-0 scale-100 opacity-100' : '-translate-y-[6px] scale-[0.965] opacity-0'}`}>
             <div className={`absolute right-[15px] top-[-13px] h-[27px] w-[27px] rotate-45 rounded-[6px] bg-white/94 shadow-[0_7px_18px_rgba(15,23,42,0.028)] ring-1 ring-black/[0.018] transition duration-200 ${moreVisible ? 'opacity-100' : 'opacity-0'}`} />
 
             <div className="relative overflow-hidden rounded-[22px] bg-white/94 shadow-[0_18px_54px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] backdrop-blur-2xl">
