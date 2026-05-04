@@ -33,6 +33,13 @@ type ConnectorConfig = {
   capabilities: { icon: React.ReactNode; title: string; subtitle: string }[];
 };
 
+type BrandIconConfig = {
+  label: string;
+  imageSrc: string;
+  fallback: React.ReactNode;
+  imageClassName?: string;
+};
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -44,6 +51,61 @@ const emptyConnectedMap: Record<ConnectorIconId, boolean> = {
   drive: false,
   'outlook-mail': false,
   'outlook-calendar': false,
+};
+
+const brandIconConfigs: Record<ConnectorIconId, BrandIconConfig> = {
+  gmail: {
+    label: 'Gmail',
+    imageSrc: 'https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png',
+    imageClassName: 'h-[25px] w-[25px]',
+    fallback: (
+      <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
+        <path fill="#4285F4" d="M43 37H34V20.8L24 28.3 14 20.8V37H5V11h6.2L24 20.6 36.8 11H43v26Z" />
+        <path fill="#34A853" d="M5 11h6.2L24 20.6v7.7L5 14.1V11Z" />
+        <path fill="#FBBC04" d="M43 11v3.1L24 28.3v-7.7L36.8 11H43Z" />
+        <path fill="#EA4335" d="M5 14.1 14 20.8V37H5V14.1Zm38 0V37h-9V20.8l9-6.7Z" />
+      </svg>
+    ),
+  },
+  'google-calendar': {
+    label: 'Google Calendar',
+    imageSrc: 'https://www.gstatic.com/images/branding/product/1x/calendar_48dp.png',
+    imageClassName: 'h-[25px] w-[25px]',
+    fallback: (
+      <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
+        <path fill="#4285F4" d="M10 10h28v28H10z" />
+        <path fill="#34A853" d="M10 29h28v9H10z" />
+        <path fill="#FBBC04" d="M10 20h28v9H10z" />
+        <path fill="#EA4335" d="M10 10h28v10H10z" />
+        <path fill="#fff" d="M14 15h20v19H14z" />
+        <text x="24" y="30" textAnchor="middle" fontSize="13" fontWeight="700" fill="#4285F4">31</text>
+      </svg>
+    ),
+  },
+  drive: {
+    label: 'Google Drive',
+    imageSrc: 'https://www.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png',
+    imageClassName: 'h-[25px] w-[25px]',
+    fallback: (
+      <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
+        <path fill="#1FA463" d="M18.4 6h11.2l14.1 24.4H32.4L18.4 6Z" />
+        <path fill="#FFD04B" d="M18.4 6 4.3 30.4l5.6 9.6L24 15.6 18.4 6Z" />
+        <path fill="#4688F1" d="M9.9 40h28.2l5.6-9.6H15.5L9.9 40Z" />
+      </svg>
+    ),
+  },
+  'outlook-mail': {
+    label: 'Outlook Mail',
+    imageSrc: 'https://res.cdn.office.net/assets/mail/filehandler/16.0.18623.41616/Outlook_32x32.png',
+    imageClassName: 'h-[26px] w-[26px]',
+    fallback: <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] bg-[#0a63d8] text-[12px] font-bold text-white">O</span>,
+  },
+  'outlook-calendar': {
+    label: 'Outlook Calendar',
+    imageSrc: 'https://res.cdn.office.net/assets/calendar/filehandler/16.0.18623.41616/Calendar_32x32.png',
+    imageClassName: 'h-[26px] w-[26px]',
+    fallback: <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] bg-[#22a8e8] text-[15px] font-bold text-white">▦</span>,
+  },
 };
 
 const connectorConfigs: ConnectorConfig[] = [
@@ -132,50 +194,28 @@ function isMicrosoftConnector(icon: ConnectorIconId) {
 }
 
 function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boolean }) {
+  const [hasImageError, setHasImageError] = useState(false);
+  const config = brandIconConfigs[icon];
   const size = large ? 'h-[42px] w-[42px]' : 'h-[32px] w-[32px]';
-  const base = `${size} flex items-center justify-center overflow-hidden rounded-[8px]`;
-
-  if (icon === 'gmail') {
-    return (
-      <span className={`${base} bg-white`}>
-        <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
-          <path fill="#4285F4" d="M43 37H34V20.8L24 28.3 14 20.8V37H5V11h6.2L24 20.6 36.8 11H43v26Z" />
-          <path fill="#34A853" d="M5 11h6.2L24 20.6v7.7L5 14.1V11Z" />
-          <path fill="#FBBC04" d="M43 11v3.1L24 28.3v-7.7L36.8 11H43Z" />
-          <path fill="#EA4335" d="M5 14.1 14 20.8V37H5V14.1Zm38 0V37h-9V20.8l9-6.7Z" />
-        </svg>
-      </span>
-    );
-  }
-
-  if (icon === 'google-calendar') {
-    return (
-      <span className={`${base} bg-white`}>
-        <svg viewBox="0 0 48 48" className="h-[25px] w-[25px]" aria-hidden="true">
-          <path fill="#4285F4" d="M10 10h28v28H10z" />
-          <path fill="#34A853" d="M10 29h28v9H10z" />
-          <path fill="#FBBC04" d="M10 20h28v9H10z" />
-          <path fill="#EA4335" d="M10 10h28v10H10z" />
-          <path fill="#fff" d="M14 15h20v19H14z" />
-          <text x="24" y="30" textAnchor="middle" fontSize="13" fontWeight="700" fill="#4285F4">31</text>
-        </svg>
-      </span>
-    );
-  }
-
-  if (icon === 'drive') return <span className={`${base} text-[20px]`}>△</span>;
-
-  if (icon === 'outlook-mail') {
-    return (
-      <span className={`${base} bg-white`}>
-        <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] bg-[#0a63d8] text-[12px] font-bold text-white">O</span>
-      </span>
-    );
-  }
+  const imageSize = large ? 'h-[32px] w-[32px]' : config.imageClassName ?? 'h-[25px] w-[25px]';
 
   return (
-    <span className={`${base} bg-white`}>
-      <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[5px] bg-[#22a8e8] text-[15px] font-bold text-white">▦</span>
+    <span className={`${size} flex items-center justify-center overflow-hidden rounded-[8px] bg-white shadow-[0_2px_7px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.025]`}>
+      {!hasImageError ? (
+        <img
+          src={config.imageSrc}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onError={() => setHasImageError(true)}
+          className={`${imageSize} object-contain`}
+        />
+      ) : (
+        config.fallback
+      )}
+      <span className="sr-only">{config.label}</span>
     </span>
   );
 }
