@@ -52,13 +52,13 @@ function MenuItem({
   href?: string;
   onClick?: () => void;
 }) {
-  const className = `flex h-[46px] w-full items-center gap-[16px] rounded-[24px] px-[13px] text-left text-[15px] font-medium tracking-[-0.03em] text-[#16171a] transition active:scale-[0.99] ${
-    active ? 'bg-black/[0.045]' : 'hover:bg-black/[0.03]'
+  const className = `flex h-[42px] w-full items-center gap-[14px] rounded-[22px] px-[12px] text-left text-[14px] font-medium tracking-[-0.03em] text-[#16171a] transition active:scale-[0.99] ${
+    active ? 'bg-[#f1f1f3] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-sm' : 'hover:bg-black/[0.03]'
   }`;
 
   const content = (
     <>
-      <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center text-[#15161a]">{icon}</span>
+      <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center text-[#15161a]">{icon}</span>
       <span className="flex-1">{label}</span>
     </>
   );
@@ -130,13 +130,13 @@ export function KivoSidebarOverlay({ open, onClose, onNewChat }: KivoSidebarOver
     const deltaX = event.clientX - dragStartXRef.current;
     const elapsed = Math.max(1, Date.now() - dragStartTimeRef.current);
     const velocity = deltaX / elapsed;
-    const shouldClose = dragModeRef.current === 'horizontal' && (deltaX < -86 || velocity < -0.72);
+    const shouldClose = dragModeRef.current === 'horizontal' && (deltaX < -80 || velocity < -0.72);
 
     setIsDragging(false);
     dragModeRef.current = 'idle';
 
     if (shouldClose) {
-      setDragX(-300);
+      setDragX(-280);
       window.setTimeout(() => {
         setDragX(0);
         onClose();
@@ -163,38 +163,38 @@ export function KivoSidebarOverlay({ open, onClose, onNewChat }: KivoSidebarOver
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`absolute left-0 top-[calc(env(safe-area-inset-top)+86px)] flex w-[284px] touch-pan-y select-none flex-col overflow-hidden rounded-r-[31px] bg-white/64 px-[18px] py-[20px] shadow-[20px_24px_72px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.02] backdrop-blur-2xl will-change-transform ${isDragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]'}`}
+        className={`absolute left-0 top-[calc(env(safe-area-inset-top)+86px)] flex w-[260px] touch-pan-y select-none flex-col overflow-hidden rounded-r-[29px] bg-white/78 px-[14px] py-[16px] shadow-[18px_22px_64px_rgba(15,23,42,0.065)] ring-1 ring-black/[0.04] backdrop-blur-2xl will-change-transform ${isDragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]'}`}
         style={{ transform: `translate3d(${dragX}px,0,0)` }}
       >
-        <div className="space-y-[8px]">
-          <MenuItem icon={<MessageCircle size={21} strokeWidth={1.9} />} label="New chat" active onClick={() => { onNewChat(); onClose(); }} />
-          <MenuItem icon={<Clock3 size={21} strokeWidth={1.9} />} label="History" href="/history" onClick={onClose} />
-          <MenuItem icon={<Bookmark size={20} strokeWidth={1.9} />} label="Saved" href="/saved" onClick={onClose} />
-          <MenuItem icon={<Folder size={21} strokeWidth={1.9} />} label="Projects" href="/projects" onClick={onClose} />
+        <div className="space-y-[7px]">
+          <MenuItem icon={<MessageCircle size={19} strokeWidth={1.9} />} label="New chat" active onClick={() => { onNewChat(); onClose(); }} />
+          <MenuItem icon={<Clock3 size={19} strokeWidth={1.9} />} label="History" href="/history" onClick={onClose} />
+          <MenuItem icon={<Bookmark size={18} strokeWidth={1.9} />} label="Saved" href="/saved" onClick={onClose} />
+          <MenuItem icon={<Folder size={19} strokeWidth={1.9} />} label="Projects" href="/projects" onClick={onClose} />
         </div>
 
-        <div className="my-[14px] h-px bg-black/[0.055]" />
+        <div className="my-[12px] h-px bg-black/[0.04]" />
 
-        <div className="space-y-[8px]">
-          <MenuItem icon={<UsersRound size={21} strokeWidth={1.9} />} label="Teams" href="/teams" onClick={onClose} />
-          <MenuItem icon={<Settings size={21} strokeWidth={1.9} />} label="Settings" href="/settings" onClick={onClose} />
+        <div className="space-y-[7px]">
+          <MenuItem icon={<UsersRound size={19} strokeWidth={1.9} />} label="Teams" href="/teams" onClick={onClose} />
+          <MenuItem icon={<Settings size={19} strokeWidth={1.9} />} label="Settings" href="/settings" onClick={onClose} />
         </div>
 
-        <div className="my-[14px] h-px bg-black/[0.055]" />
+        <div className="my-[12px] h-px bg-black/[0.04]" />
 
         <Link
           href="/upgrade"
           onClick={onClose}
-          className="flex h-[70px] items-center gap-[16px] rounded-[24px] px-[13px] text-left transition active:scale-[0.99]"
+          className="flex h-[62px] items-center gap-[14px] rounded-[22px] px-[12px] text-left transition-all duration-200 hover:bg-black/[0.02] active:scale-[0.99]"
         >
-          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center text-[#15161a]">
-            <Sparkles size={22} strokeWidth={1.9} />
+          <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center text-[#15161a]">
+            <Sparkles size={20} strokeWidth={1.9} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-medium tracking-[-0.03em] text-[#16171a]">Upgrade plan</span>
-            <span className="mt-[3px] block max-w-[126px] text-[12px] leading-[1.18] tracking-[-0.025em] text-[#7d7f87]">More power, more possibilities.</span>
+            <span className="block text-[14px] font-medium tracking-[-0.03em] text-[#16171a]">Upgrade plan</span>
+            <span className="mt-[2px] block max-w-[118px] text-[11px] leading-[1.16] tracking-[-0.025em] text-[#7d7f87]">More power, more possibilities.</span>
           </span>
-          <span className="text-[27px] font-light leading-none text-[#72747b]">›</span>
+          <span className="text-[24px] font-light leading-none text-[#72747b]">›</span>
         </Link>
       </aside>
     </div>
