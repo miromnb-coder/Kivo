@@ -8,8 +8,8 @@ import {
   CircleDollarSign,
   Grid2X2,
   MoreHorizontal,
-  Settings,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import { KivoAgentSelector } from './KivoAgentSelector';
 
@@ -51,7 +51,7 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
 
         <button
           type="button"
-          aria-label="Open more actions"
+          aria-label="Open quick actions"
           onClick={() => setMoreOpen((value) => !value)}
           className="flex h-[38px] w-[38px] items-center justify-center rounded-full text-[#111113] transition active:scale-[0.96]"
         >
@@ -63,7 +63,7 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
         <div className="fixed inset-0 z-[55]" aria-hidden="false">
           <button
             type="button"
-            aria-label="Close more actions"
+            aria-label="Close quick actions"
             onClick={() => setMoreOpen(false)}
             className="absolute inset-0 bg-transparent"
           />
@@ -96,17 +96,17 @@ export function KivoTopBar({ onOpenMenu }: KivoTopBarProps) {
 
               <div className="mx-[22px] h-px bg-black/[0.04]" />
 
-              <Link href="/tools" onClick={() => setMoreOpen(false)} className="flex h-[46px] w-full items-center gap-[17px] px-[22px] text-left text-[14.5px] font-medium tracking-[-0.025em] text-[#16171a] transition hover:bg-black/[0.018] active:scale-[0.99]">
-                <Grid2X2 size={18} strokeWidth={1.9} />
-                <span className="flex-1">Tools</span>
-                <span className="text-[27px] font-light leading-none">›</span>
-              </Link>
+              <button type="button" onClick={() => setMoreOpen(false)} className="flex h-[46px] w-full items-center gap-[17px] px-[22px] text-left text-[14.5px] font-medium tracking-[-0.025em] text-[#16171a] transition hover:bg-black/[0.018] active:scale-[0.99]">
+                <Upload size={18} strokeWidth={1.9} />
+                <span className="flex-1">Upload file</span>
+                <span className="text-[26px] font-light leading-none">+</span>
+              </button>
 
               <div className="mx-[22px] h-px bg-black/[0.04]" />
 
-              <Link href="/settings" onClick={() => setMoreOpen(false)} className="flex h-[46px] w-full items-center gap-[17px] px-[22px] text-left text-[14.5px] font-medium tracking-[-0.025em] text-[#16171a] transition hover:bg-black/[0.018] active:scale-[0.99]">
-                <Settings size={18} strokeWidth={1.9} />
-                <span className="flex-1">Settings</span>
+              <Link href="/tools" onClick={() => setMoreOpen(false)} className="flex h-[46px] w-full items-center gap-[17px] px-[22px] text-left text-[14.5px] font-medium tracking-[-0.025em] text-[#16171a] transition hover:bg-black/[0.018] active:scale-[0.99]">
+                <Grid2X2 size={18} strokeWidth={1.9} />
+                <span className="flex-1">Quick tools</span>
                 <span className="text-[27px] font-light leading-none">›</span>
               </Link>
             </div>
