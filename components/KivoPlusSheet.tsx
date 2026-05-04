@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Camera,
   CheckSquare,
   ChevronRight,
   Code2,
@@ -22,7 +21,7 @@ type KivoPlusSheetProps = {
 };
 
 type QuickPreview = {
-  kind: 'camera' | 'image' | 'task' | 'chart' | 'pdf';
+  kind: 'image' | 'task' | 'chart' | 'pdf';
   title?: string;
 };
 
@@ -34,7 +33,6 @@ type MenuAction = {
 };
 
 const quickPreviews: QuickPreview[] = [
-  { kind: 'camera' },
   { kind: 'image' },
   { kind: 'task', title: 'Q2 Report\nanalysis' },
   { kind: 'chart' },
@@ -91,26 +89,18 @@ function BrandIcon({ brand }: { brand?: MenuAction['brand'] }) {
 }
 
 function PreviewCard({ item }: { item: QuickPreview }) {
-  if (item.kind === 'camera') {
-    return (
-      <button type="button" className="flex h-[82px] min-w-[82px] items-center justify-center rounded-[17px] border border-black/[0.045] bg-white/70 text-[#1f2023] shadow-[0_10px_26px_rgba(15,23,42,0.025)]">
-        <Camera size={24} strokeWidth={1.9} />
-      </button>
-    );
-  }
-
   if (item.kind === 'image') {
     return (
-      <button type="button" className="relative h-[82px] min-w-[82px] overflow-hidden rounded-[17px] border border-black/[0.045] bg-white shadow-[0_10px_26px_rgba(15,23,42,0.025)]">
+      <button type="button" className="relative h-[82px] min-w-[112px] overflow-hidden rounded-[17px] border border-black/[0.04] bg-white shadow-[0_10px_26px_rgba(15,23,42,0.035)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,#f4c7de_0%,#b7c8ee_44%,#1d2430_100%)]" />
-        <span className="absolute bottom-[8px] left-[8px] flex h-[24px] w-[24px] items-center justify-center rounded-[7px] bg-white/90 text-[#6f63d8]"><ImageIcon size={15} /></span>
+        <span className="absolute bottom-[8px] left-[8px] flex h-[24px] w-[24px] items-center justify-center rounded-[7px] bg-white/92 text-[#6f63d8]"><ImageIcon size={15} /></span>
       </button>
     );
   }
 
   if (item.kind === 'task') {
     return (
-      <button type="button" className="relative h-[82px] min-w-[82px] rounded-[17px] border border-black/[0.045] bg-white/72 p-[12px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.025)]">
+      <button type="button" className="relative h-[82px] min-w-[112px] rounded-[17px] border border-black/[0.04] bg-white p-[12px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.035)]">
         <span className="whitespace-pre-line text-[12px] font-semibold leading-[1.15] tracking-[-0.04em] text-[#15161a]">{item.title}</span>
         <span className="absolute bottom-[8px] left-[8px] flex h-[21px] w-[21px] items-center justify-center rounded-[7px] bg-[#f0f6ef] text-[#3aad45]"><CheckSquare size={13} /></span>
       </button>
@@ -119,28 +109,29 @@ function PreviewCard({ item }: { item: QuickPreview }) {
 
   if (item.kind === 'chart') {
     return (
-      <button type="button" className="relative h-[82px] min-w-[82px] overflow-hidden rounded-[17px] border border-black/[0.045] bg-white/72 shadow-[0_10px_26px_rgba(15,23,42,0.025)]">
-        <svg viewBox="0 0 82 82" className="absolute inset-0 h-full w-full" aria-hidden="true">
-          <path d="M14 52h54" stroke="#e7e7eb" strokeWidth="1" />
-          <path d="M14 38h54" stroke="#eeeeF2" strokeWidth="1" />
-          <path d="M18 49 32 35 44 42 62 24" fill="none" stroke="#78a9ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <rect x="18" y="57" width="8" height="12" rx="2" fill="#eceef3" />
-          <rect x="34" y="52" width="8" height="17" rx="2" fill="#e5e8ef" />
-          <rect x="50" y="46" width="8" height="23" rx="2" fill="#dfe4ee" />
+      <button type="button" className="relative h-[82px] min-w-[112px] overflow-hidden rounded-[17px] border border-black/[0.04] bg-white shadow-[0_10px_26px_rgba(15,23,42,0.035)]">
+        <svg viewBox="0 0 112 82" className="absolute inset-0 h-full w-full" aria-hidden="true">
+          <path d="M14 52h84" stroke="#e7e7eb" strokeWidth="1" />
+          <path d="M14 38h84" stroke="#eeeeF2" strokeWidth="1" />
+          <path d="M18 49 38 35 55 42 89 24" fill="none" stroke="#78a9ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="20" y="58" width="9" height="12" rx="2" fill="#eceef3" />
+          <rect x="42" y="52" width="9" height="18" rx="2" fill="#e5e8ef" />
+          <rect x="64" y="46" width="9" height="24" rx="2" fill="#dfe4ee" />
+          <rect x="86" y="39" width="9" height="31" rx="2" fill="#d9dfeb" />
         </svg>
-        <span className="absolute bottom-[8px] left-[8px] flex h-[21px] w-[21px] items-center justify-center rounded-[7px] bg-white/90 text-[#4d9de8]"><ImageIcon size={13} /></span>
+        <span className="absolute bottom-[8px] left-[8px] flex h-[21px] w-[21px] items-center justify-center rounded-[7px] bg-white/92 text-[#4d9de8]"><ImageIcon size={13} /></span>
       </button>
     );
   }
 
   return (
-    <button type="button" className="relative h-[82px] min-w-[82px] rounded-[17px] border border-black/[0.045] bg-white/72 p-[10px] shadow-[0_10px_26px_rgba(15,23,42,0.025)]">
-      <div className="space-y-[5px] pt-[7px]">
-        <div className="h-[4px] w-[54px] rounded-full bg-[#d9d9de]" />
-        <div className="h-[4px] w-[44px] rounded-full bg-[#e1e1e6]" />
-        <div className="h-[4px] w-[50px] rounded-full bg-[#e8e8ed]" />
+    <button type="button" className="relative h-[82px] min-w-[112px] rounded-[17px] border border-black/[0.04] bg-white p-[12px] shadow-[0_10px_26px_rgba(15,23,42,0.035)]">
+      <div className="space-y-[6px] pt-[7px]">
+        <div className="h-[4px] w-[78px] rounded-full bg-[#d9d9de]" />
+        <div className="h-[4px] w-[62px] rounded-full bg-[#e1e1e6]" />
+        <div className="h-[4px] w-[72px] rounded-full bg-[#e8e8ed]" />
       </div>
-      <span className="absolute bottom-[8px] left-[8px] flex h-[21px] w-[21px] items-center justify-center rounded-[7px] bg-white/90 text-[#e21d38]"><FileText size={13} /></span>
+      <span className="absolute bottom-[8px] left-[8px] flex h-[21px] w-[21px] items-center justify-center rounded-[7px] bg-white/92 text-[#e21d38]"><FileText size={13} /></span>
     </button>
   );
 }
@@ -149,8 +140,8 @@ function ActionSection({ title, actions }: { title: string; actions: MenuAction[
   return (
     <section className="mt-[15px]">
       <h3 className="mb-[8px] px-[4px] text-[10.5px] font-semibold uppercase tracking-[0.09em] text-[#70727a]">{title}</h3>
-      <div className="overflow-hidden rounded-[19px] border border-black/[0.045] bg-white/72 shadow-[0_10px_28px_rgba(15,23,42,0.024)]">
-        {actions.map((action, index) => (
+      <div className="overflow-hidden rounded-[19px] border border-black/[0.05] bg-white shadow-[0_10px_28px_rgba(15,23,42,0.03)]">
+        {actions.map((action) => (
           <button key={action.title} type="button" className="flex min-h-[55px] w-full items-center gap-[13px] px-[12px] text-left transition active:scale-[0.995]">
             <span className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[12px] bg-[#f2f2f3] text-[#191a1e]">
               {action.brand ? <BrandIcon brand={action.brand} /> : action.icon}
@@ -190,7 +181,7 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
         type="button"
         aria-label="Close actions"
         onClick={closeWithAnimation}
-        className={`absolute inset-0 pointer-events-auto bg-black/10 backdrop-blur-[2px] transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 pointer-events-auto bg-black/6 backdrop-blur-[1.5px] transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       />
 
       <div className={`absolute inset-x-0 bottom-[92px] mx-auto w-[360px] max-w-[calc(100vw-34px)] origin-bottom pointer-events-auto transition duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[14px] scale-[0.97] opacity-0'}`}>
@@ -198,7 +189,7 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
           <div className="absolute left-1/2 top-[15px] h-[4px] w-[36px] -translate-x-1/2 rounded-full bg-[#c7c7cc]" />
           <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute right-[14px] top-[14px] z-10 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#f2f2f3] text-[#111] transition active:scale-[0.96]"><X size={21} strokeWidth={2.1} /></button>
 
-          <div className="max-h-[76vh] overflow-y-auto overscroll-contain rounded-[28px] bg-white/94 px-[18px] pb-[18px] pt-[44px] shadow-[0_18px_54px_rgba(15,23,42,0.09)] ring-1 ring-black/[0.035] backdrop-blur-2xl [-webkit-overflow-scrolling:touch]">
+          <div className="max-h-[76vh] overflow-y-auto overscroll-contain rounded-[28px] bg-[#fbfbfc] px-[18px] pb-[18px] pt-[44px] shadow-[0_18px_54px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.045] backdrop-blur-md [-webkit-overflow-scrolling:touch]">
             <div className="-mx-[2px] flex gap-[10px] overflow-x-auto pb-[18px] pr-[8px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {quickPreviews.map((item, index) => <PreviewCard key={`${item.kind}-${index}`} item={item} />)}
             </div>
