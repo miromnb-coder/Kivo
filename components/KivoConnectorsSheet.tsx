@@ -53,6 +53,49 @@ const emptyConnectedMap: Record<ConnectorIconId, boolean> = {
   'outlook-calendar': false,
 };
 
+const outlookMailFallback = (
+  <svg viewBox="0 0 64 64" className="h-[30px] w-[30px]" aria-hidden="true">
+    <defs>
+      <linearGradient id="outlookMailA" x1="8" y1="10" x2="56" y2="54" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#0B6FDB" />
+        <stop offset="1" stopColor="#0749A6" />
+      </linearGradient>
+      <linearGradient id="outlookMailB" x1="30" y1="18" x2="58" y2="50" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#38BDF8" />
+        <stop offset="1" stopColor="#0A66C2" />
+      </linearGradient>
+    </defs>
+    <rect x="20" y="12" width="34" height="40" rx="5" fill="url(#outlookMailA)" />
+    <path d="M22 22h30v9H22z" fill="#2EA8F2" opacity="0.9" />
+    <path d="M22 31h30v9H22z" fill="#0A58B5" opacity="0.95" />
+    <path d="M22 40h30v12H22z" fill="#0C7CD5" opacity="0.9" />
+    <path d="M18 31h40v20a5 5 0 0 1-5 5H23a5 5 0 0 1-5-5V31Z" fill="url(#outlookMailB)" />
+    <path d="m18 32 20 15 20-15v4L38 50 18 36v-4Z" fill="#75D7FF" opacity="0.85" />
+    <rect x="6" y="20" width="26" height="28" rx="4" fill="#0657B8" />
+    <path d="M13 34c0-6 3.5-10 8.5-10S30 28 30 34s-3.5 10-8.5 10S13 40 13 34Zm5.2 0c0 3.2 1.3 5.3 3.3 5.3s3.3-2.1 3.3-5.3-1.3-5.3-3.3-5.3-3.3 2.1-3.3 5.3Z" fill="white" />
+  </svg>
+);
+
+const outlookCalendarFallback = (
+  <svg viewBox="0 0 64 64" className="h-[30px] w-[30px]" aria-hidden="true">
+    <defs>
+      <linearGradient id="outlookCalA" x1="10" y1="9" x2="54" y2="55" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#19B5FE" />
+        <stop offset="1" stopColor="#0875D1" />
+      </linearGradient>
+      <linearGradient id="outlookCalB" x1="8" y1="18" x2="34" y2="46" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#0B6FDB" />
+        <stop offset="1" stopColor="#064AA5" />
+      </linearGradient>
+    </defs>
+    <rect x="18" y="10" width="36" height="44" rx="6" fill="url(#outlookCalA)" />
+    <path d="M18 18h36v9H18z" fill="#0A4FAE" opacity="0.95" />
+    <path d="M24 32h7v6h-7v-6Zm10 0h7v6h-7v-6Zm10 0h5v6h-5v-6ZM24 41h7v6h-7v-6Zm10 0h7v6h-7v-6Zm10 0h5v6h-5v-6Z" fill="white" opacity="0.78" />
+    <rect x="6" y="21" width="27" height="28" rx="4" fill="url(#outlookCalB)" />
+    <path d="M13 35c0-6 3.5-10 8.5-10S30 29 30 35s-3.5 10-8.5 10S13 41 13 35Zm5.1 0c0 3.1 1.3 5.1 3.4 5.1s3.4-2 3.4-5.1-1.3-5.1-3.4-5.1-3.4 2-3.4 5.1Z" fill="white" />
+  </svg>
+);
+
 const brandIconConfigs: Record<ConnectorIconId, BrandIconConfig> = {
   gmail: {
     label: 'Gmail',
@@ -96,15 +139,15 @@ const brandIconConfigs: Record<ConnectorIconId, BrandIconConfig> = {
   },
   'outlook-mail': {
     label: 'Outlook Mail',
-    imageSrc: 'https://res.cdn.office.net/assets/mail/filehandler/16.0.19029.20068/Outlook_64x64.png',
-    imageClassName: 'h-[28px] w-[28px]',
-    fallback: <span className="flex h-[28px] w-[28px] items-center justify-center rounded-[6px] bg-[#0a63d8] text-[13px] font-bold text-white">O</span>,
+    imageSrc: 'https://upload.wikimedia.org/wikipedia/commons/4/48/Microsoft_Outlook_Icon.svg',
+    imageClassName: 'h-[30px] w-[30px]',
+    fallback: outlookMailFallback,
   },
   'outlook-calendar': {
     label: 'Outlook Calendar',
-    imageSrc: 'https://res.cdn.office.net/assets/calendar/filehandler/16.0.19029.20068/Calendar_64x64.png',
-    imageClassName: 'h-[28px] w-[28px]',
-    fallback: <span className="flex h-[28px] w-[28px] items-center justify-center rounded-[6px] bg-[#22a8e8] text-[16px] font-bold text-white">▦</span>,
+    imageSrc: 'https://upload.wikimedia.org/wikipedia/commons/0/0a/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg',
+    imageClassName: 'h-[30px] w-[30px]',
+    fallback: outlookCalendarFallback,
   },
 };
 
@@ -197,7 +240,7 @@ function BrandIcon({ icon, large = false }: { icon: ConnectorIconId; large?: boo
   const [hasImageError, setHasImageError] = useState(false);
   const config = brandIconConfigs[icon];
   const size = large ? 'h-[44px] w-[44px]' : 'h-[34px] w-[34px]';
-  const imageSize = large ? 'h-[34px] w-[34px]' : config.imageClassName ?? 'h-[28px] w-[28px]';
+  const imageSize = large ? 'h-[36px] w-[36px]' : config.imageClassName ?? 'h-[28px] w-[28px]';
 
   return (
     <span className={`${size} flex items-center justify-center overflow-hidden rounded-[9px] bg-white shadow-[0_2px_7px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.025]`}>
