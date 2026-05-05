@@ -121,7 +121,7 @@ function parseMarkdownBlocks(content: string): MarkdownBlock[] {
 
 function InlineMarkdown({ text }: { text: string }) {
   const nodes: ReactNode[] = [];
-  const regex = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|https?:\/\/[^\s)]+)/g;
+  const regex = /(\*\*[^*]+\*\*|`[^`]+`|$begin:math:display$\[\^$end:math:display$]+\]$begin:math:text$https\?\:\\\/\\\/\[\^\\s\)\]\+$end:math:text$|https?:\/\/[^\s)]+)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -130,7 +130,7 @@ function InlineMarkdown({ text }: { text: string }) {
     const value = match[0];
     const bold = value.match(/^\*\*(.+)\*\*$/);
     const code = value.match(/^`(.+)`$/);
-    const link = value.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+    const link = value.match(/^$begin:math:display$\(\[\^$end:math:display$]+)\]$begin:math:text$\(https\?\:\\\/\\\/\[\^\\s\)\]\+\)$end:math:text$$/);
     const plainUrl = value.match(/^https?:\/\/[^\s)]+$/);
 
     if (bold) nodes.push(<strong key={`bold-${match.index}`} className="font-semibold text-[#111114]">{bold[1]}</strong>);
@@ -197,7 +197,21 @@ function KivoMarkdown({ content, streaming = false }: { content: string; streami
   return <div className="space-y-[6px]">{blocks.map((block, index) => { const isLastBlock = index === blocks.length - 1; return <div key={block.key}><MarkdownBlockView block={block} />{streaming && isLastBlock ? <StreamingCursor /> : null}</div>; })}{urls.length ? <div className="pt-[2px]">{urls.map((url) => <LinkPreviewCard key={url} url={url} />)}</div> : null}</div>;
 }
 
-function KivoAssistantHeader() { return <div className="mb-[12px] flex items-center gap-[8px] text-[#202024]"><span className="flex h-[24px] w-[24px] items-center justify-center text-[20px] leading-none" aria-hidden="true">✦</span><span className="font-serif text-[28px] font-semibold leading-none tracking-[-0.045em]">kivo</span></div>; }
+function KivoAssistantHeader() {
+  return (
+    <div className="mb-[12px] flex items-center gap-[9px] text-[#202024]">
+      <img
+        src="/avatar.PNG"
+        alt="Kivo"
+        className="h-[38px] w-[38px] shrink-0 object-contain"
+        draggable={false}
+      />
+      <span className="font-serif text-[28px] font-semibold leading-none tracking-[-0.045em]">
+        kivo
+      </span>
+    </div>
+  );
+}
 
 function KivoAssistantActions({ messageId, content, disabled = false }: { messageId: string; content: string; disabled?: boolean }) {
   const [copied, setCopied] = useState(false);
