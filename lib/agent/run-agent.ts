@@ -376,6 +376,7 @@ function formatGmailForPrompt(result: GmailToolResult) {
   ];
 
   if (result.insight?.summary) lines.push(`Insight: ${result.insight.summary}`);
+  if (result.actions?.length) lines.push(`Suggested actions: ${result.actions.join(' | ')}`);
 
   lines.push(
     ...result.messages.slice(0, 8).map((message, index) => {
@@ -527,6 +528,25 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     );
   }
 
+  const emptyGmail: GmailToolResult = {
+    connected: false,
+    messages: [],
+    important: [],
+    bills: [],
+    lowPriority: [],
+    actions: [],
+  };
+
+  const emptyOutlook: OutlookToolResult = {
+    connected: false,
+    messages: [],
+    events: [],
+    important: [],
+    bills: [],
+    lowPriority: [],
+    actions: [],
+  };
+
   const [calendar, gmail, outlook] = await Promise.all([
     routing.useCalendar
       ? runCalendarTodayTool(req.userId)
@@ -534,25 +554,11 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
 
     routing.useGmail
       ? runGmailTool(req.userId)
-      : Promise.resolve({
-          connected: false,
-          messages: [],
-          important: [],
-          bills: [],
-          lowPriority: [],
-        } as GmailToolResult),
+      : Promise.resolve(emptyGmail),
 
     routing.useOutlook
       ? runOutlookTool(req.userId)
-      : Promise.resolve({
-          connected: false,
-          messages: [],
-          events: [],
-          important: [],
-          bills: [],
-          lowPriority: [],
-          actions: [],
-        } as OutlookToolResult),
+      : Promise.resolve(emptyOutlook),
   ]);
 
   const privateContext = buildPrivateContext({
