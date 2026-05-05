@@ -162,8 +162,8 @@ function isLikelyGenericWorldKnowledge(content: string, type: MemoryType) {
   return genericDefinitionSignals.some((signal) => text.includes(signal)) && !hasPersonalSignal;
 }
 
-function cleanMemoryContent(content: string) {
-  return content
+function cleanMemoryContent(content: unknown) {
+  return toText(content)
     .replace(/\s+/g, ' ')
     .replace(/^[-*•]\s*/, '')
     .trim()
