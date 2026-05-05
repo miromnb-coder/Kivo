@@ -121,7 +121,7 @@ function parseMarkdownBlocks(content: string): MarkdownBlock[] {
 
 function InlineMarkdown({ text }: { text: string }) {
   const nodes: ReactNode[] = [];
-  const regex = /(\*\*[^*]+\*\*|`[^`]+`|$begin:math:display$\[\^$end:math:display$]+\]$begin:math:text$https\?\:\\\/\\\/\[\^\\s\)\]\+$end:math:text$|https?:\/\/[^\s)]+)/g;
+  const regex = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^\s)]+\)|https?:\/\/[^\s)]+)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -130,7 +130,7 @@ function InlineMarkdown({ text }: { text: string }) {
     const value = match[0];
     const bold = value.match(/^\*\*(.+)\*\*$/);
     const code = value.match(/^`(.+)`$/);
-    const link = value.match(/^$begin:math:display$\(\[\^$end:math:display$]+)\]$begin:math:text$\(https\?\:\\\/\\\/\[\^\\s\)\]\+\)$end:math:text$$/);
+    const link = value.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
     const plainUrl = value.match(/^https?:\/\/[^\s)]+$/);
 
     if (bold) nodes.push(<strong key={`bold-${match.index}`} className="font-semibold text-[#111114]">{bold[1]}</strong>);
