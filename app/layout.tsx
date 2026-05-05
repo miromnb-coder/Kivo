@@ -1,7 +1,10 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 
-const appIcon = '/kivo-app-image.PNG';
+const faviconIcon = '/favicon.png';
+const icon192 = '/icons/icon-192.png';
+const icon512 = '/icons/icon-512.png';
+const appleTouchIcon = '/icons/apple-touch-icon.png';
 
 export const metadata: Metadata = {
   title: 'Kivo',
@@ -18,15 +21,15 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: appIcon, type: 'image/png', sizes: '32x32' },
-      { url: appIcon, type: 'image/png', sizes: '192x192' },
-      { url: appIcon, type: 'image/png', sizes: '512x512' },
+      { url: faviconIcon, type: 'image/png', sizes: '32x32' },
+      { url: icon192, type: 'image/png', sizes: '192x192' },
+      { url: icon512, type: 'image/png', sizes: '512x512' },
     ],
     shortcut: [
-      { url: appIcon, type: 'image/png' },
+      { url: faviconIcon, type: 'image/png' },
     ],
     apple: [
-      { url: appIcon, type: 'image/png', sizes: '180x180' },
+      { url: appleTouchIcon, type: 'image/png', sizes: '180x180' },
     ],
   },
 };
@@ -43,9 +46,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href={`${appIcon}?v=3`} type="image/png" />
-        <link rel="shortcut icon" href={`${appIcon}?v=3`} type="image/png" />
-        <link rel="apple-touch-icon" href={`${appIcon}?v=3`} />
+        <link rel="icon" href={`${faviconIcon}?v=4`} type="image/png" />
+        <link rel="shortcut icon" href={`${faviconIcon}?v=4`} type="image/png" />
+        <link rel="apple-touch-icon" href={`${appleTouchIcon}?v=4`} />
       </head>
       <body>{children}</body>
     </html>
