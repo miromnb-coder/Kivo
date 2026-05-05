@@ -1,10 +1,10 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 
-const faviconIcon = '/favicon.png';
-const icon192 = '/icons/icon-192.png';
-const icon512 = '/icons/icon-512.png';
-const appleTouchIcon = '/icons/apple-touch-icon.png';
+const faviconIcon = '/favicon.PNG';
+const icon192 = '/icons/icon-192.PNG';
+const icon512 = '/icons/icon-512.PNG';
+const appleTouchIcon = '/icons/apple-touch-icon.PNG';
 
 export const metadata: Metadata = {
   title: 'Kivo',
@@ -46,9 +46,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href={`${faviconIcon}?v=4`} type="image/png" />
-        <link rel="shortcut icon" href={`${faviconIcon}?v=4`} type="image/png" />
-        <link rel="apple-touch-icon" href={`${appleTouchIcon}?v=4`} />
+        <link rel="icon" href={`${faviconIcon}?v=5`} type="image/png" />
+        <link rel="shortcut icon" href={`${faviconIcon}?v=5`} type="image/png" />
+        <link rel="apple-touch-icon" href={`${appleTouchIcon}?v=5`} />
       </head>
       <body>{children}</body>
     </html>
