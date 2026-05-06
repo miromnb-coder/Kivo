@@ -14,6 +14,7 @@ import {
   Share,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useKivoSheetMotion } from './useKivoSheetMotion';
 
 type KivoPlusSheetProps = {
   open: boolean;
@@ -343,13 +344,15 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
     };
   }, [open]);
 
-  if (!open) return null;
-
   function closeWithAnimation() {
     setIsVisible(false);
     setSelectedConnector(null);
     window.setTimeout(onClose, 170);
   }
+
+  const sheetMotion = useKivoSheetMotion({ visible: isVisible, onClose: closeWithAnimation });
+
+  if (!open) return null;
 
   async function connectConnector(connector: ConnectorItem) {
     if (connectedMap[connector.id] || loadingStatusMap[connector.id]) return;
@@ -373,12 +376,19 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
 
       <section
         aria-label="Kivo actions"
-        className={`pointer-events-auto absolute inset-x-0 bottom-0 max-h-[79vh] overflow-y-auto overscroll-contain rounded-t-[38px] bg-[#fbfbfc] px-[24px] pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[22px] shadow-[0_-18px_58px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
-          isVisible ? 'translate-y-0' : 'translate-y-full'
+        className={`pointer-events-auto absolute inset-x-0 bottom-0 max-h-[79vh] overflow-y-auto overscroll-contain rounded-t-[38px] bg-[#fbfbfc] px-[24px] pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[22px] shadow-[0_-18px_58px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035] transition-[transform,box-shadow] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          sheetMotion.moving ? 'duration-0 ease-linear' : 'duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]'
         }`}
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        style={sheetMotion.style}
       >
-        <div className="mx-auto mb-[26px] h-[6px] w-[76px] rounded-full bg-[#c4c4c9]" />
+        <button
+          type="button"
+          aria-label="Move plus menu"
+          {...sheetMotion.handleProps}
+          className="-mx-[24px] -mt-[18px] mb-[10px] flex h-[42px] touch-none items-center justify-center cursor-grab active:cursor-grabbing"
+        >
+          <span className="h-[6px] w-[76px] rounded-full bg-[#c4c4c9]" />
+        </button>
 
         <div className="-mx-[10px] mb-[36px] flex gap-[18px] overflow-x-auto px-[10px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <EmptyPreviewTile large />
