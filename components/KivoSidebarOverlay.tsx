@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import {
   Bot,
   BrainCircuit,
@@ -53,7 +53,11 @@ const DRAWER_CLOSE_TRANSLATE = -430;
 
 const fallbackRecent = [
   { id: 'fallback-weekly-planning', title: 'Weekly planning for Kivo' },
-  { id: 'fallback-life-operator', title: 'Ideas for AI Life Operator' },
+  { id: 'fallback-news', title: 'Find today’s news' },
+  { id: 'fallback-product', title: 'Kivo product ideas' },
+  { id: 'fallback-agent', title: 'Personal AI agent plan' },
+  { id: 'fallback-ui', title: 'Interface improvements' },
+  { id: 'fallback-memory', title: 'Memory system notes' },
 ];
 
 function MenuItem({ icon, label, active = false, href, onClick }: MenuItemProps) {
@@ -122,8 +126,29 @@ export function KivoSidebarOverlay({
   const dragModeRef = useRef<DragMode>('idle');
 
   const recentItems = conversations.length
-    ? conversations.slice(0, 2).map((conversation) => ({ id: conversation.id, title: conversation.title || 'Untitled conversation' }))
+    ? conversations.slice(0, 12).map((conversation) => ({ id: conversation.id, title: conversation.title || 'Untitled conversation' }))
     : fallbackRecent;
+
+  useEffect(() => {
+    if (!open) return;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyOverscroll = document.body.style.overscrollBehavior;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.overscrollBehavior = originalBodyOverscroll;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
+    };
+  }, [open]);
 
   function closeWithMotion() {
     setDragX(DRAWER_CLOSE_TRANSLATE);
@@ -189,12 +214,13 @@ export function KivoSidebarOverlay({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-hidden">
+    <div className="fixed inset-0 z-[60] overflow-hidden overscroll-none touch-none">
       <button
         type="button"
         aria-label="Close menu"
         onClick={closeWithMotion}
-        className="absolute inset-y-0 right-0 left-[86vw] bg-transparent"
+        onTouchMove={(event) => event.preventDefault()}
+        className="absolute inset-y-0 right-0 left-[86vw] bg-transparent touch-none"
       />
 
       <aside
@@ -219,7 +245,13 @@ export function KivoSidebarOverlay({
             </div>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[24px] pb-[18px] pt-[8px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div
+            className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-[24px] pb-[18px] pt-[8px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+            onPointerDown={(event) => event.stopPropagation()}
+            onWheel={(event) => event.stopPropagation()}
+            onTouchMove={(event) => event.stopPropagation()}
+          >
             <nav className="space-y-[7px]" aria-label="Main menu">
               <MenuItem icon={<Home size={25} strokeWidth={1.8} />} label="Home" active href="/" onClick={onClose} />
               <MenuItem icon={<CalendarDays size={25} strokeWidth={1.8} />} label="Today" href="/today" onClick={onClose} />
