@@ -2,13 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import {
-  CalendarDays,
-  FileText,
-  Home,
-  MessageCircle,
-  SquarePen,
-} from 'lucide-react';
+import { CalendarDays, FileText, Home, SquarePen } from 'lucide-react';
 
 export type SidebarFilter = 'all' | 'favorites' | 'scheduled';
 
@@ -46,7 +40,7 @@ type MenuItemProps = {
 };
 
 const DRAWER_CLOSE_TRANSLATE = -430;
-const DRAWER_CLOSE_DELAY_MS = 360;
+const DRAWER_ANIMATION_MS = 320;
 
 const fallbackRecent = [
   { id: 'fallback-weekly-planning', title: 'Weekly planning for Kivo' },
@@ -122,6 +116,7 @@ export function KivoSidebarOverlay({
 }: KivoSidebarOverlayProps) {
   const [dragX, setDragX] = useState(DRAWER_CLOSE_TRANSLATE);
   const [isDragging, setIsDragging] = useState(false);
+  const [isPresent, setIsPresent] = useState(open);
   const dragStartXRef = useRef(0);
   const dragStartYRef = useRef(0);
   const dragStartTimeRef = useRef(0);
@@ -133,50 +128,79 @@ export function KivoSidebarOverlay({
     : fallbackRecent;
 
   useEffect(() => {
-    if (!open) return;
+    if (!isPresent && !open) return;
 
     const originalBodyOverflow = document.body.style.overflow;
     const originalBodyOverscroll = document.body.style.overscrollBehavior;
     const originalHtmlOverflow = document.documentElement.style.overflow;
     const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
-    let frame = 0;
 
     document.body.style.overflow = 'hidden';
     document.body.style.overscrollBehavior = 'none';
     document.documentElement.style.overflow = 'hidden';
     document.documentElement.style.overscrollBehavior = 'none';
 
-    setDragX(DRAWER_CLOSE_TRANSLATE);
-    triggerKivoHaptic('open');
-    frame = window.requestAnimationFrame(() => {
-      setDragX(0);
-    });
-
     return () => {
-      window.cancelAnimationFrame(frame);
       document.body.style.overflow = originalBodyOverflow;
       document.body.style.overscrollBehavior = originalBodyOverscroll;
       document.documentElement.style.overflow = originalHtmlOverflow;
       document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
+    };
+  }, [isPresent, open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    setIsPresent(true);
+    setIsDragging(false);
+    dragModeRef.current = 'idle';
+    setDragX(DRAWER_CLOSE_TRANSLATE);
+    triggerKivoHaptic('open');
+
+    const frame = window.requestAnimationFrame(() => {
+      setDragX(0);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
+
+  useEffect(() => {
+    if (open || !isPresent) return;
+
+    setIsDragging(false);
+    dragModeRef.current = 'idle';
+    setDragX(DRAWER_CLOSE_TRANSLATE);
+
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      setIsPresent(false);
+    }, DRAWER_ANIMATION_MS);
+
+    return () => {
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
     };
-  }, [open]);
+  }, [open, isPresent]);
 
   function closeWithMotion() {
-    if (closeTimerRef.current !== null) return;
+    if (!open || closeTimerRef.current !== null) return;
 
     triggerKivoHaptic('close');
     setIsDragging(false);
     dragModeRef.current = 'idle';
     setDragX(DRAWER_CLOSE_TRANSLATE);
-    closeTimerRef.current = window.setTimeout(() => {
-      closeTimerRef.current = null;
-      onClose();
-    }, DRAWER_CLOSE_DELAY_MS);
+    onClose();
   }
 
   function handlePointerDown(event: PointerEvent<HTMLElement>) {
@@ -248,7 +272,7 @@ export function KivoSidebarOverlay({
     onNewChat();
   }
 
-  if (!open) return null;
+  if (!isPresent && !open) return null;
 
   return (
     <div
@@ -268,7 +292,7 @@ export function KivoSidebarOverlay({
 
       <aside
         className={`absolute inset-y-0 left-0 flex w-[86vw] max-w-[370px] touch-pan-y select-none flex-col overflow-hidden border-r border-black/[0.035] bg-[#f3f3f5]/98 shadow-[12px_0_42px_rgba(15,23,42,0.04)] backdrop-blur-2xl will-change-transform ${
-          isDragging ? '' : 'transition-transform duration-[420ms] ease-[cubic-bezier(0.19,1,0.22,1)]'
+          isDragging ? '' : 'transition-transform duration-[320ms] ease-[cubic-bezier(0.19,1,0.22,1)]'
         }`}
         style={{ transform: `translate3d(${dragX}px,0,0)` }}
       >
