@@ -170,6 +170,8 @@ export function KivoSidebarOverlay({
     if (closeTimerRef.current !== null) return;
 
     triggerKivoHaptic('close');
+    setIsDragging(false);
+    dragModeRef.current = 'idle';
     setDragX(DRAWER_CLOSE_TRANSLATE);
     closeTimerRef.current = window.setTimeout(() => {
       closeTimerRef.current = null;
@@ -178,6 +180,9 @@ export function KivoSidebarOverlay({
   }
 
   function handlePointerDown(event: PointerEvent<HTMLElement>) {
+    if (closeTimerRef.current !== null) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
     dragStartXRef.current = event.clientX;
     dragStartYRef.current = event.clientY;
     dragStartTimeRef.current = Date.now();
@@ -186,7 +191,7 @@ export function KivoSidebarOverlay({
   }
 
   function handlePointerMove(event: PointerEvent<HTMLElement>) {
-    if (!isDragging) return;
+    if (!isDragging || closeTimerRef.current !== null) return;
 
     const deltaX = event.clientX - dragStartXRef.current;
     const deltaY = event.clientY - dragStartYRef.current;
@@ -194,13 +199,13 @@ export function KivoSidebarOverlay({
     const absY = Math.abs(deltaY);
 
     if (dragModeRef.current === 'idle') {
-      if (absY > 10 && absY > absX * 1.15) {
+      if (absY > 10 && absY > absX * 1.12) {
         dragModeRef.current = 'vertical';
         setDragX(0);
         return;
       }
 
-      if (deltaX < -16 && absX > absY * 1.35) {
+      if (deltaX < -14 && absX > absY * 1.28) {
         dragModeRef.current = 'horizontal';
       }
     }
@@ -212,12 +217,15 @@ export function KivoSidebarOverlay({
   }
 
   function handlePointerUp(event: PointerEvent<HTMLElement>) {
-    if (!isDragging) return;
+    if (!isDragging || closeTimerRef.current !== null) return;
 
     const deltaX = event.clientX - dragStartXRef.current;
+    const deltaY = event.clientY - dragStartYRef.current;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
     const elapsed = Math.max(1, Date.now() - dragStartTimeRef.current);
     const velocity = deltaX / elapsed;
-    const shouldClose = dragModeRef.current === 'horizontal' && (deltaX < -76 || velocity < -0.68);
+    const shouldClose = dragModeRef.current === 'horizontal' && absX > absY * 1.18 && (deltaX < -72 || velocity < -0.62);
 
     setIsDragging(false);
     dragModeRef.current = 'idle';
@@ -243,20 +251,22 @@ export function KivoSidebarOverlay({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-hidden overscroll-none">
+    <div
+      className="fixed inset-0 z-[60] overflow-hidden overscroll-none"
+      onPointerDownCapture={handlePointerDown}
+      onPointerMoveCapture={handlePointerMove}
+      onPointerUpCapture={handlePointerUp}
+      onPointerCancelCapture={handlePointerUp}
+    >
       <button
         type="button"
         aria-label="Close menu"
         onClick={closeWithMotion}
         onTouchMove={(event) => event.preventDefault()}
-        className="absolute inset-y-0 right-0 left-[86vw] bg-transparent touch-none"
+        className="absolute inset-y-0 right-0 left-[86vw] bg-transparent touch-pan-y"
       />
 
       <aside
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
         className={`absolute inset-y-0 left-0 flex w-[86vw] max-w-[370px] touch-pan-y select-none flex-col overflow-hidden border-r border-black/[0.035] bg-[#f3f3f5]/98 shadow-[12px_0_42px_rgba(15,23,42,0.04)] backdrop-blur-2xl will-change-transform ${
           isDragging ? '' : 'transition-transform duration-[420ms] ease-[cubic-bezier(0.19,1,0.22,1)]'
         }`}
@@ -274,7 +284,6 @@ export function KivoSidebarOverlay({
           <div
             className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-[36px] pb-[22px] pt-[32px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ WebkitOverflowScrolling: 'touch' }}
-            onPointerDown={(event) => event.stopPropagation()}
             onWheel={(event) => event.stopPropagation()}
             onTouchMove={(event) => event.stopPropagation()}
           >
