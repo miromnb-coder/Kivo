@@ -1,18 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
-  CheckSquare,
-  ChevronRight,
-  Code2,
-  FileText,
+  CalendarDays,
+  Camera,
+  FilePenLine,
+  FolderPlus,
   Globe2,
-  Grid2X2,
   ImageIcon,
-  MessageCircle,
-  Paperclip,
-  SlidersHorizontal,
-  X,
+  Pencil,
+  Plug,
 } from 'lucide-react';
 
 type KivoPlusSheetProps = {
@@ -20,51 +17,29 @@ type KivoPlusSheetProps = {
   onClose: () => void;
 };
 
-type QuickPreview = {
-  kind: 'image' | 'task' | 'chart' | 'pdf';
-  title?: string;
-};
-
-type MenuAction = {
+type ActionItem = {
   title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  brand?: 'drive' | 'onedrive';
+  icon: ReactNode;
+  badge?: string;
 };
 
-const quickPreviews: QuickPreview[] = [
-  { kind: 'image' },
-  { kind: 'task', title: 'Q2 Report\nanalysis' },
-  { kind: 'chart' },
-  { kind: 'pdf' },
-];
+type ConnectorItem = {
+  title: string;
+  icon: ReactNode;
+};
 
-const createActions: MenuAction[] = [
-  { title: 'New chat', subtitle: 'Start a fresh conversation', icon: <MessageCircle size={20} strokeWidth={1.9} /> },
-  { title: 'New task', subtitle: 'Ask Kivo to do something', icon: <CheckSquare size={20} strokeWidth={1.9} /> },
-];
-
-const addActions: MenuAction[] = [
-  { title: 'Upload files', subtitle: 'Add files from your device', icon: <Paperclip size={20} strokeWidth={1.9} /> },
-  { title: 'Google Drive', subtitle: 'Add files from Drive', icon: null, brand: 'drive' },
-  { title: 'OneDrive', subtitle: 'Add files from OneDrive', icon: null, brand: 'onedrive' },
-  { title: 'Use a connector', subtitle: 'Bring in data from your apps', icon: <FileText size={20} strokeWidth={1.9} /> },
-];
-
-const toolActions: MenuAction[] = [
-  { title: 'Use tools', subtitle: 'Access AI tools and features', icon: <SlidersHorizontal size={20} strokeWidth={1.9} /> },
-  { title: 'Search the web', subtitle: 'Get real-time information', icon: <Globe2 size={20} strokeWidth={1.9} /> },
-  { title: 'Generate image', subtitle: 'Create images with AI', icon: <ImageIcon size={20} strokeWidth={1.9} /> },
-  { title: 'Run code', subtitle: 'Write and execute code', icon: <Code2 size={20} strokeWidth={1.9} /> },
-];
-
-const moreActions: MenuAction[] = [
-  { title: 'Browse all apps', subtitle: 'Explore all integrations and apps', icon: <Grid2X2 size={20} strokeWidth={1.9} /> },
+const actions: ActionItem[] = [
+  { title: 'Add files', icon: <FolderPlus size={28} strokeWidth={1.75} /> },
+  { title: 'Create image', icon: <Pencil size={28} strokeWidth={1.75} /> },
+  { title: 'Write draft', icon: <FilePenLine size={28} strokeWidth={1.75} /> },
+  { title: 'Research deeply', icon: <Globe2 size={28} strokeWidth={1.75} />, badge: '5 left' },
+  { title: 'Schedule task', icon: <CalendarDays size={28} strokeWidth={1.75} /> },
+  { title: 'Connect tools', icon: <Plug size={28} strokeWidth={1.75} /> },
 ];
 
 function GoogleDriveIcon() {
   return (
-    <svg viewBox="0 0 48 48" className="h-[23px] w-[23px]" aria-hidden="true">
+    <svg viewBox="0 0 48 48" className="h-[32px] w-[32px]" aria-hidden="true">
       <path fill="#1FA463" d="M18.4 6h11.2l14.1 24.4H32.4L18.4 6Z" />
       <path fill="#FFD04B" d="M18.4 6 4.3 30.4l5.6 9.6L24 15.6 18.4 6Z" />
       <path fill="#4688F1" d="M9.9 40h28.2l5.6-9.6H15.5L9.9 40Z" />
@@ -72,89 +47,78 @@ function GoogleDriveIcon() {
   );
 }
 
-function OneDriveIcon() {
+function GmailIcon() {
   return (
-    <svg viewBox="0 0 48 48" className="h-[24px] w-[24px]" aria-hidden="true">
-      <path fill="#0364B8" d="M19.5 19.2a10.7 10.7 0 0 1 19.1 4.7 8.7 8.7 0 0 1-.5 17.3H15.8a9.5 9.5 0 0 1 3.7-22Z" opacity=".95" />
-      <path fill="#1490DF" d="M9.4 41.2a8.5 8.5 0 0 1 7.8-12 11.4 11.4 0 0 1 21.4-4.8 9.3 9.3 0 0 0-5.6-1.9c-4.7 0-8.7 3.4-9.4 7.9a8.3 8.3 0 0 0-14.2 10.8Z" />
-      <path fill="#28A8EA" d="M15.8 41.2h22.3a8.7 8.7 0 0 0 .5-17.3 11.4 11.4 0 0 0-21.4 5.3 8.5 8.5 0 0 0-1.4 12Z" />
+    <svg viewBox="0 0 48 48" className="h-[32px] w-[32px]" aria-hidden="true">
+      <path fill="#EA4335" d="M6 14.5v22A3.5 3.5 0 0 0 9.5 40H15V21.4L6 14.5Z" />
+      <path fill="#34A853" d="M33 40h5.5A3.5 3.5 0 0 0 42 36.5v-22l-9 6.9V40Z" />
+      <path fill="#FBBC04" d="M33 14.5 24 21.4l-9-6.9V21.4l9 6.9 9-6.9v-6.9Z" />
+      <path fill="#4285F4" d="M15 40h18V21.4l-9 6.9-9-6.9V40Z" opacity=".08" />
+      <path fill="#EA4335" d="M6 14.5A3.5 3.5 0 0 1 11.6 11.7L24 21.4l12.4-9.7A3.5 3.5 0 0 1 42 14.5l-18 13.8L6 14.5Z" />
     </svg>
   );
 }
 
-function BrandIcon({ brand }: { brand?: MenuAction['brand'] }) {
-  if (brand === 'drive') return <GoogleDriveIcon />;
-  if (brand === 'onedrive') return <OneDriveIcon />;
-  return null;
+function GoogleCalendarIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-[32px] w-[32px]" aria-hidden="true">
+      <path fill="#4285F4" d="M8 10h32v30H8V10Z" />
+      <path fill="#34A853" d="M8 32h32v8H8v-8Z" />
+      <path fill="#FBBC04" d="M8 10h32v8H8v-8Z" />
+      <path fill="#EA4335" d="M32 10h8v30h-8V10Z" />
+      <path fill="#fff" d="M12 18h20v18H12V18Z" />
+      <text x="16" y="32" fontSize="12" fontFamily="Arial, Helvetica, sans-serif" fontWeight="700" fill="#4285F4">31</text>
+    </svg>
+  );
 }
 
-function PreviewCard({ item }: { item: QuickPreview }) {
-  if (item.kind === 'image') {
-    return (
-      <button type="button" className="relative h-[82px] min-w-[112px] overflow-hidden rounded-[17px] border border-black/[0.04] bg-white shadow-[0_10px_26px_rgba(15,23,42,0.035)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,#f4c7de_0%,#b7c8ee_44%,#1d2430_100%)]" />
-        <span className="absolute bottom-[8px] left-[8px] flex h-[24px] w-[24px] items-center justify-center rounded-[7px] bg-white/92 text-[#6f63d8]"><ImageIcon size={15} /></span>
-      </button>
-    );
-  }
+const connectors: ConnectorItem[] = [
+  { title: 'Google Drive', icon: <GoogleDriveIcon /> },
+  { title: 'Gmail', icon: <GmailIcon /> },
+  { title: 'Google Calendar', icon: <GoogleCalendarIcon /> },
+];
 
-  if (item.kind === 'task') {
-    return (
-      <button type="button" className="relative h-[82px] min-w-[112px] rounded-[17px] border border-black/[0.04] bg-white p-[12px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.035)]">
-        <span className="whitespace-pre-line text-[12px] font-semibold leading-[1.15] tracking-[-0.04em] text-[#15161a]">{item.title}</span>
-        <span className="absolute bottom-[8px] left-[8px] flex h-[21px] w-[21px] items-center justify-center rounded-[7px] bg-[#f0f6ef] text-[#3aad45]"><CheckSquare size={13} /></span>
-      </button>
-    );
-  }
-
-  if (item.kind === 'chart') {
-    return (
-      <button type="button" className="relative h-[82px] min-w-[112px] overflow-hidden rounded-[17px] border border-black/[0.04] bg-white shadow-[0_10px_26px_rgba(15,23,42,0.035)]">
-        <svg viewBox="0 0 112 82" className="absolute inset-0 h-full w-full" aria-hidden="true">
-          <path d="M14 52h84" stroke="#e7e7eb" strokeWidth="1" />
-          <path d="M14 38h84" stroke="#eeeeF2" strokeWidth="1" />
-          <path d="M18 49 38 35 55 42 89 24" fill="none" stroke="#78a9ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <rect x="20" y="58" width="9" height="12" rx="2" fill="#eceef3" />
-          <rect x="42" y="52" width="9" height="18" rx="2" fill="#e5e8ef" />
-          <rect x="64" y="46" width="9" height="24" rx="2" fill="#dfe4ee" />
-          <rect x="86" y="39" width="9" height="31" rx="2" fill="#d9dfeb" />
-        </svg>
-        <span className="absolute bottom-[8px] left-[8px] flex h-[21px] w-[21px] items-center justify-center rounded-[7px] bg-white/92 text-[#4d9de8]"><ImageIcon size={13} /></span>
-      </button>
-    );
-  }
-
+function EmptyPreviewTile({ large = false }: { large?: boolean }) {
   return (
-    <button type="button" className="relative h-[82px] min-w-[112px] rounded-[17px] border border-black/[0.04] bg-white p-[12px] shadow-[0_10px_26px_rgba(15,23,42,0.035)]">
-      <div className="space-y-[6px] pt-[7px]">
-        <div className="h-[4px] w-[78px] rounded-full bg-[#d9d9de]" />
-        <div className="h-[4px] w-[62px] rounded-full bg-[#e1e1e6]" />
-        <div className="h-[4px] w-[72px] rounded-full bg-[#e8e8ed]" />
-      </div>
-      <span className="absolute bottom-[8px] left-[8px] flex h-[21px] w-[21px] items-center justify-center rounded-[7px] bg-white/92 text-[#e21d38]"><FileText size={13} /></span>
+    <button
+      type="button"
+      className={`flex shrink-0 items-center justify-center rounded-[20px] border border-black/[0.04] bg-[#f8f8f9] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] ${
+        large ? 'h-[98px] w-[98px]' : 'h-[98px] w-[112px]'
+      }`}
+    >
+      {large ? <Camera size={38} strokeWidth={2.15} className="text-[#5a5a5e]" /> : null}
     </button>
   );
 }
 
-function ActionSection({ title, actions }: { title: string; actions: MenuAction[] }) {
+function ActionRow({ item }: { item: ActionItem }) {
   return (
-    <section className="mt-[15px]">
-      <h3 className="mb-[8px] px-[4px] text-[10.5px] font-semibold uppercase tracking-[0.09em] text-[#70727a]">{title}</h3>
-      <div className="overflow-hidden rounded-[19px] border border-black/[0.05] bg-white shadow-[0_10px_28px_rgba(15,23,42,0.03)]">
-        {actions.map((action) => (
-          <button key={action.title} type="button" className="flex min-h-[55px] w-full items-center gap-[13px] px-[12px] text-left transition active:scale-[0.995]">
-            <span className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[12px] bg-[#f2f2f3] text-[#191a1e]">
-              {action.brand ? <BrandIcon brand={action.brand} /> : action.icon}
-            </span>
-            <span className="min-w-0 flex-1 border-b border-black/[0.045] py-[9px] last:border-b-0">
-              <span className="block truncate text-[13.8px] font-semibold tracking-[-0.035em] text-[#15161a]">{action.title}</span>
-              <span className="mt-[2px] block truncate text-[11.5px] tracking-[-0.025em] text-[#70727a]">{action.subtitle}</span>
-            </span>
-            <ChevronRight size={18} strokeWidth={2.1} className="shrink-0 text-[#8b8d94]" />
-          </button>
-        ))}
-      </div>
-    </section>
+    <button type="button" className="flex h-[66px] w-full items-center gap-[28px] text-left text-[#17181b] transition active:scale-[0.995]">
+      <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center text-[#15161a]">{item.icon}</span>
+      <span className="flex min-w-0 flex-1 items-center gap-[16px]">
+        <span className="truncate text-[25px] font-normal leading-none tracking-[-0.045em]">{item.title}</span>
+        {item.badge ? (
+          <span className="shrink-0 rounded-[7px] bg-[#ececf0] px-[10px] py-[3px] text-[15px] font-medium leading-none tracking-[-0.035em] text-[#505157]">
+            {item.badge}
+          </span>
+        ) : null}
+      </span>
+    </button>
+  );
+}
+
+function ConnectorRow({ item }: { item: ConnectorItem }) {
+  return (
+    <div className="flex h-[56px] items-center gap-[20px]">
+      <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center">{item.icon}</span>
+      <span className="min-w-0 flex-1 truncate text-[21px] font-normal tracking-[-0.04em] text-[#24252a]">{item.title}</span>
+      <button
+        type="button"
+        className="h-[44px] rounded-[22px] bg-white px-[26px] text-[17px] font-medium tracking-[-0.03em] text-[#202124] shadow-[0_8px_24px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] transition active:scale-[0.98]"
+      >
+        Connect
+      </button>
+    </div>
   );
 }
 
@@ -172,35 +136,51 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
 
   function closeWithAnimation() {
     setIsVisible(false);
-    window.setTimeout(onClose, 160);
+    window.setTimeout(onClose, 170);
   }
 
   return (
-    <div className="fixed inset-0 z-[90] pointer-events-none">
+    <div className="fixed inset-0 z-[90] overflow-hidden pointer-events-none">
       <button
         type="button"
-        aria-label="Close actions"
+        aria-label="Close plus menu"
         onClick={closeWithAnimation}
-        className={`absolute inset-0 pointer-events-auto bg-black/6 backdrop-blur-[1.5px] transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        className="absolute inset-0 pointer-events-auto bg-transparent"
       />
 
-      <div className={`absolute inset-x-0 bottom-[92px] mx-auto w-[360px] max-w-[calc(100vw-34px)] origin-bottom pointer-events-auto transition duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[14px] scale-[0.97] opacity-0'}`}>
-        <div className="relative overflow-visible">
-          <div className="absolute left-1/2 top-[15px] h-[4px] w-[36px] -translate-x-1/2 rounded-full bg-[#c7c7cc]" />
-          <button type="button" onClick={closeWithAnimation} aria-label="Close" className="absolute right-[14px] top-[14px] z-10 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#f2f2f3] text-[#111] transition active:scale-[0.96]"><X size={21} strokeWidth={2.1} /></button>
+      <section
+        aria-label="Kivo actions"
+        className={`pointer-events-auto absolute inset-x-0 bottom-0 max-h-[79vh] overflow-y-auto overscroll-contain rounded-t-[38px] bg-[#fbfbfc] px-[24px] pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[22px] shadow-[0_-18px_58px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          isVisible ? 'translate-y-0' : 'translate-y-full'
+        }`}
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <div className="mx-auto mb-[26px] h-[6px] w-[76px] rounded-full bg-[#c4c4c9]" />
 
-          <div className="max-h-[76vh] overflow-y-auto overscroll-contain rounded-[28px] bg-[#fbfbfc] px-[18px] pb-[18px] pt-[44px] shadow-[0_18px_54px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.045] backdrop-blur-md [-webkit-overflow-scrolling:touch]">
-            <div className="-mx-[2px] flex gap-[10px] overflow-x-auto pb-[18px] pr-[8px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {quickPreviews.map((item, index) => <PreviewCard key={`${item.kind}-${index}`} item={item} />)}
-            </div>
-
-            <ActionSection title="Create" actions={createActions} />
-            <ActionSection title="Add to message" actions={addActions} />
-            <ActionSection title="Tools" actions={toolActions} />
-            <ActionSection title="More" actions={moreActions} />
-          </div>
+        <div className="-mx-[10px] mb-[40px] flex gap-[18px] overflow-x-auto px-[10px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <EmptyPreviewTile large />
+          <EmptyPreviewTile />
+          <EmptyPreviewTile />
+          <EmptyPreviewTile />
         </div>
-      </div>
+
+        <div className="space-y-[2px]">
+          {actions.map((action) => (
+            <ActionRow key={action.title} item={action} />
+          ))}
+        </div>
+
+        <div className="my-[26px] h-px bg-black/[0.1]" />
+
+        <section>
+          <h3 className="mb-[14px] text-[22px] font-medium tracking-[-0.045em] text-[#6d6e76]">Connectors</h3>
+          <div className="space-y-[10px]">
+            {connectors.map((connector) => (
+              <ConnectorRow key={connector.title} item={connector} />
+            ))}
+          </div>
+        </section>
+      </section>
     </div>
   );
 }
