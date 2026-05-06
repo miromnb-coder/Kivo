@@ -385,7 +385,7 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
           type="button"
           aria-label="Move plus menu"
           {...sheetMotion.handleProps}
-          className="-mx-[24px] -mt-[18px] mb-[10px] flex h-[42px] touch-none items-center justify-center cursor-grab active:cursor-grabbing"
+          className="sticky top-[-22px] z-20 -mx-[24px] -mt-[18px] mb-[10px] flex h-[42px] w-[calc(100%+48px)] touch-none items-center justify-center cursor-grab bg-[#fbfbfc]/95 backdrop-blur active:cursor-grabbing"
         >
           <span className="h-[6px] w-[76px] rounded-full bg-[#c4c4c9]" />
         </button>
