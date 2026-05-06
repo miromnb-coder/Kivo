@@ -6,6 +6,7 @@ import { KivoComposer } from './KivoComposer';
 import { KivoTopBar } from './KivoTopBar';
 import { KivoChatMessages, type KivoChatMessage } from './KivoChatMessages';
 import { KivoSidebarOverlay, type KivoConversation, type SidebarFilter } from './KivoSidebarOverlay';
+import { type KivoAttachment } from './KivoAttachments';
 
 type StreamStep = {
   id?: string;
@@ -44,8 +45,9 @@ function mergeBrowserPreview(prevPreview: BrowserPreviewEvent | undefined, nextP
   return { ...(prevPreview ?? {}), ...nextPreview };
 }
 
-function createConversationTitle(message: string) {
+function createConversationTitle(message: string, attachmentCount = 0) {
   const cleaned = message.replace(/\s+/g, ' ').trim();
+  if (!cleaned && attachmentCount > 0) return attachmentCount === 1 ? 'Image' : `${attachmentCount} images`;
   if (!cleaned) return 'New conversation';
   return cleaned.length > 54 ? `${cleaned.slice(0, 54).trim()}…` : cleaned;
 }
@@ -165,9 +167,9 @@ export function KivoStartScreen() {
     swipeModeRef.current = 'idle';
   }
 
-  async function createConversation(userId: string, firstMessage: string) {
+  async function createConversation(userId: string, firstMessage: string, attachmentCount = 0) {
     const supabase = createSupabaseBrowser();
-    const title = createConversationTitle(firstMessage);
+    const title = createConversationTitle(firstMessage, attachmentCount);
     const { data, error } = await supabase
       .from('kivo_conversations')
       .insert({ user_id: userId, title })
@@ -189,6 +191,7 @@ export function KivoStartScreen() {
         role: message.role,
         content: message.content,
         metadata: {
+          attachments: message.attachments ?? null,
           steps: message.steps ?? null,
           browserPreview: message.browserPreview ?? null,
           model: message.model ?? null,
@@ -231,6 +234,7 @@ export function KivoStartScreen() {
         id: row.id,
         role: row.role,
         content: row.content ?? '',
+        attachments: row.metadata?.attachments ?? undefined,
         steps: row.metadata?.steps ?? undefined,
         browserPreview: row.metadata?.browserPreview ?? undefined,
         model: row.metadata?.model ?? undefined,
@@ -299,15 +303,15 @@ export function KivoStartScreen() {
     setIsKeyboardMode(false);
   }
 
-  async function handleSend(message: string) {
+  async function handleSend(message: string, attachments: KivoAttachment[] = []) {
     const userId = await getUserId();
     if (!userId) {
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: '', error: 'Please sign in again to use Kivo memory.' }]);
       return;
     }
 
-    const conversationId = activeConversationId ?? (await createConversation(userId, message));
-    const userMsg: KivoChatMessage = { id: crypto.randomUUID(), role: 'user', content: message };
+    const conversationId = activeConversationId ?? (await createConversation(userId, message, attachments.length));
+    const userMsg: KivoChatMessage = { id: crypto.randomUUID(), role: 'user', content: message, attachments };
     const assistantId = crypto.randomUUID();
     let assistantContent = '';
     let assistantSnapshot: KivoChatMessage = { id: assistantId, role: 'assistant', content: '', steps: [] };
@@ -320,7 +324,7 @@ export function KivoStartScreen() {
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, userId }),
+        body: JSON.stringify({ message, userId, attachments }),
       });
 
       if (!res.ok) throw new Error(`Agent request failed (${res.status})`);
