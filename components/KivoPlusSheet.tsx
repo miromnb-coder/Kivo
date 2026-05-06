@@ -13,6 +13,7 @@ import {
   Plug,
   Share,
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 type KivoPlusSheetProps = {
   open: boolean;
@@ -25,13 +26,21 @@ type ActionItem = {
   badge?: string;
 };
 
+type ConnectorId = 'google-drive' | 'gmail' | 'google-calendar' | 'outlook-calendar' | 'outlook-mail';
+
 type ConnectorItem = {
+  id: ConnectorId;
   title: string;
   iconSrc: string;
   description: string;
   category: string;
   features: string;
 };
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 const actions: ActionItem[] = [
   { title: 'Add files', icon: <FolderPlus size={24} strokeWidth={1.75} /> },
@@ -44,6 +53,7 @@ const actions: ActionItem[] = [
 
 const connectors: ConnectorItem[] = [
   {
+    id: 'google-drive',
     title: 'Google Drive',
     iconSrc: '/connectors/google-drive.PNG',
     description: 'Connect Google Drive to Kivo to search files, summarize documents, analyze folders, and use workspace content in conversations.',
@@ -51,6 +61,7 @@ const connectors: ConnectorItem[] = [
     features: 'File search',
   },
   {
+    id: 'gmail',
     title: 'Gmail',
     iconSrc: '/connectors/gmail.PNG',
     description: 'Connect Gmail to Kivo to summarize conversations, draft replies, surface recent threads, prepare meeting context, and highlight action items.',
@@ -58,6 +69,7 @@ const connectors: ConnectorItem[] = [
     features: 'Email assistance',
   },
   {
+    id: 'google-calendar',
     title: 'Google Calendar',
     iconSrc: '/connectors/google-calendar.PNG',
     description: 'Connect Google Calendar to Kivo to review your schedule, plan your day, prepare meetings, and create smarter reminders.',
@@ -65,6 +77,7 @@ const connectors: ConnectorItem[] = [
     features: 'Calendar planning',
   },
   {
+    id: 'outlook-calendar',
     title: 'Outlook Calendar',
     iconSrc: '/connectors/outlook-calendar.PNG',
     description: 'Connect Outlook Calendar to Kivo to organize events, prepare meeting context, find open time, and keep your day on track.',
@@ -72,6 +85,7 @@ const connectors: ConnectorItem[] = [
     features: 'Calendar planning',
   },
   {
+    id: 'outlook-mail',
     title: 'Outlook Mail',
     iconSrc: '/connectors/outlook-mail.PNG',
     description: 'Connect Outlook Mail to Kivo to summarize emails, draft responses, find important messages, and turn threads into next steps.',
@@ -79,6 +93,30 @@ const connectors: ConnectorItem[] = [
     features: 'Email assistance',
   },
 ];
+
+const emptyConnectedMap: Record<ConnectorId, boolean> = {
+  'google-drive': false,
+  gmail: false,
+  'google-calendar': false,
+  'outlook-calendar': false,
+  'outlook-mail': false,
+};
+
+const statusEndpoints: Record<ConnectorId, (userId: string) => string> = {
+  'google-drive': (userId) => `/api/integrations/google/drive/status?userId=${encodeURIComponent(userId)}`,
+  gmail: (userId) => `/api/integrations/google/gmail/status?userId=${encodeURIComponent(userId)}`,
+  'google-calendar': (userId) => `/api/integrations/google/calendar/status?userId=${encodeURIComponent(userId)}`,
+  'outlook-calendar': (userId) => `/api/integrations/microsoft/outlook-calendar/status?userId=${encodeURIComponent(userId)}`,
+  'outlook-mail': (userId) => `/api/integrations/microsoft/outlook-mail/status?userId=${encodeURIComponent(userId)}`,
+};
+
+const connectEndpoints: Record<ConnectorId, (userId: string) => string> = {
+  'google-drive': (userId) => `/api/integrations/google/drive/connect?userId=${encodeURIComponent(userId)}`,
+  gmail: (userId) => `/api/integrations/google/gmail/connect?userId=${encodeURIComponent(userId)}`,
+  'google-calendar': (userId) => `/api/integrations/google/calendar/connect?userId=${encodeURIComponent(userId)}`,
+  'outlook-calendar': (userId) => `/api/integrations/microsoft/connect?userId=${encodeURIComponent(userId)}`,
+  'outlook-mail': (userId) => `/api/integrations/microsoft/connect?userId=${encodeURIComponent(userId)}`,
+};
 
 function EmptyPreviewTile({ large = false }: { large?: boolean }) {
   return (
@@ -141,7 +179,12 @@ function ConnectorIcon({
   );
 }
 
-function ConnectorRow({ item, onOpen }: { item: ConnectorItem; onOpen: () => void }) {
+function getConnectorButtonLabel(connected?: boolean) {
+  if (connected) return 'Connected';
+  return 'Connect';
+}
+
+function ConnectorRow({ item, onOpen, connected }: { item: ConnectorItem; onOpen: () => void; connected?: boolean }) {
   return (
     <div className="flex h-[50px] items-center gap-[18px]">
       <ConnectorIcon src={item.iconSrc} title={item.title} />
@@ -151,7 +194,7 @@ function ConnectorRow({ item, onOpen }: { item: ConnectorItem; onOpen: () => voi
         onClick={onOpen}
         className="h-[40px] rounded-[20px] bg-white px-[22px] text-[15.5px] font-medium tracking-[-0.03em] text-[#202124] shadow-[0_8px_24px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] transition active:scale-[0.98]"
       >
-        Connect
+        {getConnectorButtonLabel(connected)}
       </button>
     </div>
   );
@@ -168,7 +211,19 @@ function DetailRow({ label, value, external = false }: { label: string; value?: 
   );
 }
 
-function ConnectorDetailView({ connector, onBack }: { connector: ConnectorItem; onBack: () => void }) {
+function ConnectorDetailView({
+  connector,
+  connected,
+  loading,
+  onBack,
+  onConnect,
+}: {
+  connector: ConnectorItem;
+  connected: boolean;
+  loading: boolean;
+  onBack: () => void;
+  onConnect: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-[120] overflow-hidden bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[calc(env(safe-area-inset-top)+10px)] text-[#111113]">
       <header className="relative mb-[26px] flex h-[42px] items-center justify-center">
@@ -206,9 +261,11 @@ function ConnectorDetailView({ connector, onBack }: { connector: ConnectorItem; 
           </h1>
           <button
             type="button"
+            onClick={onConnect}
+            disabled={loading || connected}
             className="h-[42px] rounded-full bg-black px-[31px] text-[16px] font-medium tracking-[-0.035em] text-white transition active:scale-[0.98]"
           >
-            Connect
+            {getConnectorButtonLabel(connected)}
           </button>
         </div>
       </section>
@@ -235,6 +292,8 @@ function ConnectorDetailView({ connector, onBack }: { connector: ConnectorItem; 
 export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<ConnectorItem | null>(null);
+  const [connectedMap, setConnectedMap] = useState<Record<ConnectorId, boolean>>(emptyConnectedMap);
+  const [loadingStatusMap, setLoadingStatusMap] = useState<Partial<Record<ConnectorId, boolean>>>({});
 
   useEffect(() => {
     if (!open) return;
@@ -244,12 +303,63 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
     return () => cancelAnimationFrame(frame);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    async function syncStatuses() {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+
+      if (!userId || cancelled) {
+        setConnectedMap(emptyConnectedMap);
+        setLoadingStatusMap({});
+        return;
+      }
+
+      setLoadingStatusMap(Object.fromEntries(connectors.map((connector) => [connector.id, true])) as Partial<Record<ConnectorId, boolean>>);
+
+      const results = await Promise.all(
+        connectors.map(async (connector) => {
+          try {
+            const response = await fetch(statusEndpoints[connector.id](userId), { cache: 'no-store' });
+            if (!response.ok) return [connector.id, false] as const;
+            const payload = await response.json();
+            return [connector.id, Boolean(payload.connected)] as const;
+          } catch {
+            return [connector.id, false] as const;
+          }
+        }),
+      );
+
+      if (cancelled) return;
+      setConnectedMap((current) => ({ ...current, ...Object.fromEntries(results) } as Record<ConnectorId, boolean>));
+      setLoadingStatusMap({});
+    }
+
+    syncStatuses();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   function closeWithAnimation() {
     setIsVisible(false);
     setSelectedConnector(null);
     window.setTimeout(onClose, 170);
+  }
+
+  async function connectConnector(connector: ConnectorItem) {
+    if (connectedMap[connector.id] || loadingStatusMap[connector.id]) return;
+
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id;
+
+    if (!userId) return;
+
+    window.location.href = connectEndpoints[connector.id](userId);
   }
 
   return (
@@ -289,14 +399,27 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
           <h3 className="mb-[12px] text-[19px] font-medium tracking-[-0.04em] text-[#6d6e76]">Connectors</h3>
           <div className="space-y-[8px]">
             {connectors.map((connector) => (
-              <ConnectorRow key={connector.title} item={connector} onOpen={() => setSelectedConnector(connector)} />
+              <ConnectorRow
+                key={connector.title}
+                item={connector}
+                connected={connectedMap[connector.id]}
+                onOpen={() => setSelectedConnector(connector)}
+              />
             ))}
           </div>
         </section>
       </section>
 
       {selectedConnector ? (
-        <ConnectorDetailView connector={selectedConnector} onBack={() => setSelectedConnector(null)} />
+        <ConnectorDetailView
+          connector={selectedConnector}
+          connected={connectedMap[selectedConnector.id]}
+          loading={Boolean(loadingStatusMap[selectedConnector.id])}
+          onBack={() => setSelectedConnector(null)}
+          onConnect={() => {
+            void connectConnector(selectedConnector);
+          }}
+        />
       ) : null}
     </div>
   );
