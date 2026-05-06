@@ -37,9 +37,9 @@ const actions: ActionItem[] = [
 ];
 
 const connectors: ConnectorItem[] = [
-  { title: 'Google Drive', iconSrc: '/connectors/google-drive.png' },
-  { title: 'Gmail', iconSrc: '/connectors/gmail.png' },
-  { title: 'Google Calendar', iconSrc: '/connectors/google-calendar.png' },
+  { title: 'Google Drive', iconSrc: '/connectors/google-drive.PNG' },
+  { title: 'Gmail', iconSrc: '/connectors/gmail.PNG' },
+  { title: 'Google Calendar', iconSrc: '/connectors/google-calendar.PNG' },
 ];
 
 function EmptyPreviewTile({ large = false }: { large?: boolean }) {
