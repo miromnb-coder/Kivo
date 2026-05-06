@@ -27,6 +27,8 @@ type BrowserPreviewEvent = {
   status?: 'idle' | 'running' | 'done';
 };
 
+type SwipeMode = 'idle' | 'horizontal' | 'vertical';
+
 function getStepKey(step: StreamStep) {
   return step.id || step.title || step.label || 'step';
 }
@@ -48,6 +50,11 @@ function createConversationTitle(message: string) {
   return cleaned.length > 54 ? `${cleaned.slice(0, 54).trim()}…` : cleaned;
 }
 
+function shouldIgnoreOpenSwipeStart(target: EventTarget | null) {
+  const element = target instanceof HTMLElement ? target : null;
+  return Boolean(element?.closest('a, button, input, textarea, select, [role="button"], [contenteditable="true"]'));
+}
+
 export function KivoStartScreen() {
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
   const [messages, setMessages] = useState<KivoChatMessage[]>([]);
@@ -60,6 +67,7 @@ export function KivoStartScreen() {
   const edgeSwipeStartXRef = useRef(0);
   const edgeSwipeStartYRef = useRef(0);
   const edgeSwipeStartTimeRef = useRef(0);
+  const swipeModeRef = useRef<SwipeMode>('idle');
   const [edgeSwipeActive, setEdgeSwipeActive] = useState(false);
 
   async function getUserId() {
@@ -98,31 +106,63 @@ export function KivoStartScreen() {
   }
 
   function handleEdgePointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (sidebarOpen || loading) return;
+    if (sidebarOpen || loading || shouldIgnoreOpenSwipeStart(event.target)) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
     edgeSwipeStartXRef.current = event.clientX;
     edgeSwipeStartYRef.current = event.clientY;
     edgeSwipeStartTimeRef.current = Date.now();
+    swipeModeRef.current = 'idle';
     setEdgeSwipeActive(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function handleEdgePointerMove(event: PointerEvent<HTMLDivElement>) {
     if (!edgeSwipeActive || sidebarOpen) return;
+
     const deltaX = event.clientX - edgeSwipeStartXRef.current;
-    const deltaY = Math.abs(event.clientY - edgeSwipeStartYRef.current);
-    if (deltaX > 46 && deltaY < 42) {
+    const deltaY = event.clientY - edgeSwipeStartYRef.current;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (swipeModeRef.current === 'idle') {
+      if (absY > 10 && absY > absX * 1.1) {
+        swipeModeRef.current = 'vertical';
+        return;
+      }
+
+      if (deltaX > 18 && absX > absY * 1.25) {
+        swipeModeRef.current = 'horizontal';
+      }
+    }
+
+    if (swipeModeRef.current !== 'horizontal') return;
+
+    event.preventDefault();
+    if (deltaX > 70) {
       setEdgeSwipeActive(false);
+      swipeModeRef.current = 'idle';
       openSidebar();
     }
   }
 
   function handleEdgePointerUp(event: PointerEvent<HTMLDivElement>) {
     if (!edgeSwipeActive) return;
+
     const deltaX = event.clientX - edgeSwipeStartXRef.current;
+    const deltaY = event.clientY - edgeSwipeStartYRef.current;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
     const elapsed = Math.max(1, Date.now() - edgeSwipeStartTimeRef.current);
     const velocity = deltaX / elapsed;
+
     setEdgeSwipeActive(false);
-    if (deltaX > 34 && velocity > 0.28) openSidebar();
+
+    if (swipeModeRef.current === 'horizontal' && absX > absY * 1.18 && (deltaX > 86 || velocity > 0.42)) {
+      openSidebar();
+    }
+
+    swipeModeRef.current = 'idle';
   }
 
   async function createConversation(userId: string, firstMessage: string) {
@@ -366,19 +406,12 @@ export function KivoStartScreen() {
     <main className="relative min-h-screen overflow-hidden bg-[#f3f3f5]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,#ffffff_0%,#f5f5f6_60%,#f0f0f2_100%)]" />
       <div className="relative z-10 mx-auto min-h-screen w-full max-w-[430px] overflow-hidden">
-        {!sidebarOpen ? (
-          <div
-            aria-hidden="true"
-            onPointerDown={handleEdgePointerDown}
-            onPointerMove={handleEdgePointerMove}
-            onPointerUp={handleEdgePointerUp}
-            onPointerCancel={handleEdgePointerUp}
-            className="fixed left-0 top-0 z-[45] h-full w-[22px] touch-pan-y bg-transparent"
-          />
-        ) : null}
-
         <div
-          className="absolute inset-0 min-h-screen w-full will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          onPointerDownCapture={handleEdgePointerDown}
+          onPointerMoveCapture={handleEdgePointerMove}
+          onPointerUpCapture={handleEdgePointerUp}
+          onPointerCancelCapture={handleEdgePointerUp}
+          className="absolute inset-0 min-h-screen w-full touch-pan-y will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{ transform: sidebarOpen ? 'translate3d(min(86vw, 370px), 0, 0)' : 'translate3d(0, 0, 0)' }}
         >
           <div className="fixed left-1/2 top-0 z-50 w-full max-w-[430px] -translate-x-1/2">
