@@ -6,10 +6,11 @@ import { KivoPlusSheet } from './KivoPlusSheet';
 import { KivoConnectorsSheet } from './KivoConnectorsSheet';
 import { KivoModePopover } from './KivoModePopover';
 import { KivoVoiceRecorderBar } from './KivoVoiceRecorderBar';
+import { KivoAttachmentPreviewTray, type KivoAttachment } from './KivoAttachments';
 
 type KivoComposerProps = {
   onFocusChange?: (focused: boolean) => void;
-  onSubmitMessage?: (message: string) => Promise<void> | void;
+  onSubmitMessage?: (message: string, attachments: KivoAttachment[]) => Promise<void> | void;
   disabled?: boolean;
   conversationId?: string | null;
   messageCount?: number;
@@ -33,6 +34,9 @@ const smartSuggestions: SmartSuggestion[] = [
   { label: 'Research deeply', prompt: 'Research this deeply and give me a clear summary: ' },
   { label: 'Write draft', prompt: 'Write a polished draft for ' },
 ];
+
+const MAX_IMAGE_ATTACHMENTS = 6;
+const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
 
 function KivoToolsIcon() {
   return (
@@ -89,6 +93,33 @@ function KivoSmartSuggestionRail({ visible, onSelect }: { visible: boolean; onSe
   );
 }
 
+function readImageAttachment(file: File): Promise<KivoAttachment | null> {
+  if (!file.type.startsWith('image/')) return Promise.resolve(null);
+  if (file.size > MAX_IMAGE_SIZE_BYTES) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = typeof reader.result === 'string' ? reader.result : '';
+      if (!url) {
+        resolve(null);
+        return;
+      }
+
+      resolve({
+        id: crypto.randomUUID(),
+        type: 'image',
+        name: file.name || 'image',
+        size: file.size,
+        mimeType: file.type,
+        url,
+      });
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function KivoComposer({
   onFocusChange,
   onSubmitMessage,
@@ -97,6 +128,7 @@ export function KivoComposer({
   messageCount = 0,
 }: KivoComposerProps) {
   const [value, setValue] = useState('');
+  const [attachments, setAttachments] = useState<KivoAttachment[]>([]);
   const [hasSubmittedInCurrentConversation, setHasSubmittedInCurrentConversation] = useState(false);
   const [isPlusOpen, setIsPlusOpen] = useState(false);
   const [isConnectorsOpen, setIsConnectorsOpen] = useState(false);
@@ -108,14 +140,16 @@ export function KivoComposer({
     offsetTop: 0,
   });
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousConversationKeyRef = useRef<string | null>(conversationId ?? null);
-  const canSend = value.trim().length > 0 && !disabled;
+  const canSend = (value.trim().length > 0 || attachments.length > 0) && !disabled;
   const conversationHasMessages = messageCount > 0;
   const showSmartSuggestions =
     !conversationHasMessages &&
     !hasSubmittedInCurrentConversation &&
     value.trim().length === 0 &&
+    attachments.length === 0 &&
     !isPlusOpen &&
     !isConnectorsOpen &&
     !isModeOpen;
@@ -126,6 +160,7 @@ export function KivoComposer({
       previousConversationKeyRef.current = nextConversationKey;
       setHasSubmittedInCurrentConversation(false);
       setValue('');
+      setAttachments([]);
       requestAnimationFrame(() => {
         const textarea = textareaRef.current;
         if (!textarea) return;
@@ -185,13 +220,42 @@ export function KivoComposer({
     textarea.style.height = `${Math.min(textarea.scrollHeight, 96)}px`;
   }
 
+  function openImagePicker() {
+    setIsPlusOpen(false);
+    imageInputRef.current?.click();
+  }
+
+  async function handleImageInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (!files.length) return;
+
+    const remainingSlots = Math.max(0, MAX_IMAGE_ATTACHMENTS - attachments.length);
+    if (remainingSlots === 0) return;
+
+    const nextAttachments = (await Promise.all(files.slice(0, remainingSlots).map(readImageAttachment))).filter(Boolean) as KivoAttachment[];
+    if (!nextAttachments.length) return;
+
+    setAttachments((current) => [...current, ...nextAttachments].slice(0, MAX_IMAGE_ATTACHMENTS));
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      syncKeyboardPosition();
+    });
+  }
+
+  function removeAttachment(id: string) {
+    setAttachments((current) => current.filter((attachment) => attachment.id !== id));
+  }
+
   function handleSubmit() {
     const message = value.trim();
-    if (!message || disabled) return;
+    const outgoingAttachments = attachments;
+    if ((!message && outgoingAttachments.length === 0) || disabled) return;
 
     setHasSubmittedInCurrentConversation(true);
     setValue('');
-    onSubmitMessage?.(message);
+    setAttachments([]);
+    onSubmitMessage?.(message, outgoingAttachments);
 
     requestAnimationFrame(() => {
       const textarea = textareaRef.current;
@@ -229,11 +293,22 @@ export function KivoComposer({
 
   return (
     <>
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleImageInputChange}
+      />
+
       {!isRecording ? (
         <div className="fixed inset-x-0 bottom-0 z-40 pointer-events-none px-[16px] pb-[64px] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform" style={{ transform: `translate3d(0, -${keyboardOffset}px, 0)` }}>
           <KivoSmartSuggestionRail visible={showSmartSuggestions} onSelect={handleSuggestionSelect} />
 
           <div className="mx-auto w-full max-w-[430px] rounded-[34px] border border-[#eeeeF1] bg-[#f9f9fa] px-[16px] pt-[14px] pb-[12px] shadow-[0_10px_30px_rgba(0,0,0,0.04)] pointer-events-auto">
+            <KivoAttachmentPreviewTray attachments={attachments} onRemove={removeAttachment} />
+
             <textarea
               ref={textareaRef}
               value={value}
@@ -300,7 +375,7 @@ export function KivoComposer({
       ) : null}
 
       <KivoVoiceRecorderBar open={isRecording} seconds={recordSeconds} onCancel={stopRecording} onConfirm={stopRecording} />
-      <KivoPlusSheet open={isPlusOpen} onClose={() => setIsPlusOpen(false)} />
+      <KivoPlusSheet open={isPlusOpen} onClose={() => setIsPlusOpen(false)} onAddFiles={openImagePicker} />
       <KivoConnectorsSheet open={isConnectorsOpen} onClose={() => setIsConnectorsOpen(false)} />
       <KivoModePopover open={isModeOpen} onClose={() => setIsModeOpen(false)} />
     </>
