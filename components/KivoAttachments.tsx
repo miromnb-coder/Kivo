@@ -50,13 +50,13 @@ export function KivoMessageAttachments({ attachments }: { attachments?: KivoAtta
   if (!attachments?.length) return null;
 
   return (
-    <div className="mb-[8px] flex max-w-full flex-col items-end gap-[8px]">
+    <div className="mb-[8px] flex max-w-full flex-wrap justify-end gap-[8px]">
       {attachments.map((attachment) => (
         <img
           key={attachment.id}
           src={attachment.url}
           alt={attachment.name}
-          className="max-h-[280px] w-auto max-w-full rounded-[18px] border border-black/[0.05] object-contain shadow-[0_8px_24px_rgba(15,23,42,0.055)]"
+          className="h-[104px] w-[104px] rounded-[22px] border border-black/[0.055] bg-white object-cover shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
           draggable={false}
         />
       ))}
