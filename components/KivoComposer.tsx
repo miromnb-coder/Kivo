@@ -11,6 +11,8 @@ type KivoComposerProps = {
   onFocusChange?: (focused: boolean) => void;
   onSubmitMessage?: (message: string) => Promise<void> | void;
   disabled?: boolean;
+  conversationId?: string | null;
+  messageCount?: number;
 };
 
 type VisualViewportState = {
@@ -87,9 +89,15 @@ function KivoSmartSuggestionRail({ visible, onSelect }: { visible: boolean; onSe
   );
 }
 
-export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false }: KivoComposerProps) {
+export function KivoComposer({
+  onFocusChange,
+  onSubmitMessage,
+  disabled = false,
+  conversationId = null,
+  messageCount = 0,
+}: KivoComposerProps) {
   const [value, setValue] = useState('');
-  const [hasStartedConversation, setHasStartedConversation] = useState(false);
+  const [hasSubmittedInCurrentConversation, setHasSubmittedInCurrentConversation] = useState(false);
   const [isPlusOpen, setIsPlusOpen] = useState(false);
   const [isConnectorsOpen, setIsConnectorsOpen] = useState(false);
   const [isModeOpen, setIsModeOpen] = useState(false);
@@ -101,8 +109,36 @@ export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false 
   });
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previousConversationKeyRef = useRef<string | null>(conversationId ?? null);
   const canSend = value.trim().length > 0 && !disabled;
-  const showSmartSuggestions = !hasStartedConversation && value.trim().length === 0 && !isPlusOpen && !isConnectorsOpen && !isModeOpen;
+  const conversationHasMessages = messageCount > 0;
+  const showSmartSuggestions =
+    !conversationHasMessages &&
+    !hasSubmittedInCurrentConversation &&
+    value.trim().length === 0 &&
+    !isPlusOpen &&
+    !isConnectorsOpen &&
+    !isModeOpen;
+
+  useEffect(() => {
+    const nextConversationKey = conversationId ?? null;
+    if (previousConversationKeyRef.current !== nextConversationKey) {
+      previousConversationKeyRef.current = nextConversationKey;
+      setHasSubmittedInCurrentConversation(false);
+      setValue('');
+      requestAnimationFrame(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        textarea.style.height = '24px';
+      });
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (messageCount === 0) {
+      setHasSubmittedInCurrentConversation(false);
+    }
+  }, [messageCount]);
 
   const updateVisualViewportState = useCallback(() => {
     const viewport = window.visualViewport;
@@ -153,7 +189,7 @@ export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false 
     const message = value.trim();
     if (!message || disabled) return;
 
-    setHasStartedConversation(true);
+    setHasSubmittedInCurrentConversation(true);
     setValue('');
     onSubmitMessage?.(message);
 
