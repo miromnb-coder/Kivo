@@ -5,12 +5,23 @@ import type { KivoAgentId, KivoContextId, KivoModeId } from '@/lib/ai/models';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type AgentAttachment = {
+  id?: string;
+  name?: string;
+  type?: string;
+  mimeType?: string;
+  url?: string;
+  size?: number;
+  metadata?: Record<string, unknown>;
+};
+
 type AgentRequest = {
   message?: string;
   agent?: KivoAgentId;
   mode?: KivoModeId;
   context?: KivoContextId;
   userId?: string;
+  attachments?: AgentAttachment[];
 };
 
 type StreamStep = {
@@ -27,6 +38,16 @@ function encoderLine(event: string, data: unknown) {
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getImageAttachments(attachments?: AgentAttachment[]) {
+  return (attachments ?? [])
+    .filter((attachment) => {
+      const mimeType = attachment.mimeType || attachment.type || '';
+      const url = attachment.url || '';
+      return Boolean(url) && (mimeType.startsWith('image/') || attachment.type === 'image' || url.startsWith('data:image/'));
+    })
+    .slice(0, 6);
 }
 
 function getTypingDelay(token: string, index: number) {
@@ -85,7 +106,6 @@ function normalizeAgentStep(rawStep: any, index: number): StreamStep {
   return { id, title, detail: rawStep?.detail, status: 'pending', kind };
 }
 
-// 🔥 FIXED: always use request origin (works in Vercel + local)
 async function fetchBrowserPreview(url: string, origin: string) {
   try {
     const res = await fetch(`${origin}/api/browser/preview`, {
@@ -174,7 +194,8 @@ async function runStepSequence(send: (event: string, data: unknown) => void, ste
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as AgentRequest;
-    const message = body.message?.trim();
+    const imageAttachments = getImageAttachments(body.attachments);
+    const message = body.message?.trim() || (imageAttachments.length ? 'Analyze the attached image.' : '');
     const userId = body.userId?.trim();
 
     if (!message) return NextResponse.json({ error: 'Message is required' }, { status: 400 });
@@ -195,7 +216,7 @@ export async function POST(req: Request) {
           const initialSteps = createInitialSteps(message);
           for (const step of initialSteps) send('step', step);
 
-          const result = await runKivoAgent({ message, agent, mode, context, userId });
+          const result = await runKivoAgent({ message, agent, mode, context, userId, attachments: imageAttachments });
           const agentSteps = Array.isArray(result.steps) ? result.steps.map(normalizeAgentStep) : [];
           const stepsToRun = agentSteps.length ? agentSteps : initialSteps;
 
