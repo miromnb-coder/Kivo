@@ -202,76 +202,82 @@ export function KivoSidebarOverlay({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`absolute inset-y-0 left-0 flex w-[86vw] max-w-[370px] touch-pan-y select-none flex-col overflow-hidden bg-[#f3f3f5]/98 px-[24px] pb-[calc(env(safe-area-inset-bottom)+42px)] pt-[calc(env(safe-area-inset-top)+48px)] shadow-[12px_0_42px_rgba(15,23,42,0.045)] ring-r-1 ring-black/[0.035] backdrop-blur-2xl will-change-transform ${
+        className={`absolute inset-y-0 left-0 flex w-[86vw] max-w-[370px] touch-pan-y select-none flex-col overflow-hidden border-r border-black/[0.035] bg-[#f3f3f5]/98 shadow-[12px_0_42px_rgba(15,23,42,0.045)] backdrop-blur-2xl will-change-transform ${
           isDragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]'
         }`}
         style={{ transform: `translate3d(${dragX}px,0,0)` }}
       >
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.45)_0%,rgba(243,243,245,0)_32%)]" />
 
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div className="mb-[26px] flex items-center gap-[14px] pl-[2px]">
-            <Sparkles size={15} strokeWidth={2} className="text-[#7C8CFF]" />
-            <span className="text-[36px] font-semibold leading-none tracking-[-0.075em] text-[#111113]">
-              Kivo
-            </span>
-          </div>
+        <div className="relative flex h-full min-h-0 flex-col">
+          <header className="flex h-[calc(env(safe-area-inset-top)+62px)] shrink-0 items-end px-[24px] pb-[12px]">
+            <div className="flex items-center gap-[12px]">
+              <Sparkles size={13} strokeWidth={2} className="text-[#7C8CFF]" />
+              <span className="text-[30px] font-semibold leading-none tracking-[-0.075em] text-[#111113]">
+                Kivo
+              </span>
+            </div>
+          </header>
 
-          <nav className="space-y-[7px]" aria-label="Main menu">
-            <MenuItem icon={<Home size={25} strokeWidth={1.8} />} label="Home" active href="/" onClick={onClose} />
-            <MenuItem icon={<CalendarDays size={25} strokeWidth={1.8} />} label="Today" href="/today" onClick={onClose} />
-            <MenuItem icon={<MessageCircle size={25} strokeWidth={1.8} />} label="Conversations" href="/history" onClick={onClose} />
-            <MenuItem icon={<Bot size={25} strokeWidth={1.8} />} label="Agents" href="/agents" onClick={onClose} />
-            <MenuItem icon={<BrainCircuit size={25} strokeWidth={1.8} />} label="Memory" href="/memory" onClick={onClose} />
-            <MenuItem icon={<Settings size={25} strokeWidth={1.8} />} label="Settings" href="/settings" onClick={onClose} />
-          </nav>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-[24px] pb-[18px] pt-[8px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav className="space-y-[7px]" aria-label="Main menu">
+              <MenuItem icon={<Home size={25} strokeWidth={1.8} />} label="Home" active href="/" onClick={onClose} />
+              <MenuItem icon={<CalendarDays size={25} strokeWidth={1.8} />} label="Today" href="/today" onClick={onClose} />
+              <MenuItem icon={<MessageCircle size={25} strokeWidth={1.8} />} label="Conversations" href="/history" onClick={onClose} />
+              <MenuItem icon={<Bot size={25} strokeWidth={1.8} />} label="Agents" href="/agents" onClick={onClose} />
+              <MenuItem icon={<BrainCircuit size={25} strokeWidth={1.8} />} label="Memory" href="/memory" onClick={onClose} />
+              <MenuItem icon={<Settings size={25} strokeWidth={1.8} />} label="Settings" href="/settings" onClick={onClose} />
+            </nav>
 
-          <div className="my-[22px] h-px bg-black/[0.065]" />
+            <div className="my-[22px] h-px bg-black/[0.065]" />
 
-          <div className="space-y-[10px]">
-            <p className="px-[2px] text-[13.5px] font-medium tracking-[-0.025em] text-[#85868d]">
-              Recent
-            </p>
-            <div className="space-y-[6px]">
-              {recentItems.map((item) => {
-                const isRealConversation = !item.id.startsWith('fallback-');
-                return (
-                  <RecentItem
-                    key={item.id}
-                    title={item.title}
-                    active={activeConversationId === item.id}
-                    onClick={isRealConversation ? () => onOpenConversation(item.id) : undefined}
-                  />
-                );
-              })}
+            <div className="space-y-[10px]">
+              <p className="px-[2px] text-[13.5px] font-medium tracking-[-0.025em] text-[#85868d]">
+                Recent
+              </p>
+              <div className="space-y-[6px]">
+                {recentItems.map((item) => {
+                  const isRealConversation = !item.id.startsWith('fallback-');
+                  return (
+                    <RecentItem
+                      key={item.id}
+                      title={item.title}
+                      active={activeConversationId === item.id}
+                      onClick={isRealConversation ? () => onOpenConversation(item.id) : undefined}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          <div className="mt-auto flex items-center justify-between gap-[16px] pt-[22px]">
-            <button
-              type="button"
-              className="flex h-[52px] min-w-0 flex-1 items-center gap-[13px] rounded-[25px] bg-white/78 px-[12px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] active:scale-[0.99]"
-            >
-              <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#c9771b] text-[15px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                M
-              </span>
-              <span className="min-w-0 flex-1 truncate text-[17px] font-medium tracking-[-0.04em] text-[#151518]">
-                Miro
-              </span>
-            </button>
+          <footer className="shrink-0 px-[24px] pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[12px]">
+            <div className="flex items-center justify-between gap-[16px]">
+              <button
+                type="button"
+                className="flex h-[52px] w-[148px] items-center gap-[13px] rounded-[25px] bg-white/78 px-[12px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] active:scale-[0.99]"
+              >
+                <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#c9771b] text-[15px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  M
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[17px] font-medium tracking-[-0.04em] text-[#151518]">
+                  Miro
+                </span>
+              </button>
 
-            <button
-              type="button"
-              aria-label="New chat"
-              onClick={() => {
-                onNewChat();
-                onClose();
-              }}
-              className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[20px] bg-white/78 text-[#111113] shadow-[0_10px_26px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] transition active:scale-[0.96]"
-            >
-              <SquarePen size={24} strokeWidth={1.85} />
-            </button>
-          </div>
+              <button
+                type="button"
+                aria-label="New chat"
+                onClick={() => {
+                  onNewChat();
+                  onClose();
+                }}
+                className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[20px] bg-white/78 text-[#111113] shadow-[0_10px_26px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] transition active:scale-[0.96]"
+              >
+                <SquarePen size={24} strokeWidth={1.85} />
+              </button>
+            </div>
+          </footer>
         </div>
       </aside>
     </div>
