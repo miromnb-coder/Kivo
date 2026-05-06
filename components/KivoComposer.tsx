@@ -138,7 +138,7 @@ export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false 
   return (
     <>
       {!isRecording ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 pointer-events-none px-[16px] pb-[42px] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform" style={{ transform: `translate3d(0, -${keyboardOffset}px, 0)` }}>
+        <div className="fixed inset-x-0 bottom-0 z-40 pointer-events-none px-[16px] pb-[64px] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform" style={{ transform: `translate3d(0, -${keyboardOffset}px, 0)` }}>
           <div className="mx-auto w-full max-w-[430px] rounded-[34px] border border-[#eeeeF1] bg-[#f9f9fa] px-[16px] pt-[14px] pb-[12px] shadow-[0_10px_30px_rgba(0,0,0,0.04)] pointer-events-auto">
             <textarea
               ref={textareaRef}
