@@ -40,6 +40,8 @@ const connectors: ConnectorItem[] = [
   { title: 'Google Drive', iconSrc: '/connectors/google-drive.PNG' },
   { title: 'Gmail', iconSrc: '/connectors/gmail.PNG' },
   { title: 'Google Calendar', iconSrc: '/connectors/google-calendar.PNG' },
+  { title: 'Outlook Calendar', iconSrc: '/connectors/outlook-calendar.PNG' },
+  { title: 'Outlook Mail', iconSrc: '/connectors/outlook-mail.PNG' },
 ];
 
 function EmptyPreviewTile({ large = false }: { large?: boolean }) {
