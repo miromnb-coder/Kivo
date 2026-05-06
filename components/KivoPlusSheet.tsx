@@ -46,7 +46,7 @@ const connectors: ConnectorItem[] = [
   {
     title: 'Google Drive',
     iconSrc: '/connectors/google-drive.PNG',
-    description: 'Connect Google Drive to Kivo to find files, summarize documents, analyze folders, and use your workspace content in conversations.',
+    description: 'Connect Google Drive to Kivo to search files, summarize documents, analyze folders, and use workspace content in conversations.',
     category: 'Productivity',
     features: 'File search',
   },
@@ -60,21 +60,21 @@ const connectors: ConnectorItem[] = [
   {
     title: 'Google Calendar',
     iconSrc: '/connectors/google-calendar.PNG',
-    description: 'Connect Google Calendar to Kivo to understand your schedule, plan your day, prepare for meetings, and create smarter reminders.',
+    description: 'Connect Google Calendar to Kivo to review your schedule, plan your day, prepare meetings, and create smarter reminders.',
     category: 'Productivity',
     features: 'Calendar planning',
   },
   {
     title: 'Outlook Calendar',
     iconSrc: '/connectors/outlook-calendar.PNG',
-    description: 'Connect Outlook Calendar to Kivo to organize upcoming events, prepare meeting context, find open time, and keep your day on track.',
+    description: 'Connect Outlook Calendar to Kivo to organize events, prepare meeting context, find open time, and keep your day on track.',
     category: 'Productivity',
     features: 'Calendar planning',
   },
   {
     title: 'Outlook Mail',
     iconSrc: '/connectors/outlook-mail.PNG',
-    description: 'Connect Outlook Mail to Kivo to summarize emails, draft responses, find important messages, and turn conversations into clear next steps.',
+    description: 'Connect Outlook Mail to Kivo to summarize emails, draft responses, find important messages, and turn threads into next steps.',
     category: 'Productivity',
     features: 'Email assistance',
   },
@@ -109,7 +109,17 @@ function ActionRow({ item }: { item: ActionItem }) {
   );
 }
 
-function ConnectorIcon({ src, title, className = 'h-[32px] w-[32px]', fallbackClassName = 'text-[12px]' }: { src: string; title: string; className?: string; fallbackClassName?: string }) {
+function ConnectorIcon({
+  src,
+  title,
+  className = 'h-[32px] w-[32px]',
+  fallbackClassName = 'text-[12px]',
+}: {
+  src: string;
+  title: string;
+  className?: string;
+  fallbackClassName?: string;
+}) {
   const [failed, setFailed] = useState(false);
 
   return (
@@ -149,10 +159,10 @@ function ConnectorRow({ item, onOpen }: { item: ConnectorItem; onOpen: () => voi
 
 function DetailRow({ label, value, external = false }: { label: string; value?: string; external?: boolean }) {
   return (
-    <div className="grid min-h-[64px] grid-cols-[1fr_1fr] items-center border-t border-black/[0.09] px-[20px]">
-      <span className="text-[17px] font-normal tracking-[-0.035em] text-[#8b8c92]">{label}</span>
-      <span className="flex items-center justify-start text-[17px] font-normal tracking-[-0.035em] text-[#15161a]">
-        {external ? <ExternalLink size={18} strokeWidth={2} /> : value}
+    <div className="grid min-h-[54px] grid-cols-[1fr_1fr] items-center border-t border-black/[0.09] px-[20px] first:border-t-0">
+      <span className="text-[16px] font-normal tracking-[-0.035em] text-[#8b8c92]">{label}</span>
+      <span className="flex items-center justify-start text-[16px] font-normal tracking-[-0.035em] text-[#15161a]">
+        {external ? <ExternalLink size={17} strokeWidth={2} /> : value}
       </span>
     </div>
   );
@@ -160,55 +170,55 @@ function DetailRow({ label, value, external = false }: { label: string; value?: 
 
 function ConnectorDetailView({ connector, onBack }: { connector: ConnectorItem; onBack: () => void }) {
   return (
-    <div className="fixed inset-0 z-[120] overflow-y-auto bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+14px)] text-[#111113] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <header className="relative mb-[34px] flex h-[44px] items-center justify-center">
+    <div className="fixed inset-0 z-[120] overflow-hidden bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[calc(env(safe-area-inset-top)+10px)] text-[#111113]">
+      <header className="relative mb-[26px] flex h-[42px] items-center justify-center">
         <button
           type="button"
           aria-label="Back"
           onClick={onBack}
-          className="absolute left-0 flex h-[44px] w-[44px] items-center justify-center text-[#111113] transition active:scale-[0.96]"
+          className="absolute left-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"
         >
-          <ChevronLeft size={30} strokeWidth={2.2} />
+          <ChevronLeft size={29} strokeWidth={2.2} />
         </button>
         <h2 className="text-[20px] font-semibold tracking-[-0.04em]">Apps</h2>
         <button
           type="button"
           aria-label="Share"
-          className="absolute right-0 flex h-[44px] w-[44px] items-center justify-center text-[#111113] transition active:scale-[0.96]"
+          className="absolute right-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"
         >
-          <Share size={26} strokeWidth={2.2} />
+          <Share size={25} strokeWidth={2.2} />
         </button>
       </header>
 
-      <section className="mb-[34px] flex items-start gap-[24px]">
-        <div className="flex h-[96px] w-[96px] shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.07]">
+      <section className="mb-[30px] flex items-start gap-[22px]">
+        <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.07]">
           <ConnectorIcon
             src={connector.iconSrc}
             title={connector.title}
-            className="h-[66px] w-[66px] rounded-[12px]"
-            fallbackClassName="text-[24px]"
+            className="h-[58px] w-[58px] rounded-[12px]"
+            fallbackClassName="text-[22px]"
           />
         </div>
 
-        <div className="min-w-0 pt-[2px]">
-          <h1 className="mb-[18px] truncate text-[32px] font-semibold leading-none tracking-[-0.055em] text-[#111113]">
+        <div className="min-w-0 pt-[1px]">
+          <h1 className="mb-[16px] truncate text-[31px] font-semibold leading-none tracking-[-0.055em] text-[#111113]">
             {connector.title}
           </h1>
           <button
             type="button"
-            className="h-[44px] rounded-full bg-black px-[32px] text-[17px] font-medium tracking-[-0.035em] text-white transition active:scale-[0.98]"
+            className="h-[42px] rounded-full bg-black px-[31px] text-[16px] font-medium tracking-[-0.035em] text-white transition active:scale-[0.98]"
           >
             Connect
           </button>
         </div>
       </section>
 
-      <p className="mb-[50px] max-w-[360px] text-[21px] font-normal leading-[1.55] tracking-[-0.045em] text-[#5c5d64]">
+      <p className="mb-[42px] max-w-[360px] text-[19px] font-normal leading-[1.45] tracking-[-0.045em] text-[#5c5d64]">
         {connector.description}
       </p>
 
       <section>
-        <h3 className="mb-[28px] text-[24px] font-semibold tracking-[-0.05em] text-[#111113]">Details</h3>
+        <h3 className="mb-[24px] text-[23px] font-semibold tracking-[-0.05em] text-[#111113]">Details</h3>
         <div className="overflow-hidden rounded-[17px] border border-black/[0.1]">
           <DetailRow label="Category" value={connector.category} />
           <DetailRow label="Features" value={connector.features} />
