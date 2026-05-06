@@ -425,7 +425,13 @@ export function KivoStartScreen() {
             <p className="mt-[18px] text-[17px] tracking-[-0.02em] text-[#b2b2b7]">Your personal AI assistant</p>
           </section>
 
-          <KivoComposer onFocusChange={setIsKeyboardMode} onSubmitMessage={handleSend} disabled={loading} />
+          <KivoComposer
+            conversationId={activeConversationId}
+            messageCount={messages.length}
+            onFocusChange={setIsKeyboardMode}
+            onSubmitMessage={handleSend}
+            disabled={loading}
+          />
         </div>
 
         <KivoSidebarOverlay
