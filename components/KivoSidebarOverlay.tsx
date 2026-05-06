@@ -3,14 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import {
-  Bot,
-  BrainCircuit,
   CalendarDays,
   FileText,
   Home,
   MessageCircle,
-  Settings,
-  Sparkles,
   SquarePen,
 } from 'lucide-react';
 
@@ -61,15 +57,13 @@ const fallbackRecent = [
 ];
 
 function MenuItem({ icon, label, active = false, href, onClick }: MenuItemProps) {
-  const className = `flex h-[52px] w-full items-center gap-[18px] rounded-[25px] px-[18px] text-left text-[16.5px] font-medium tracking-[-0.04em] text-[#151518] transition duration-200 active:scale-[0.99] ${
-    active
-      ? 'bg-white/86 shadow-[0_10px_28px_rgba(15,23,42,0.035),inset_0_1px_0_rgba(255,255,255,0.88)] ring-1 ring-black/[0.018]'
-      : 'hover:bg-white/45'
+  const className = `flex h-[56px] w-full items-center gap-[20px] rounded-[0px] px-[8px] text-left text-[19px] font-medium tracking-[-0.035em] text-[#1b1c20] transition active:scale-[0.99] ${
+    active ? 'bg-transparent' : 'hover:bg-white/32'
   }`;
 
   const content = (
     <>
-      <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center text-[#111113]">
+      <span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center text-[#222329]">
         {icon}
       </span>
       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -96,14 +90,11 @@ function RecentItem({ title, active = false, onClick }: { title: string; active?
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-[46px] w-full items-center gap-[15px] rounded-[20px] px-[12px] text-left transition duration-200 active:scale-[0.99] ${
-        active ? 'bg-white/74 shadow-[0_8px_22px_rgba(15,23,42,0.03)]' : 'hover:bg-white/48'
+      className={`block min-h-[48px] w-full rounded-[14px] px-[4px] py-[12px] text-left transition active:scale-[0.995] ${
+        active ? 'bg-white/46' : 'hover:bg-white/34'
       }`}
     >
-      <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[13px] bg-white/72 text-[#151518] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] ring-1 ring-black/[0.025]">
-        <FileText size={18} strokeWidth={1.85} />
-      </span>
-      <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium tracking-[-0.035em] text-[#1a1a1d]">
+      <span className="block truncate text-[16px] font-normal leading-[1.2] tracking-[-0.025em] text-[#2b2c31]">
         {title}
       </span>
     </button>
@@ -214,7 +205,7 @@ export function KivoSidebarOverlay({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-hidden overscroll-none touch-none">
+    <div className="fixed inset-0 z-[60] overflow-hidden overscroll-none">
       <button
         type="button"
         aria-label="Close menu"
@@ -228,68 +219,57 @@ export function KivoSidebarOverlay({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`absolute inset-y-0 left-0 flex w-[86vw] max-w-[370px] touch-pan-y select-none flex-col overflow-hidden border-r border-black/[0.035] bg-[#f3f3f5]/98 shadow-[12px_0_42px_rgba(15,23,42,0.045)] backdrop-blur-2xl will-change-transform ${
+        className={`absolute inset-y-0 left-0 flex w-[86vw] max-w-[370px] touch-pan-y select-none flex-col overflow-hidden border-r border-black/[0.035] bg-[#f3f3f5]/98 shadow-[12px_0_42px_rgba(15,23,42,0.04)] backdrop-blur-2xl will-change-transform ${
           isDragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]'
         }`}
         style={{ transform: `translate3d(${dragX}px,0,0)` }}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.45)_0%,rgba(243,243,245,0)_32%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.36)_0%,rgba(243,243,245,0)_34%)]" />
 
         <div className="relative flex h-full min-h-0 flex-col">
-          <header className="flex h-[calc(env(safe-area-inset-top)+62px)] shrink-0 items-end px-[24px] pb-[12px]">
-            <div className="flex items-center gap-[12px]">
-              <Sparkles size={13} strokeWidth={2} className="text-[#7C8CFF]" />
-              <span className="text-[30px] font-semibold leading-none tracking-[-0.075em] text-[#111113]">
-                Kivo
-              </span>
-            </div>
+          <header className="flex h-[calc(env(safe-area-inset-top)+56px)] shrink-0 items-end px-[36px] pb-[7px]">
+            <h2 className="text-[30px] font-semibold leading-none tracking-[-0.06em] text-[#111113]">
+              Kivo
+            </h2>
           </header>
 
           <div
-            className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-[24px] pb-[18px] pt-[8px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-[36px] pb-[22px] pt-[32px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ WebkitOverflowScrolling: 'touch' }}
             onPointerDown={(event) => event.stopPropagation()}
             onWheel={(event) => event.stopPropagation()}
             onTouchMove={(event) => event.stopPropagation()}
           >
-            <nav className="space-y-[7px]" aria-label="Main menu">
-              <MenuItem icon={<Home size={25} strokeWidth={1.8} />} label="Home" active href="/" onClick={onClose} />
-              <MenuItem icon={<CalendarDays size={25} strokeWidth={1.8} />} label="Today" href="/today" onClick={onClose} />
-              <MenuItem icon={<MessageCircle size={25} strokeWidth={1.8} />} label="Conversations" href="/history" onClick={onClose} />
-              <MenuItem icon={<Bot size={25} strokeWidth={1.8} />} label="Agents" href="/agents" onClick={onClose} />
-              <MenuItem icon={<BrainCircuit size={25} strokeWidth={1.8} />} label="Memory" href="/memory" onClick={onClose} />
-              <MenuItem icon={<Settings size={25} strokeWidth={1.8} />} label="Settings" href="/settings" onClick={onClose} />
+            <nav className="space-y-[18px]" aria-label="Main menu">
+              <MenuItem icon={<Home size={28} strokeWidth={1.75} />} label="Home" active href="/" onClick={onClose} />
+              <MenuItem icon={<CalendarDays size={28} strokeWidth={1.75} />} label="Today" href="/today" onClick={onClose} />
+              <MenuItem icon={<FileText size={28} strokeWidth={1.75} />} label="Library" href="/history" onClick={onClose} />
             </nav>
 
-            <div className="my-[22px] h-px bg-black/[0.065]" />
+            <div className="my-[34px] h-px bg-black/[0.08]" />
 
-            <div className="space-y-[10px]">
-              <p className="px-[2px] text-[13.5px] font-medium tracking-[-0.025em] text-[#85868d]">
-                Recent
-              </p>
-              <div className="space-y-[6px]">
-                {recentItems.map((item) => {
-                  const isRealConversation = !item.id.startsWith('fallback-');
-                  return (
-                    <RecentItem
-                      key={item.id}
-                      title={item.title}
-                      active={activeConversationId === item.id}
-                      onClick={isRealConversation ? () => onOpenConversation(item.id) : undefined}
-                    />
-                  );
-                })}
-              </div>
+            <div className="space-y-[6px]">
+              {recentItems.map((item) => {
+                const isRealConversation = !item.id.startsWith('fallback-');
+                return (
+                  <RecentItem
+                    key={item.id}
+                    title={item.title}
+                    active={activeConversationId === item.id}
+                    onClick={isRealConversation ? () => onOpenConversation(item.id) : undefined}
+                  />
+                );
+              })}
             </div>
           </div>
 
-          <footer className="shrink-0 px-[24px] pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[12px]">
+          <footer className="shrink-0 px-[36px] pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[12px]">
             <div className="flex items-center justify-between gap-[16px]">
               <button
                 type="button"
-                className="flex h-[52px] w-[148px] items-center gap-[13px] rounded-[25px] bg-white/78 px-[12px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] active:scale-[0.99]"
+                className="flex h-[50px] w-[138px] items-center gap-[12px] rounded-[25px] bg-white/78 px-[11px] text-left shadow-[0_10px_26px_rgba(15,23,42,0.03)] ring-1 ring-black/[0.018] active:scale-[0.99]"
               >
-                <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#c9771b] text-[15px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <span className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-[#c9771b] text-[14px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   M
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[17px] font-medium tracking-[-0.04em] text-[#151518]">
@@ -304,7 +284,7 @@ export function KivoSidebarOverlay({
                   onNewChat();
                   onClose();
                 }}
-                className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[20px] bg-white/78 text-[#111113] shadow-[0_10px_26px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] transition active:scale-[0.96]"
+                className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[20px] bg-white/78 text-[#111113] shadow-[0_10px_26px_rgba(15,23,42,0.03)] ring-1 ring-black/[0.018] transition active:scale-[0.96]"
               >
                 <SquarePen size={24} strokeWidth={1.85} />
               </button>
