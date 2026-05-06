@@ -46,6 +46,7 @@ type MenuItemProps = {
 };
 
 const DRAWER_CLOSE_TRANSLATE = -430;
+const DRAWER_CLOSE_DELAY_MS = 360;
 
 const fallbackRecent = [
   { id: 'fallback-weekly-planning', title: 'Weekly planning for Kivo' },
@@ -55,6 +56,16 @@ const fallbackRecent = [
   { id: 'fallback-ui', title: 'Interface improvements' },
   { id: 'fallback-memory', title: 'Memory system notes' },
 ];
+
+function triggerKivoHaptic(kind: 'open' | 'close') {
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+
+  try {
+    navigator.vibrate(kind === 'open' ? [10, 18, 10] : 14);
+  } catch {
+    // Some browsers expose navigator.vibrate but block it. Ignore safely.
+  }
+}
 
 function MenuItem({ icon, label, active = false, href, onClick }: MenuItemProps) {
   const className = `flex h-[56px] w-full items-center gap-[20px] rounded-[0px] px-[8px] text-left text-[19px] font-medium tracking-[-0.035em] text-[#1b1c20] transition active:scale-[0.99] ${
@@ -109,12 +120,13 @@ export function KivoSidebarOverlay({
   onNewChat,
   onOpenConversation,
 }: KivoSidebarOverlayProps) {
-  const [dragX, setDragX] = useState(0);
+  const [dragX, setDragX] = useState(DRAWER_CLOSE_TRANSLATE);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartXRef = useRef(0);
   const dragStartYRef = useRef(0);
   const dragStartTimeRef = useRef(0);
   const dragModeRef = useRef<DragMode>('idle');
+  const closeTimerRef = useRef<number | null>(null);
 
   const recentItems = conversations.length
     ? conversations.slice(0, 12).map((conversation) => ({ id: conversation.id, title: conversation.title || 'Untitled conversation' }))
@@ -127,26 +139,42 @@ export function KivoSidebarOverlay({
     const originalBodyOverscroll = document.body.style.overscrollBehavior;
     const originalHtmlOverflow = document.documentElement.style.overflow;
     const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+    let frame = 0;
 
     document.body.style.overflow = 'hidden';
     document.body.style.overscrollBehavior = 'none';
     document.documentElement.style.overflow = 'hidden';
     document.documentElement.style.overscrollBehavior = 'none';
 
+    setDragX(DRAWER_CLOSE_TRANSLATE);
+    triggerKivoHaptic('open');
+    frame = window.requestAnimationFrame(() => {
+      setDragX(0);
+    });
+
     return () => {
+      window.cancelAnimationFrame(frame);
       document.body.style.overflow = originalBodyOverflow;
       document.body.style.overscrollBehavior = originalBodyOverscroll;
       document.documentElement.style.overflow = originalHtmlOverflow;
       document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
+
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
     };
   }, [open]);
 
   function closeWithMotion() {
+    if (closeTimerRef.current !== null) return;
+
+    triggerKivoHaptic('close');
     setDragX(DRAWER_CLOSE_TRANSLATE);
-    window.setTimeout(() => {
-      setDragX(0);
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
       onClose();
-    }, 155);
+    }, DRAWER_CLOSE_DELAY_MS);
   }
 
   function handlePointerDown(event: PointerEvent<HTMLElement>) {
@@ -202,6 +230,16 @@ export function KivoSidebarOverlay({
     setDragX(0);
   }
 
+  function openConversationAndClose(conversationId: string) {
+    triggerKivoHaptic('close');
+    onOpenConversation(conversationId);
+  }
+
+  function startNewChatAndClose() {
+    triggerKivoHaptic('close');
+    onNewChat();
+  }
+
   if (!open) return null;
 
   return (
@@ -220,7 +258,7 @@ export function KivoSidebarOverlay({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         className={`absolute inset-y-0 left-0 flex w-[86vw] max-w-[370px] touch-pan-y select-none flex-col overflow-hidden border-r border-black/[0.035] bg-[#f3f3f5]/98 shadow-[12px_0_42px_rgba(15,23,42,0.04)] backdrop-blur-2xl will-change-transform ${
-          isDragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]'
+          isDragging ? '' : 'transition-transform duration-[420ms] ease-[cubic-bezier(0.19,1,0.22,1)]'
         }`}
         style={{ transform: `translate3d(${dragX}px,0,0)` }}
       >
@@ -241,9 +279,9 @@ export function KivoSidebarOverlay({
             onTouchMove={(event) => event.stopPropagation()}
           >
             <nav className="space-y-[18px]" aria-label="Main menu">
-              <MenuItem icon={<Home size={28} strokeWidth={1.75} />} label="Home" active href="/" onClick={onClose} />
-              <MenuItem icon={<CalendarDays size={28} strokeWidth={1.75} />} label="Today" href="/today" onClick={onClose} />
-              <MenuItem icon={<FileText size={28} strokeWidth={1.75} />} label="Library" href="/history" onClick={onClose} />
+              <MenuItem icon={<Home size={28} strokeWidth={1.75} />} label="Home" active href="/" onClick={closeWithMotion} />
+              <MenuItem icon={<CalendarDays size={28} strokeWidth={1.75} />} label="Today" href="/today" onClick={closeWithMotion} />
+              <MenuItem icon={<FileText size={28} strokeWidth={1.75} />} label="Library" href="/history" onClick={closeWithMotion} />
             </nav>
 
             <div className="my-[34px] h-px bg-black/[0.08]" />
@@ -256,7 +294,7 @@ export function KivoSidebarOverlay({
                     key={item.id}
                     title={item.title}
                     active={activeConversationId === item.id}
-                    onClick={isRealConversation ? () => onOpenConversation(item.id) : undefined}
+                    onClick={isRealConversation ? () => openConversationAndClose(item.id) : undefined}
                   />
                 );
               })}
@@ -280,10 +318,7 @@ export function KivoSidebarOverlay({
               <button
                 type="button"
                 aria-label="New chat"
-                onClick={() => {
-                  onNewChat();
-                  onClose();
-                }}
+                onClick={startNewChatAndClose}
                 className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[20px] bg-white/78 text-[#111113] shadow-[0_10px_26px_rgba(15,23,42,0.03)] ring-1 ring-black/[0.018] transition active:scale-[0.96]"
               >
                 <SquarePen size={24} strokeWidth={1.85} />
