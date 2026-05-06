@@ -377,11 +377,23 @@ export function KivoStartScreen() {
           />
         ) : null}
 
-        <div className="fixed left-1/2 top-0 z-50 w-full max-w-[430px] -translate-x-1/2">
-          <KivoTopBar onOpenMenu={openSidebar} />
-        </div>
+        <div
+          className="absolute inset-0 min-h-screen w-full will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ transform: sidebarOpen ? 'translate3d(min(86vw, 370px), 0, 0)' : 'translate3d(0, 0, 0)' }}
+        >
+          <div className="fixed left-1/2 top-0 z-50 w-full max-w-[430px] -translate-x-1/2">
+            <KivoTopBar onOpenMenu={openSidebar} />
+          </div>
 
-        <KivoChatMessages messages={messages} loading={loading} />
+          <KivoChatMessages messages={messages} loading={loading} />
+
+          <section className={`absolute left-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-[36px] text-center transition-all duration-300 ease-out ${isKeyboardMode || messages.length > 0 ? 'top-[20%] scale-[0.9] opacity-0 pointer-events-none' : 'top-[51%] scale-100 opacity-100'}`}>
+            <h1 className="mx-auto max-w-[320px] text-[32px] leading-[1.2] tracking-[-0.04em] text-[#202024]">How can I help you today?</h1>
+            <p className="mt-[18px] text-[17px] tracking-[-0.02em] text-[#b2b2b7]">Your personal AI assistant</p>
+          </section>
+
+          <KivoComposer onFocusChange={setIsKeyboardMode} onSubmitMessage={handleSend} disabled={loading} />
+        </div>
 
         <KivoSidebarOverlay
           open={sidebarOpen}
@@ -397,13 +409,6 @@ export function KivoStartScreen() {
           onRenameConversation={renameConversation}
           onDeleteConversation={deleteConversation}
         />
-
-        <section className={`absolute left-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-[36px] text-center transition-all duration-300 ease-out ${isKeyboardMode || messages.length > 0 ? 'top-[20%] scale-[0.9] opacity-0 pointer-events-none' : 'top-[51%] scale-100 opacity-100'}`}>
-          <h1 className="mx-auto max-w-[320px] text-[32px] leading-[1.2] tracking-[-0.04em] text-[#202024]">How can I help you today?</h1>
-          <p className="mt-[18px] text-[17px] tracking-[-0.02em] text-[#b2b2b7]">Your personal AI assistant</p>
-        </section>
-
-        <KivoComposer onFocusChange={setIsKeyboardMode} onSubmitMessage={handleSend} disabled={loading} />
       </div>
     </main>
   );
