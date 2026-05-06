@@ -4,12 +4,14 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
   CalendarDays,
   Camera,
+  ChevronLeft,
   ExternalLink,
   FilePenLine,
   FolderPlus,
   Globe2,
   Pencil,
   Plug,
+  Share,
 } from 'lucide-react';
 
 type KivoPlusSheetProps = {
@@ -168,13 +170,25 @@ function DetailRow({ label, value, external = false }: { label: string; value?: 
 
 function ConnectorDetailView({ connector, onBack }: { connector: ConnectorItem; onBack: () => void }) {
   return (
-    <div className="fixed inset-0 z-[120] overflow-hidden bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[calc(env(safe-area-inset-top)+48px)] text-[#111113]">
-      <button
-        type="button"
-        aria-label="Back"
-        onClick={onBack}
-        className="absolute left-0 top-0 h-[96px] w-[96px] opacity-0"
-      />
+    <div className="fixed inset-0 z-[120] overflow-hidden bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[calc(env(safe-area-inset-top)+10px)] text-[#111113]">
+      <header className="relative mb-[26px] flex h-[42px] items-center justify-center">
+        <button
+          type="button"
+          aria-label="Back"
+          onClick={onBack}
+          className="absolute left-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"
+        >
+          <ChevronLeft size={29} strokeWidth={2.2} />
+        </button>
+        <h2 className="text-[20px] font-semibold tracking-[-0.04em]">Apps</h2>
+        <button
+          type="button"
+          aria-label="Share"
+          className="absolute right-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"
+        >
+          <Share size={25} strokeWidth={2.2} />
+        </button>
+      </header>
 
       <section className="mb-[30px] flex items-start gap-[22px]">
         <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.07]">
