@@ -19,12 +19,14 @@ import { useKivoSheetMotion } from './useKivoSheetMotion';
 type KivoPlusSheetProps = {
   open: boolean;
   onClose: () => void;
+  onAddFiles?: () => void;
 };
 
 type ActionItem = {
   title: string;
   icon: ReactNode;
   badge?: string;
+  action?: 'add-files';
 };
 
 type ConnectorId = 'google-drive' | 'gmail' | 'google-calendar' | 'outlook-calendar' | 'outlook-mail';
@@ -44,7 +46,7 @@ const supabase = createClient(
 );
 
 const actions: ActionItem[] = [
-  { title: 'Add files', icon: <FolderPlus size={24} strokeWidth={1.75} /> },
+  { title: 'Add files', icon: <FolderPlus size={24} strokeWidth={1.75} />, action: 'add-files' },
   { title: 'Create image', icon: <Pencil size={24} strokeWidth={1.75} /> },
   { title: 'Write draft', icon: <FilePenLine size={24} strokeWidth={1.75} /> },
   { title: 'Research deeply', icon: <Globe2 size={24} strokeWidth={1.75} />, badge: '5 left' },
@@ -119,11 +121,12 @@ const connectEndpoints: Record<ConnectorId, (userId: string) => string> = {
   'outlook-mail': (userId) => `/api/integrations/microsoft/connect?userId=${encodeURIComponent(userId)}`,
 };
 
-function EmptyPreviewTile({ large = false }: { large?: boolean }) {
+function EmptyPreviewTile({ large = false, onClick }: { large?: boolean; onClick?: () => void }) {
   return (
     <button
       type="button"
-      className={`flex shrink-0 items-center justify-center rounded-[20px] border border-black/[0.04] bg-[#f8f8f9] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] ${
+      onClick={onClick}
+      className={`flex shrink-0 items-center justify-center rounded-[20px] border border-black/[0.04] bg-[#f8f8f9] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition active:scale-[0.985] ${
         large ? 'h-[98px] w-[98px]' : 'h-[98px] w-[112px]'
       }`}
     >
@@ -132,9 +135,9 @@ function EmptyPreviewTile({ large = false }: { large?: boolean }) {
   );
 }
 
-function ActionRow({ item }: { item: ActionItem }) {
+function ActionRow({ item, onClick }: { item: ActionItem; onClick?: () => void }) {
   return (
-    <button type="button" className="flex h-[56px] w-full items-center gap-[22px] text-left text-[#17181b] transition active:scale-[0.995]">
+    <button type="button" onClick={onClick} className="flex h-[56px] w-full items-center gap-[22px] text-left text-[#17181b] transition active:scale-[0.995]">
       <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center text-[#15161a]">{item.icon}</span>
       <span className="flex min-w-0 flex-1 items-center gap-[12px]">
         <span className="truncate text-[20px] font-normal leading-none tracking-[-0.04em]">{item.title}</span>
@@ -148,41 +151,21 @@ function ActionRow({ item }: { item: ActionItem }) {
   );
 }
 
-function ConnectorIcon({
-  src,
-  title,
-  className = 'h-[32px] w-[32px]',
-  fallbackClassName = 'text-[12px]',
-}: {
-  src: string;
-  title: string;
-  className?: string;
-  fallbackClassName?: string;
-}) {
+function ConnectorIcon({ src, title, className = 'h-[32px] w-[32px]', fallbackClassName = 'text-[12px]' }: { src: string; title: string; className?: string; fallbackClassName?: string }) {
   const [failed, setFailed] = useState(false);
-
   return (
     <span className={`flex shrink-0 items-center justify-center overflow-hidden rounded-[7px] ${className}`}>
       {!failed ? (
-        <img
-          src={src}
-          alt=""
-          className="h-full w-full object-contain"
-          onError={() => setFailed(true)}
-          draggable={false}
-        />
+        <img src={src} alt="" className="h-full w-full object-contain" onError={() => setFailed(true)} draggable={false} />
       ) : (
-        <span className={`flex h-full w-full items-center justify-center rounded-[7px] bg-[#f1f1f3] font-semibold text-[#777982] ${fallbackClassName}`}>
-          {title.slice(0, 1)}
-        </span>
+        <span className={`flex h-full w-full items-center justify-center rounded-[7px] bg-[#f1f1f3] font-semibold text-[#777982] ${fallbackClassName}`}>{title.slice(0, 1)}</span>
       )}
     </span>
   );
 }
 
 function getConnectorButtonLabel(connected?: boolean) {
-  if (connected) return 'Connected';
-  return 'Connect';
+  return connected ? 'Connected' : 'Connect';
 }
 
 function ConnectorRow({ item, onOpen, connected }: { item: ConnectorItem; onOpen: () => void; connected?: boolean }) {
@@ -190,11 +173,7 @@ function ConnectorRow({ item, onOpen, connected }: { item: ConnectorItem; onOpen
     <div className="flex h-[50px] items-center gap-[18px]">
       <ConnectorIcon src={item.iconSrc} title={item.title} />
       <span className="min-w-0 flex-1 truncate text-[18px] font-normal tracking-[-0.035em] text-[#24252a]">{item.title}</span>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="h-[40px] rounded-[20px] bg-white px-[22px] text-[15.5px] font-medium tracking-[-0.03em] text-[#202124] shadow-[0_8px_24px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] transition active:scale-[0.98]"
-      >
+      <button type="button" onClick={onOpen} className="h-[40px] rounded-[20px] bg-white px-[22px] text-[15.5px] font-medium tracking-[-0.03em] text-[#202124] shadow-[0_8px_24px_rgba(15,23,42,0.035)] ring-1 ring-black/[0.02] transition active:scale-[0.98]">
         {getConnectorButtonLabel(connected)}
       </button>
     </div>
@@ -205,75 +184,31 @@ function DetailRow({ label, value, external = false }: { label: string; value?: 
   return (
     <div className="grid min-h-[54px] grid-cols-[1fr_1fr] items-center border-t border-black/[0.09] px-[20px] first:border-t-0">
       <span className="text-[16px] font-normal tracking-[-0.035em] text-[#8b8c92]">{label}</span>
-      <span className="flex items-center justify-start text-[16px] font-normal tracking-[-0.035em] text-[#15161a]">
-        {external ? <ExternalLink size={17} strokeWidth={2} /> : value}
-      </span>
+      <span className="flex items-center justify-start text-[16px] font-normal tracking-[-0.035em] text-[#15161a]">{external ? <ExternalLink size={17} strokeWidth={2} /> : value}</span>
     </div>
   );
 }
 
-function ConnectorDetailView({
-  connector,
-  connected,
-  loading,
-  onBack,
-  onConnect,
-}: {
-  connector: ConnectorItem;
-  connected: boolean;
-  loading: boolean;
-  onBack: () => void;
-  onConnect: () => void;
-}) {
+function ConnectorDetailView({ connector, connected, loading, onBack, onConnect }: { connector: ConnectorItem; connected: boolean; loading: boolean; onBack: () => void; onConnect: () => void }) {
   return (
     <div className="fixed inset-0 z-[120] overflow-hidden bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[calc(env(safe-area-inset-top)+10px)] text-[#111113]">
       <header className="relative mb-[26px] flex h-[42px] items-center justify-center">
-        <button
-          type="button"
-          aria-label="Back"
-          onClick={onBack}
-          className="absolute left-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"
-        >
-          <ChevronLeft size={29} strokeWidth={2.2} />
-        </button>
+        <button type="button" aria-label="Back" onClick={onBack} className="absolute left-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"><ChevronLeft size={29} strokeWidth={2.2} /></button>
         <h2 className="text-[20px] font-semibold tracking-[-0.04em]">Apps</h2>
-        <button
-          type="button"
-          aria-label="Share"
-          className="absolute right-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"
-        >
-          <Share size={25} strokeWidth={2.2} />
-        </button>
+        <button type="button" aria-label="Share" className="absolute right-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"><Share size={25} strokeWidth={2.2} /></button>
       </header>
 
       <section className="mb-[30px] flex items-start gap-[22px]">
         <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/[0.07]">
-          <ConnectorIcon
-            src={connector.iconSrc}
-            title={connector.title}
-            className="h-[58px] w-[58px] rounded-[12px]"
-            fallbackClassName="text-[22px]"
-          />
+          <ConnectorIcon src={connector.iconSrc} title={connector.title} className="h-[58px] w-[58px] rounded-[12px]" fallbackClassName="text-[22px]" />
         </div>
-
         <div className="min-w-0 pt-[1px]">
-          <h1 className="mb-[16px] truncate text-[31px] font-semibold leading-none tracking-[-0.055em] text-[#111113]">
-            {connector.title}
-          </h1>
-          <button
-            type="button"
-            onClick={onConnect}
-            disabled={loading || connected}
-            className="h-[42px] rounded-full bg-black px-[31px] text-[16px] font-medium tracking-[-0.035em] text-white transition active:scale-[0.98]"
-          >
-            {getConnectorButtonLabel(connected)}
-          </button>
+          <h1 className="mb-[16px] truncate text-[31px] font-semibold leading-none tracking-[-0.055em] text-[#111113]">{connector.title}</h1>
+          <button type="button" onClick={onConnect} disabled={loading || connected} className="h-[42px] rounded-full bg-black px-[31px] text-[16px] font-medium tracking-[-0.035em] text-white transition active:scale-[0.98]">{getConnectorButtonLabel(connected)}</button>
         </div>
       </section>
 
-      <p className="mb-[42px] max-w-[360px] text-[19px] font-normal leading-[1.45] tracking-[-0.045em] text-[#5c5d64]">
-        {connector.description}
-      </p>
+      <p className="mb-[42px] max-w-[360px] text-[19px] font-normal leading-[1.45] tracking-[-0.045em] text-[#5c5d64]">{connector.description}</p>
 
       <section>
         <h3 className="mb-[24px] text-[23px] font-semibold tracking-[-0.05em] text-[#111113]">Details</h3>
@@ -290,7 +225,7 @@ function ConnectorDetailView({
   );
 }
 
-export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
+export function KivoPlusSheet({ open, onClose, onAddFiles }: KivoPlusSheetProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<ConnectorItem | null>(null);
   const [connectedMap, setConnectedMap] = useState<Record<ConnectorId, boolean>>(emptyConnectedMap);
@@ -307,41 +242,31 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-
     async function syncStatuses() {
       const { data } = await supabase.auth.getUser();
       const userId = data.user?.id;
-
       if (!userId || cancelled) {
         setConnectedMap(emptyConnectedMap);
         setLoadingStatusMap({});
         return;
       }
-
       setLoadingStatusMap(Object.fromEntries(connectors.map((connector) => [connector.id, true])) as Partial<Record<ConnectorId, boolean>>);
-
-      const results = await Promise.all(
-        connectors.map(async (connector) => {
-          try {
-            const response = await fetch(statusEndpoints[connector.id](userId), { cache: 'no-store' });
-            if (!response.ok) return [connector.id, false] as const;
-            const payload = await response.json();
-            return [connector.id, Boolean(payload.connected)] as const;
-          } catch {
-            return [connector.id, false] as const;
-          }
-        }),
-      );
-
+      const results = await Promise.all(connectors.map(async (connector) => {
+        try {
+          const response = await fetch(statusEndpoints[connector.id](userId), { cache: 'no-store' });
+          if (!response.ok) return [connector.id, false] as const;
+          const payload = await response.json();
+          return [connector.id, Boolean(payload.connected)] as const;
+        } catch {
+          return [connector.id, false] as const;
+        }
+      }));
       if (cancelled) return;
       setConnectedMap((current) => ({ ...current, ...Object.fromEntries(results) } as Record<ConnectorId, boolean>));
       setLoadingStatusMap({});
     }
-
     syncStatuses();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [open]);
 
   function closeWithAnimation() {
@@ -350,56 +275,42 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
     window.setTimeout(onClose, 170);
   }
 
+  function handleAddFiles() {
+    onAddFiles?.();
+    closeWithAnimation();
+  }
+
   const sheetMotion = useKivoSheetMotion({ visible: isVisible, onClose: closeWithAnimation });
 
   if (!open) return null;
 
   async function connectConnector(connector: ConnectorItem) {
     if (connectedMap[connector.id] || loadingStatusMap[connector.id]) return;
-
     const { data } = await supabase.auth.getUser();
     const userId = data.user?.id;
-
     if (!userId) return;
-
     window.location.href = connectEndpoints[connector.id](userId);
   }
 
   return (
     <div className="fixed inset-0 z-[90] overflow-hidden pointer-events-none">
-      <button
-        type="button"
-        aria-label="Close plus menu"
-        onClick={closeWithAnimation}
-        className="absolute inset-0 pointer-events-auto bg-transparent"
-      />
+      <button type="button" aria-label="Close plus menu" onClick={closeWithAnimation} className="absolute inset-0 pointer-events-auto bg-transparent" />
 
-      <section
-        aria-label="Kivo actions"
-        className={`pointer-events-auto absolute inset-x-0 bottom-0 max-h-[79vh] overflow-y-auto overscroll-contain rounded-t-[38px] bg-[#fbfbfc] px-[24px] pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[22px] shadow-[0_-18px_58px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035] transition-[transform,box-shadow] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
-          sheetMotion.moving ? 'duration-0 ease-linear' : 'duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]'
-        }`}
-        style={sheetMotion.style}
-      >
-        <button
-          type="button"
-          aria-label="Move plus menu"
-          {...sheetMotion.handleProps}
-          className="sticky top-[-22px] z-20 -mx-[24px] -mt-[18px] mb-[10px] flex h-[42px] w-[calc(100%+48px)] touch-none items-center justify-center cursor-grab bg-[#fbfbfc]/95 backdrop-blur active:cursor-grabbing"
-        >
+      <section aria-label="Kivo actions" className={`pointer-events-auto absolute inset-x-0 bottom-0 max-h-[79vh] overflow-y-auto overscroll-contain rounded-t-[38px] bg-[#fbfbfc] px-[24px] pb-[calc(env(safe-area-inset-bottom)+22px)] pt-[22px] shadow-[0_-18px_58px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.035] transition-[transform,box-shadow] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${sheetMotion.moving ? 'duration-0 ease-linear' : 'duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]'}`} style={sheetMotion.style}>
+        <button type="button" aria-label="Move plus menu" {...sheetMotion.handleProps} className="sticky top-[-22px] z-20 -mx-[24px] -mt-[18px] mb-[10px] flex h-[42px] w-[calc(100%+48px)] touch-none items-center justify-center cursor-grab bg-[#fbfbfc]/95 backdrop-blur active:cursor-grabbing">
           <span className="h-[6px] w-[76px] rounded-full bg-[#c4c4c9]" />
         </button>
 
         <div className="-mx-[10px] mb-[36px] flex gap-[18px] overflow-x-auto px-[10px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <EmptyPreviewTile large />
-          <EmptyPreviewTile />
-          <EmptyPreviewTile />
-          <EmptyPreviewTile />
+          <EmptyPreviewTile large onClick={handleAddFiles} />
+          <EmptyPreviewTile onClick={handleAddFiles} />
+          <EmptyPreviewTile onClick={handleAddFiles} />
+          <EmptyPreviewTile onClick={handleAddFiles} />
         </div>
 
         <div className="space-y-[1px]">
           {actions.map((action) => (
-            <ActionRow key={action.title} item={action} />
+            <ActionRow key={action.title} item={action} onClick={action.action === 'add-files' ? handleAddFiles : undefined} />
           ))}
         </div>
 
@@ -409,27 +320,14 @@ export function KivoPlusSheet({ open, onClose }: KivoPlusSheetProps) {
           <h3 className="mb-[12px] text-[19px] font-medium tracking-[-0.04em] text-[#6d6e76]">Connectors</h3>
           <div className="space-y-[8px]">
             {connectors.map((connector) => (
-              <ConnectorRow
-                key={connector.title}
-                item={connector}
-                connected={connectedMap[connector.id]}
-                onOpen={() => setSelectedConnector(connector)}
-              />
+              <ConnectorRow key={connector.title} item={connector} connected={connectedMap[connector.id]} onOpen={() => setSelectedConnector(connector)} />
             ))}
           </div>
         </section>
       </section>
 
       {selectedConnector ? (
-        <ConnectorDetailView
-          connector={selectedConnector}
-          connected={connectedMap[selectedConnector.id]}
-          loading={Boolean(loadingStatusMap[selectedConnector.id])}
-          onBack={() => setSelectedConnector(null)}
-          onConnect={() => {
-            void connectConnector(selectedConnector);
-          }}
-        />
+        <ConnectorDetailView connector={selectedConnector} connected={connectedMap[selectedConnector.id]} loading={Boolean(loadingStatusMap[selectedConnector.id])} onBack={() => setSelectedConnector(null)} onConnect={() => { void connectConnector(selectedConnector); }} />
       ) : null}
     </div>
   );
