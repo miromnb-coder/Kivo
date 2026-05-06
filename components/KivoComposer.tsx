@@ -18,6 +18,20 @@ type VisualViewportState = {
   offsetTop: number;
 };
 
+type SmartSuggestion = {
+  label: string;
+  prompt: string;
+};
+
+const smartSuggestions: SmartSuggestion[] = [
+  { label: 'Create image', prompt: 'Create an image of ' },
+  { label: 'Find best deal', prompt: 'Find the best deal for ' },
+  { label: 'Plan my day', prompt: 'Plan my day and suggest the most important next steps.' },
+  { label: 'Summarize email', prompt: 'Summarize my latest important emails and action items.' },
+  { label: 'Research deeply', prompt: 'Research this deeply and give me a clear summary: ' },
+  { label: 'Write draft', prompt: 'Write a polished draft for ' },
+];
+
 function KivoToolsIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -45,8 +59,37 @@ function CircleButton({ children, muted = false, onClick }: { children: React.Re
   );
 }
 
+function KivoSmartSuggestionRail({ visible, onSelect }: { visible: boolean; onSelect: (suggestion: SmartSuggestion) => void }) {
+  return (
+    <div
+      className={`pointer-events-auto mb-[10px] overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        visible ? 'max-h-[44px] translate-y-0 opacity-100' : 'max-h-0 translate-y-[8px] opacity-0'
+      }`}
+      aria-hidden={!visible}
+    >
+      <div className="relative mx-auto w-full max-w-[430px]">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[18px] bg-gradient-to-r from-[#f7f7f8] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[18px] bg-gradient-to-l from-[#f7f7f8] to-transparent" />
+        <div className="flex snap-x snap-mandatory gap-[8px] overflow-x-auto px-[2px] pb-[2px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {smartSuggestions.map((suggestion) => (
+            <button
+              key={suggestion.label}
+              type="button"
+              onClick={() => onSelect(suggestion)}
+              className="h-[36px] shrink-0 snap-start rounded-full border border-black/[0.055] bg-white/80 px-[16px] text-[15px] font-normal tracking-[-0.035em] text-[#303035] shadow-[0_8px_22px_rgba(15,23,42,0.035)] backdrop-blur transition active:scale-[0.98]"
+            >
+              {suggestion.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false }: KivoComposerProps) {
   const [value, setValue] = useState('');
+  const [hasStartedConversation, setHasStartedConversation] = useState(false);
   const [isPlusOpen, setIsPlusOpen] = useState(false);
   const [isConnectorsOpen, setIsConnectorsOpen] = useState(false);
   const [isModeOpen, setIsModeOpen] = useState(false);
@@ -59,6 +102,7 @@ export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canSend = value.trim().length > 0 && !disabled;
+  const showSmartSuggestions = !hasStartedConversation && value.trim().length === 0 && !isPlusOpen && !isConnectorsOpen && !isModeOpen;
 
   const updateVisualViewportState = useCallback(() => {
     const viewport = window.visualViewport;
@@ -109,6 +153,7 @@ export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false 
     const message = value.trim();
     if (!message || disabled) return;
 
+    setHasStartedConversation(true);
     setValue('');
     onSubmitMessage?.(message);
 
@@ -116,6 +161,17 @@ export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false 
       const textarea = textareaRef.current;
       if (!textarea) return;
       textarea.style.height = '24px';
+    });
+  }
+
+  function handleSuggestionSelect(suggestion: SmartSuggestion) {
+    setValue(suggestion.prompt);
+    requestAnimationFrame(() => {
+      resizeTextarea();
+      textareaRef.current?.focus();
+      const length = suggestion.prompt.length;
+      textareaRef.current?.setSelectionRange(length, length);
+      syncKeyboardPosition();
     });
   }
 
@@ -139,6 +195,8 @@ export function KivoComposer({ onFocusChange, onSubmitMessage, disabled = false 
     <>
       {!isRecording ? (
         <div className="fixed inset-x-0 bottom-0 z-40 pointer-events-none px-[16px] pb-[64px] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform" style={{ transform: `translate3d(0, -${keyboardOffset}px, 0)` }}>
+          <KivoSmartSuggestionRail visible={showSmartSuggestions} onSelect={handleSuggestionSelect} />
+
           <div className="mx-auto w-full max-w-[430px] rounded-[34px] border border-[#eeeeF1] bg-[#f9f9fa] px-[16px] pt-[14px] pb-[12px] shadow-[0_10px_30px_rgba(0,0,0,0.04)] pointer-events-auto">
             <textarea
               ref={textareaRef}
