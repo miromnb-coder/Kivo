@@ -217,7 +217,7 @@ function ConnectorDetailView({
   onPrimaryAction: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[120] overflow-hidden bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[calc(env(safe-area-inset-top)+10px)] text-[#111113]">
+    <div className="pointer-events-auto fixed inset-0 z-[120] overflow-hidden bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[calc(env(safe-area-inset-top)+10px)] text-[#111113]">
       <header className="relative mb-[26px] flex h-[42px] items-center justify-center">
         <button type="button" aria-label="Back" onClick={onBack} className="absolute left-0 flex h-[42px] w-[42px] items-center justify-center text-[#111113] transition active:scale-[0.96]"><ChevronLeft size={29} strokeWidth={2.2} /></button>
         <h2 className="text-[20px] font-semibold tracking-[-0.04em]">Apps</h2>
@@ -232,7 +232,11 @@ function ConnectorDetailView({
           <h1 className="mb-[16px] truncate text-[31px] font-semibold leading-none tracking-[-0.055em] text-[#111113]">{connector.title}</h1>
           <button
             type="button"
-            onClick={onPrimaryAction}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onPrimaryAction();
+            }}
             disabled={loading}
             className="h-[42px] rounded-full bg-black px-[31px] text-[16px] font-medium tracking-[-0.035em] text-white transition active:scale-[0.98] disabled:opacity-60"
           >
@@ -352,7 +356,7 @@ export function KivoPlusSheet({ open, onClose, onAddFiles, initialConnectorId = 
 
     setActionLoadingMap((current) => ({ ...current, [connector.id]: true }));
     setActionErrorMap((current) => ({ ...current, [connector.id]: '' }));
-    window.location.assign(connectEndpoints[connector.id](userId));
+    window.location.href = connectEndpoints[connector.id](userId);
   }
 
   async function disconnectConnector(connector: ConnectorItem) {
