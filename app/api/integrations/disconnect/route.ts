@@ -7,11 +7,11 @@ export const dynamic = 'force-dynamic';
 type ConnectorId = 'google-drive' | 'gmail' | 'google-calendar' | 'outlook-calendar' | 'outlook-mail';
 
 const providerAliases: Record<ConnectorId, string[]> = {
-  'google-drive': ['google_drive', 'drive'],
-  gmail: ['gmail', 'google_gmail'],
-  'google-calendar': ['google_calendar', 'calendar'],
-  'outlook-calendar': ['outlook_calendar', 'microsoft_outlook_calendar'],
-  'outlook-mail': ['outlook_mail', 'microsoft_outlook_mail'],
+  'google-drive': ['google_drive', 'drive', 'google'],
+  gmail: ['gmail', 'google_gmail', 'google_mail', 'email', 'google'],
+  'google-calendar': ['google_calendar', 'calendar', 'google'],
+  'outlook-calendar': ['outlook_calendar', 'microsoft_outlook_calendar', 'microsoft'],
+  'outlook-mail': ['outlook_mail', 'microsoft_outlook_mail', 'microsoft'],
 };
 
 function isConnectorId(value: string | null): value is ConnectorId {
