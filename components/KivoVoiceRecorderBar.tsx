@@ -11,8 +11,8 @@ type KivoVoiceRecorderBarProps = {
   onConfirm: (audioBlob?: Blob) => void;
 };
 
-const BAR_COUNT = 28;
-const IDLE_WAVEFORM = [18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 18];
+const BAR_COUNT = 26;
+const IDLE_WAVEFORM = [18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 17];
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -158,13 +158,13 @@ export function KivoVoiceRecorderBar({ open, seconds, transcribing = false, onCa
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[70] px-[16px] pb-[64px] pointer-events-none">
-      <div className="relative mx-auto h-[116px] w-full max-w-[430px] overflow-hidden rounded-[40px] border border-black/[0.04] bg-[#fbfbfc] shadow-[0_10px_30px_rgba(0,0,0,0.035)] pointer-events-auto">
-        <div className="absolute left-[116px] right-[30px] top-[22px] flex h-[30px] items-center justify-end overflow-hidden">
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-[4px] overflow-hidden">
+      <div className="relative mx-auto h-[116px] w-full max-w-[430px] overflow-hidden rounded-[40px] border border-black/[0.035] bg-[#fbfbfc] shadow-[0_10px_30px_rgba(0,0,0,0.035)] pointer-events-auto">
+        <div className="absolute left-[148px] right-[30px] top-[22px] flex h-[31px] items-center justify-end overflow-hidden">
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden">
             {waveform.map((height, index) => (
               <span
                 key={index}
-                className={`block w-[4px] shrink-0 rounded-full transition-[height,opacity] duration-100 ${transcribing ? 'animate-pulse bg-[#9d9da2]' : 'bg-[#b7b7bc]'}`}
+                className={`block w-[3px] shrink-0 rounded-full transition-[height,opacity] duration-100 ${transcribing ? 'animate-pulse bg-[#a2a2a7]' : 'bg-[#b7b7bc]'}`}
                 style={{ height }}
               />
             ))}
