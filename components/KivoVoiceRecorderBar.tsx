@@ -11,8 +11,8 @@ type KivoVoiceRecorderBarProps = {
   onConfirm: (audioBlob?: Blob) => void;
 };
 
-const BAR_COUNT = 34;
-const IDLE_WAVEFORM = [18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 16];
+const BAR_COUNT = 28;
+const IDLE_WAVEFORM = [18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 20, 18, 19, 17, 18];
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -34,6 +34,11 @@ export function KivoVoiceRecorderBar({ open, seconds, transcribing = false, onCa
   const audioContextRef = useRef<AudioContext | null>(null);
   const animationRef = useRef<number | null>(null);
   const confirmPendingRef = useRef(false);
+  const onConfirmRef = useRef(onConfirm);
+
+  useEffect(() => {
+    onConfirmRef.current = onConfirm;
+  }, [onConfirm]);
 
   useEffect(() => {
     if (!open) return;
@@ -72,7 +77,7 @@ export function KivoVoiceRecorderBar({ open, seconds, transcribing = false, onCa
 
           if (confirmPendingRef.current) {
             confirmPendingRef.current = false;
-            onConfirm(blob);
+            onConfirmRef.current(blob);
           }
         };
 
@@ -129,7 +134,7 @@ export function KivoVoiceRecorderBar({ open, seconds, transcribing = false, onCa
       setRecorderReady(false);
       setWaveform(IDLE_WAVEFORM);
     };
-  }, [open, onConfirm]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -153,38 +158,40 @@ export function KivoVoiceRecorderBar({ open, seconds, transcribing = false, onCa
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[70] px-[16px] pb-[64px] pointer-events-none">
-      <div className="mx-auto flex h-[116px] w-full max-w-[430px] items-center rounded-[40px] border border-black/[0.04] bg-[#fbfbfc] px-[16px] shadow-[0_10px_30px_rgba(0,0,0,0.035)] pointer-events-auto">
+      <div className="relative mx-auto h-[116px] w-full max-w-[430px] overflow-hidden rounded-[40px] border border-black/[0.04] bg-[#fbfbfc] shadow-[0_10px_30px_rgba(0,0,0,0.035)] pointer-events-auto">
+        <div className="absolute left-[116px] right-[30px] top-[22px] flex h-[30px] items-center justify-end overflow-hidden">
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-[4px] overflow-hidden">
+            {waveform.map((height, index) => (
+              <span
+                key={index}
+                className={`block w-[4px] shrink-0 rounded-full transition-[height,opacity] duration-100 ${transcribing ? 'animate-pulse bg-[#9d9da2]' : 'bg-[#b7b7bc]'}`}
+                style={{ height }}
+              />
+            ))}
+            <span className="ml-[8px] h-[26px] w-px shrink-0 rounded-full bg-[#c7c7cb]" />
+          </div>
+
+          <div className="ml-[14px] min-w-[58px] text-right text-[28px] font-normal leading-none tracking-[-0.055em] text-[#5f6066]">
+            {transcribing ? '...' : formatTime(seconds)}
+          </div>
+        </div>
+
         <button
           type="button"
           aria-label="Cancel recording"
           onClick={handleCancel}
           disabled={transcribing}
-          className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-[#f1f1f3] text-[#202024] transition active:scale-[0.96] disabled:opacity-60"
+          className="absolute bottom-[16px] left-[16px] flex h-[58px] w-[58px] items-center justify-center rounded-full bg-[#f1f1f3] text-[#202024] transition active:scale-[0.96] disabled:opacity-60"
         >
           <X size={27} strokeWidth={1.9} />
         </button>
-
-        <div className="mx-[22px] flex min-w-0 flex-1 items-center justify-end gap-[5px] overflow-hidden">
-          {waveform.map((height, index) => (
-            <span
-              key={index}
-              className={`block w-[5px] shrink-0 rounded-full transition-[height,opacity] duration-100 ${transcribing ? 'animate-pulse bg-[#9d9da2]' : 'bg-[#b7b7bc]'}`}
-              style={{ height }}
-            />
-          ))}
-          <span className="ml-[8px] h-[26px] w-px shrink-0 rounded-full bg-[#c7c7cb]" />
-        </div>
-
-        <div className="mr-[26px] min-w-[56px] text-right text-[28px] font-normal leading-none tracking-[-0.055em] text-[#5f6066]">
-          {transcribing ? '...' : formatTime(seconds)}
-        </div>
 
         <button
           type="button"
           aria-label="Confirm recording"
           onClick={handleConfirm}
           disabled={transcribing || !recorderReady}
-          className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-[#f1f1f3] text-[#202024] transition active:scale-[0.96] disabled:opacity-60"
+          className="absolute bottom-[16px] right-[16px] flex h-[58px] w-[58px] items-center justify-center rounded-full bg-[#f1f1f3] text-[#202024] transition active:scale-[0.96] disabled:opacity-60"
         >
           <Check size={29} strokeWidth={1.9} />
         </button>
