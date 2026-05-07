@@ -523,7 +523,13 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     : null;
   const actionVerification = verifyAgentActionResult(action, actionResult);
 
-  const memory = await getMemoryContext(req.userId, req.message);
+  const memory = await getMemoryContext(req.userId, req.message, {
+    conversationId: req.conversationId,
+    includeConversationContext: Boolean(req.conversationId),
+    includeConversationSummary: true,
+    recentMessageLimit: 16,
+    finalMemoryLimit: 14,
+  });
   const memoryBrief = shouldUseMemory(memory) ? buildMemoryBrief(memory, intent) : '';
 
   if (routing.needsClarification && action.kind === 'none') {
