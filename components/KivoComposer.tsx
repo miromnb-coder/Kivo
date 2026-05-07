@@ -166,6 +166,12 @@ function removeConnectorUrlParams() {
   }
 }
 
+function createAudioFile(audioBlob: Blob) {
+  const mimeType = audioBlob.type || 'audio/webm';
+  const extension = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('mpeg') ? 'mp3' : mimeType.includes('ogg') ? 'ogg' : mimeType.includes('wav') ? 'wav' : 'webm';
+  return new File([audioBlob], `kivo-voice.${extension}`, { type: mimeType });
+}
+
 export function KivoComposer({
   onFocusChange,
   onSubmitMessage,
@@ -181,6 +187,7 @@ export function KivoComposer({
   const [isModeOpen, setIsModeOpen] = useState(false);
   const [pendingConnectorId, setPendingConnectorId] = useState<ConnectorId | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [visualViewportState, setVisualViewportState] = useState<VisualViewportState>({
     height: 0,
@@ -190,7 +197,7 @@ export function KivoComposer({
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousConversationKeyRef = useRef<string | null>(conversationId ?? null);
-  const canSend = (value.trim().length > 0 || attachments.length > 0) && !disabled;
+  const canSend = (value.trim().length > 0 || attachments.length > 0) && !disabled && !isTranscribing;
   const conversationHasMessages = messageCount > 0;
   const showSmartSuggestions =
     !conversationHasMessages &&
@@ -199,7 +206,8 @@ export function KivoComposer({
     attachments.length === 0 &&
     !isPlusOpen &&
     !isConnectorsOpen &&
-    !isModeOpen;
+    !isModeOpen &&
+    !isRecording;
 
   useEffect(() => {
     const connectorId = connectorFromUrlParams(new URLSearchParams(window.location.search));
@@ -219,6 +227,9 @@ export function KivoComposer({
       setHasSubmittedInCurrentConversation(false);
       setValue('');
       setAttachments([]);
+      setIsRecording(false);
+      setIsTranscribing(false);
+      setRecordSeconds(0);
       requestAnimationFrame(() => {
         const textarea = textareaRef.current;
         if (!textarea) return;
@@ -308,7 +319,7 @@ export function KivoComposer({
   function handleSubmit() {
     const message = value.trim();
     const outgoingAttachments = attachments;
-    if ((!message && outgoingAttachments.length === 0) || disabled) return;
+    if ((!message && outgoingAttachments.length === 0) || disabled || isTranscribing) return;
 
     setHasSubmittedInCurrentConversation(true);
     setValue('');
@@ -339,11 +350,57 @@ export function KivoComposer({
     setIsModeOpen(false);
     setRecordSeconds(0);
     setIsRecording(true);
+    setIsTranscribing(false);
+    onFocusChange?.(false);
   }
 
-  function stopRecording() {
+  function cancelRecording() {
     setIsRecording(false);
+    setIsTranscribing(false);
     setRecordSeconds(0);
+  }
+
+  async function transcribeRecording(audioBlob?: Blob) {
+    if (!audioBlob || audioBlob.size === 0) {
+      cancelRecording();
+      return;
+    }
+
+    setIsTranscribing(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', createAudioFile(audioBlob));
+
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || 'Transcription failed.');
+      }
+
+      const transcript = typeof payload.text === 'string' ? payload.text.trim() : '';
+      if (transcript) {
+        setValue((current) => {
+          const prefix = current.trim().length ? `${current.trim()} ` : '';
+          return `${prefix}${transcript}`;
+        });
+        requestAnimationFrame(() => {
+          resizeTextarea();
+          textareaRef.current?.focus();
+          syncKeyboardPosition();
+        });
+      }
+    } catch (error) {
+      console.warn('Voice transcription failed', error);
+    } finally {
+      setIsRecording(false);
+      setIsTranscribing(false);
+      setRecordSeconds(0);
+    }
   }
 
   const viewportHeight = visualViewportState.height || window.innerHeight;
@@ -372,7 +429,7 @@ export function KivoComposer({
               value={value}
               rows={1}
               placeholder="Ask anything or assign a task"
-              disabled={disabled}
+              disabled={disabled || isTranscribing}
               onFocus={() => {
                 if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
                 onFocusChange?.(true);
@@ -432,7 +489,7 @@ export function KivoComposer({
         </div>
       ) : null}
 
-      <KivoVoiceRecorderBar open={isRecording} seconds={recordSeconds} onCancel={stopRecording} onConfirm={stopRecording} />
+      <KivoVoiceRecorderBar open={isRecording} seconds={recordSeconds} transcribing={isTranscribing} onCancel={cancelRecording} onConfirm={(audioBlob) => { void transcribeRecording(audioBlob); }} />
       <KivoPlusSheet
         open={isPlusOpen}
         onClose={() => setIsPlusOpen(false)}
