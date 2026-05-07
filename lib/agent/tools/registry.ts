@@ -38,32 +38,18 @@ export type RegisteredToolDefinition = {
   name: AgentToolName;
   label: string;
   description: string;
-  category:
-    | 'memory'
-    | 'email'
-    | 'calendar'
-    | 'files'
-    | 'web'
-    | 'finance'
-    | 'browser'
-    | 'system';
-
+  category: 'memory' | 'email' | 'calendar' | 'files' | 'web' | 'finance' | 'browser' | 'system';
   provider?: 'google' | 'microsoft' | 'groq' | 'internal' | 'custom';
-
   capabilities: ToolCapability[];
   riskLevel: ToolRiskLevel;
-
   requiresUser: boolean;
   requiresConnection: boolean;
   requiredScopes?: string[];
-
   canRead: boolean;
   canWrite: boolean;
   canRunNow: boolean;
-
   implemented: boolean;
   enabled: boolean;
-
   reconnectMessage?: string;
 };
 
@@ -84,33 +70,11 @@ export type ToolHealth = {
 };
 
 export type ToolRunInput =
-  | {
-      tool: 'google_calendar';
-      action: 'read_today';
-      userId?: string;
-    }
-  | {
-      tool: 'google_calendar';
-      action: 'create_event';
-      userId?: string;
-      input: CreateCalendarEventInput;
-    }
-  | {
-      tool: 'gmail';
-      action: 'scan';
-      userId?: string;
-    }
-  | {
-      tool: 'outlook' | 'outlook_mail' | 'outlook_calendar';
-      action: 'scan';
-      userId?: string;
-    }
-  | {
-      tool: 'web_search';
-      action: 'search';
-      query: string;
-      country?: string;
-    }
+  | { tool: 'google_calendar'; action: 'read_today'; userId?: string }
+  | { tool: 'google_calendar'; action: 'create_event'; userId?: string; input: CreateCalendarEventInput }
+  | { tool: 'gmail'; action: 'scan'; userId?: string }
+  | { tool: 'outlook' | 'outlook_mail' | 'outlook_calendar'; action: 'scan'; userId?: string }
+  | { tool: 'web_search'; action: 'search'; query: string; country?: string }
   | {
       tool: Exclude<
         AgentToolName,
@@ -138,7 +102,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     implemented: true,
     enabled: true,
   },
-
   gmail: {
     name: 'gmail',
     label: 'Gmail',
@@ -149,9 +112,7 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     riskLevel: 'low',
     requiresUser: true,
     requiresConnection: true,
-    requiredScopes: [
-      'https://www.googleapis.com/auth/gmail.readonly',
-    ],
+    requiredScopes: ['https://www.googleapis.com/auth/gmail.readonly'],
     canRead: true,
     canWrite: false,
     canRunNow: true,
@@ -159,7 +120,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     enabled: true,
     reconnectMessage: 'Reconnect Gmail with mail read permission.',
   },
-
   google_calendar: {
     name: 'google_calendar',
     label: 'Google Calendar',
@@ -170,10 +130,7 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     riskLevel: 'medium',
     requiresUser: true,
     requiresConnection: true,
-    requiredScopes: [
-      'https://www.googleapis.com/auth/calendar',
-      'https://www.googleapis.com/auth/calendar.events',
-    ],
+    requiredScopes: ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'],
     canRead: true,
     canWrite: true,
     canRunNow: true,
@@ -181,7 +138,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     enabled: true,
     reconnectMessage: 'Reconnect Google Calendar with calendar read/write permission.',
   },
-
   google_drive: {
     name: 'google_drive',
     label: 'Google Drive',
@@ -192,10 +148,7 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     riskLevel: 'low',
     requiresUser: true,
     requiresConnection: true,
-    requiredScopes: [
-      'https://www.googleapis.com/auth/drive.readonly',
-      'https://www.googleapis.com/auth/drive.metadata.readonly',
-    ],
+    requiredScopes: ['https://www.googleapis.com/auth/drive.readonly', 'https://www.googleapis.com/auth/drive.metadata.readonly'],
     canRead: true,
     canWrite: false,
     canRunNow: false,
@@ -203,7 +156,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     enabled: true,
     reconnectMessage: 'Connect Google Drive before Kivo can read files.',
   },
-
   outlook: {
     name: 'outlook',
     label: 'Outlook',
@@ -214,11 +166,7 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     riskLevel: 'low',
     requiresUser: true,
     requiresConnection: true,
-    requiredScopes: [
-      'User.Read',
-      'Mail.Read',
-      'Calendars.Read',
-    ],
+    requiredScopes: ['User.Read', 'Mail.Read', 'Calendars.Read'],
     canRead: true,
     canWrite: false,
     canRunNow: true,
@@ -226,7 +174,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     enabled: true,
     reconnectMessage: 'Reconnect Outlook with Mail.Read and Calendars.Read permission.',
   },
-
   outlook_mail: {
     name: 'outlook_mail',
     label: 'Outlook Mail',
@@ -245,7 +192,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     enabled: true,
     reconnectMessage: 'Reconnect Outlook Mail with Mail.Read permission.',
   },
-
   outlook_calendar: {
     name: 'outlook_calendar',
     label: 'Outlook Calendar',
@@ -264,7 +210,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     enabled: true,
     reconnectMessage: 'Reconnect Outlook Calendar with Calendars.Read permission.',
   },
-
   web_search: {
     name: 'web_search',
     label: 'Web Search',
@@ -281,7 +226,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     implemented: true,
     enabled: true,
   },
-
   finance: {
     name: 'finance',
     label: 'Finance',
@@ -298,7 +242,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     implemented: false,
     enabled: true,
   },
-
   browser: {
     name: 'browser',
     label: 'Browser',
@@ -315,7 +258,6 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
     implemented: false,
     enabled: false,
   },
-
   none: {
     name: 'none',
     label: 'No tool',
@@ -337,14 +279,7 @@ const TOOL_DEFINITIONS: Record<AgentToolName, RegisteredToolDefinition> = {
 const GOOGLE_GMAIL_PROVIDERS = ['gmail', 'google_gmail', 'google_mail', 'email'];
 const GOOGLE_CALENDAR_PROVIDERS = ['google_calendar', 'google'];
 const GOOGLE_DRIVE_PROVIDERS = ['google_drive', 'drive', 'google'];
-const MICROSOFT_PROVIDERS = [
-  'microsoft',
-  'outlook',
-  'outlook_mail',
-  'outlook_calendar',
-  'microsoft_outlook_mail',
-  'microsoft_outlook_calendar',
-];
+const MICROSOFT_PROVIDERS = ['microsoft', 'outlook', 'outlook_mail', 'outlook_calendar', 'microsoft_outlook_mail', 'microsoft_outlook_calendar'];
 
 function toText(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
@@ -360,6 +295,7 @@ function normalizeText(value: unknown) {
 
 function scopesToArray(scopes: unknown): string[] {
   if (Array.isArray(scopes)) return scopes.map(String).filter(Boolean);
+
   if (typeof scopes === 'string') {
     try {
       const parsed = JSON.parse(scopes);
@@ -389,18 +325,14 @@ function getProviderKeysForTool(tool: AgentToolName) {
   switch (tool) {
     case 'gmail':
       return GOOGLE_GMAIL_PROVIDERS;
-
     case 'google_calendar':
       return GOOGLE_CALENDAR_PROVIDERS;
-
     case 'google_drive':
       return GOOGLE_DRIVE_PROVIDERS;
-
     case 'outlook':
     case 'outlook_mail':
     case 'outlook_calendar':
       return MICROSOFT_PROVIDERS;
-
     default:
       return [];
   }
@@ -410,22 +342,16 @@ function getScopeSignalsForTool(tool: AgentToolName) {
   switch (tool) {
     case 'gmail':
       return ['gmail', 'mail.google.com', 'gmail.readonly', 'gmail.modify'];
-
     case 'google_calendar':
       return ['calendar', 'calendar.events'];
-
     case 'google_drive':
       return ['drive', 'drive.readonly', 'drive.metadata'];
-
     case 'outlook':
       return ['mail.read', 'calendars.read', 'user.read'];
-
     case 'outlook_mail':
       return ['mail.read', 'user.read'];
-
     case 'outlook_calendar':
       return ['calendars.read', 'user.read'];
-
     default:
       return [];
   }
@@ -508,9 +434,7 @@ async function getConnectionHealth(userId: string | undefined, tool: AgentToolNa
     return unavailableHealth(definition, 'not_implemented', `${definition.label} is not implemented yet.`);
   }
 
-  if (definition.name === 'none') {
-    return baseHealth(definition);
-  }
+  if (definition.name === 'none') return baseHealth(definition);
 
   if (!definition.requiresUser && !definition.requiresConnection) {
     if (tool === 'web_search' && !process.env.GROQ_API_KEY) {
@@ -524,44 +448,28 @@ async function getConnectionHealth(userId: string | undefined, tool: AgentToolNa
     return unavailableHealth(definition, 'not_connected', 'User is not signed in.');
   }
 
-  if (!definition.requiresConnection) {
-    return baseHealth(definition);
-  }
+  if (!definition.requiresConnection) return baseHealth(definition);
 
   const integration = await findIntegration(userId!, tool);
 
   if (!integration?.access_token) {
-    return unavailableHealth(
-      definition,
-      'not_connected',
-      definition.reconnectMessage ?? `${definition.label} is not connected.`,
-    );
+    return unavailableHealth(definition, 'not_connected', definition.reconnectMessage ?? `${definition.label} is not connected.`);
   }
 
   if (isNeedsReconnectStatus(integration.status) || tokenExpired(integration.expires_at)) {
-    return unavailableHealth(
-      definition,
-      'needs_reconnect',
-      definition.reconnectMessage ?? `${definition.label} needs to be reconnected.`,
-      {
-        provider: integration.provider,
-        status: integration.status,
-      },
-    );
+    return unavailableHealth(definition, 'needs_reconnect', definition.reconnectMessage ?? `${definition.label} needs to be reconnected.`, {
+      provider: integration.provider,
+      status: integration.status,
+    });
   }
 
   const scopeSignals = getScopeSignalsForTool(tool);
 
   if (scopeSignals.length && !hasAnyScope(integration.scopes, scopeSignals)) {
-    return unavailableHealth(
-      definition,
-      'permission_required',
-      definition.reconnectMessage ?? `${definition.label} needs more permissions.`,
-      {
-        provider: integration.provider,
-        scopes: scopesToArray(integration.scopes),
-      },
-    );
+    return unavailableHealth(definition, 'permission_required', definition.reconnectMessage ?? `${definition.label} needs more permissions.`, {
+      provider: integration.provider,
+      scopes: scopesToArray(integration.scopes),
+    });
   }
 
   return {
@@ -626,10 +534,7 @@ export function getToolRegistry() {
   return TOOL_DEFINITIONS;
 }
 
-export function listToolDefinitions(options?: {
-  includeDisabled?: boolean;
-  includeNotImplemented?: boolean;
-}) {
+export function listToolDefinitions(options?: { includeDisabled?: boolean; includeNotImplemented?: boolean }) {
   const includeDisabled = options?.includeDisabled ?? true;
   const includeNotImplemented = options?.includeNotImplemented ?? true;
 
@@ -645,31 +550,19 @@ export async function getToolHealth(tool: AgentToolName, userId?: string): Promi
     return await getConnectionHealth(userId, tool);
   } catch (error) {
     const definition = getToolDefinition(tool);
-
-    return unavailableHealth(
-      definition,
-      'error',
-      error instanceof Error ? error.message : `${definition.label} health check failed.`,
-    );
+    return unavailableHealth(definition, 'error', error instanceof Error ? error.message : `${definition.label} health check failed.`);
   }
 }
 
 export async function getAllToolHealth(userId?: string) {
   const tools = listToolDefinitions({ includeDisabled: true, includeNotImplemented: true });
-
-  const results = await Promise.allSettled(
-    tools.map((tool) => getToolHealth(tool.name, userId)),
-  );
+  const results = await Promise.allSettled(tools.map((tool) => getToolHealth(tool.name, userId)));
 
   return results.map((result, index) => {
     if (result.status === 'fulfilled') return result.value;
 
     const definition = tools[index];
-    return unavailableHealth(
-      definition,
-      'error',
-      result.reason instanceof Error ? result.reason.message : `${definition.label} health check failed.`,
-    );
+    return unavailableHealth(definition, 'error', result.reason instanceof Error ? result.reason.message : `${definition.label} health check failed.`);
   });
 }
 
@@ -743,7 +636,7 @@ export async function runRegisteredTool(input: ToolRunInput): Promise<AgentToolR
           };
         }
 
-        return blockedResult('google_calendar', `Unsupported Google Calendar action: ${input.action}`);
+        return blockedResult('google_calendar', 'Unsupported Google Calendar action.');
       }
 
       case 'gmail': {
@@ -811,12 +704,15 @@ export async function runRegisteredTool(input: ToolRunInput): Promise<AgentToolR
       }
 
       case 'memory':
+        return notImplementedResult('memory');
       case 'google_drive':
+        return notImplementedResult('google_drive');
       case 'finance':
+        return notImplementedResult('finance');
       case 'browser':
+        return notImplementedResult('browser');
       case 'none':
-      default:
-        return notImplementedResult(input.tool);
+        return notImplementedResult('none');
     }
   } catch (error) {
     return {
