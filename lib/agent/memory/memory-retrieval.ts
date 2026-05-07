@@ -235,7 +235,7 @@ async function retrieveSemanticMemories(
 
   if (error || !Array.isArray(data)) return [];
 
-  return (data as RpcMemoryRow[])
+  return (data as unknown as RpcMemoryRow[])
     .filter((row) => row?.id && row?.content)
     .map((row) => rpcRowToMemory(row, options.query ?? '', 'semantic'));
 }
@@ -256,7 +256,7 @@ async function retrieveKeywordMemories(
 
   if (error || !Array.isArray(data)) return [];
 
-  return (data as RpcMemoryRow[])
+  return (data as unknown as RpcMemoryRow[])
     .filter((row) => row?.id && row?.content)
     .map((row) => rpcRowToMemory(row, query, 'keyword'));
 }
@@ -297,7 +297,7 @@ async function retrieveFallbackMemories(
 
   if (error || !Array.isArray(data)) return [];
 
-  return (data as KivoMemoryRow[])
+  return (data as unknown as KivoMemoryRow[])
     .filter((row) => row?.id && row?.content && isActiveMemory(row))
     .map((row) => {
       const memory = memoryRowToRetrievedMemory(row, {
@@ -343,7 +343,7 @@ async function getConversationSummary(
 
   if (error || !data) return null;
 
-  return data as KivoConversationSummaryRow;
+  return data as unknown as KivoConversationSummaryRow;
 }
 
 async function getRecentConversationMessages(
@@ -362,7 +362,7 @@ async function getRecentConversationMessages(
 
   if (error || !Array.isArray(data)) return [];
 
-  return (data as KivoConversationMessageRow[])
+  return (data as unknown as KivoConversationMessageRow[])
     .filter((message) => message?.id && message?.content)
     .map((message) => ({
       ...message,
