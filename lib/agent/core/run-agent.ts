@@ -1,4 +1,12 @@
 import { runKivoModel } from '@/lib/ai/model-router';
+import { routeAgentAction } from '../actions/action-router';
+import { executeAgentAction, actionResultForPrompt } from '../actions/action-executor';
+import {
+  buildActionVerificationPrompt,
+  guardAgainstFalseActionClaim,
+  verifyAgentActionResult,
+} from '../actions/action-verifier';
+import { EMPTY_AGENT_ACTION, type AgentAction, type AgentActionResult } from '../actions/action-types';
 import { createPlan } from './planner';
 import { routeIntent } from './router';
 import { getMemoryContext, saveAgentRun, saveMemory } from '../memory/memory';
@@ -30,6 +38,12 @@ type ToolRouting = {
   reason?: string;
 };
 
+type ImageModelAttachment = {
+  url?: string;
+  base64?: string;
+  mimeType?: string;
+};
+
 const KIVO_SYSTEM_PROMPT = [
   'You are Kivo AI, a premium personal AI operator.',
   '',
@@ -40,6 +54,12 @@ const KIVO_SYSTEM_PROMPT = [
   '- Use memory only when it is relevant.',
   '- Use connected tool context only when it helps answer the request.',
   '- Never invent emails, calendar events, files, people, preferences, or personal facts.',
+  '',
+  'Action behavior:',
+  '- If an action result is provided, follow the verification instruction exactly.',
+  '- You may say an action was completed only when action verification says it is verified.',
+  '- If an action is blocked, failed, missing fields, or needs confirmation, explain that briefly and do not claim completion.',
+  '- Do not claim you created, sent, saved, deleted, or updated anything unless the verified action result confirms it.',
   '',
   'Image behavior:',
   '- If the user attaches an image, answer based on the visible image content.',
@@ -92,7 +112,7 @@ function getImageModelAttachments(attachments?: AgentAttachment[]) {
       return { url, mimeType };
     })
     .filter(Boolean)
-    .slice(0, 6) as { url?: string; base64?: string; mimeType?: string }[];
+    .slice(0, 6) as ImageModelAttachment[];
 }
 
 function toText(value: unknown) {
@@ -133,9 +153,26 @@ function fallbackToolRouting(message: string): ToolRouting {
   const text = message.toLowerCase();
   const useGmail = shouldRunGmailTool(message);
   const useOutlook = shouldRunOutlookTool(message);
-  const useCalendar = text.includes('calendar') || text.includes('schedule') || text.includes('meeting') || text.includes('event') || text.includes('free time') || text.includes('availability');
-  const useWebSearch = text.includes('latest') || text.includes('current') || text.includes('recent') || text.includes('news') || text.includes('price') || text.includes('available') || text.includes('search') || text.includes('find online') || text.includes('today');
-  const needsClarification = text.split(/\s+/).filter(Boolean).length <= 4 && (text.includes('plan') || text.includes('build') || text.includes('design'));
+  const useCalendar =
+    text.includes('calendar') ||
+    text.includes('schedule') ||
+    text.includes('meeting') ||
+    text.includes('event') ||
+    text.includes('free time') ||
+    text.includes('availability');
+  const useWebSearch =
+    text.includes('latest') ||
+    text.includes('current') ||
+    text.includes('recent') ||
+    text.includes('news') ||
+    text.includes('price') ||
+    text.includes('available') ||
+    text.includes('search') ||
+    text.includes('find online') ||
+    text.includes('today');
+  const needsClarification =
+    text.split(/\s+/).filter(Boolean).length <= 4 &&
+    (text.includes('plan') || text.includes('build') || text.includes('design'));
 
   return { needsClarification, useWebSearch, useCalendar, useGmail, useOutlook, reason: 'fallback-routing' };
 }
@@ -178,24 +215,124 @@ async function classifyToolRouting(req: AgentRequest): Promise<ToolRouting> {
 function shouldShowExecutionSteps(message: string, routing: ToolRouting) {
   const text = message.trim();
   if (!text) return false;
-  if (text.length < 18 && !routing.useCalendar && !routing.useGmail && !routing.useOutlook && !routing.useWebSearch) return false;
+  if (text.length < 18 && !routing.useCalendar && !routing.useGmail && !routing.useOutlook && !routing.useWebSearch) {
+    return false;
+  }
   return routing.useCalendar || routing.useGmail || routing.useOutlook || routing.useWebSearch || text.length > 80;
 }
 
-function buildExecutionSteps(message: string, routing: ToolRouting, options?: { calendarConnected?: boolean; gmailConnected?: boolean; outlookConnected?: boolean; fallback?: boolean; hasImages?: boolean }): ExecutionStep[] {
-  if (routing.needsClarification) return [{ title: 'Clarifying request', detail: 'Kivo asks only for the details needed to produce a better result.', status: 'done', kind: 'think' }];
-  if (!shouldShowExecutionSteps(message, routing) && !options?.hasImages) return [];
+function actionStep(action: AgentAction, result?: AgentActionResult | null): ExecutionStep | null {
+  if (action.kind === 'none') return null;
 
-  const steps: ExecutionStep[] = [{ title: 'Understanding request', detail: options?.hasImages ? 'Kivo reads your message and attached image.' : 'Kivo identifies the goal and chooses the right context.', status: 'done', kind: 'think' }];
+  return {
+    title: action.userVisibleLabel || 'Run action',
+    detail: result?.userVisibleMessage || result?.message || action.reason,
+    status: 'done',
+    kind: 'tool',
+  };
+}
 
-  if (options?.hasImages) steps.push({ title: 'Reading image', detail: 'Kivo analyzes the visible content in the attached image.', status: 'done', kind: 'tool' });
-  if (routing.useGmail) steps.push({ title: options?.gmailConnected ? 'Reading Gmail context' : 'Checking Gmail connection', detail: options?.gmailConnected ? 'Kivo reviews relevant email signals, bills, and action items.' : 'Gmail context was requested but may not be connected.', status: 'done', kind: 'tool' });
-  if (routing.useOutlook) steps.push({ title: options?.outlookConnected ? 'Reading Outlook Smart context' : 'Checking Outlook connection', detail: options?.outlookConnected ? 'Kivo reviews Outlook emails, calendar events, and priority signals.' : 'Outlook context was requested but may not be connected.', status: 'done', kind: 'tool' });
-  if (routing.useCalendar) steps.push({ title: options?.calendarConnected ? 'Reading calendar context' : 'Checking calendar connection', detail: options?.calendarConnected ? 'Kivo reviews schedule context and upcoming events.' : 'Calendar context was requested but may not be connected.', status: 'done', kind: 'tool' });
-  if (routing.useWebSearch) steps.push({ title: options?.fallback ? 'Web search unavailable' : 'Checking current information', detail: options?.fallback ? 'Kivo continues safely without pretending to have live sources.' : 'Kivo uses current information when needed.', status: 'done', kind: 'search' });
+function buildExecutionSteps(
+  message: string,
+  routing: ToolRouting,
+  options?: {
+    calendarConnected?: boolean;
+    gmailConnected?: boolean;
+    outlookConnected?: boolean;
+    fallback?: boolean;
+    hasImages?: boolean;
+    action?: AgentAction;
+    actionResult?: AgentActionResult | null;
+  },
+): ExecutionStep[] {
+  if (routing.needsClarification) {
+    return [
+      {
+        title: 'Clarifying request',
+        detail: 'Kivo asks only for the details needed to produce a better result.',
+        status: 'done',
+        kind: 'think',
+      },
+    ];
+  }
 
-  steps.push({ title: 'Building response', detail: 'Kivo turns the available context into a clear answer.', status: 'done', kind: 'plan' });
-  return steps.slice(0, 6);
+  if (!shouldShowExecutionSteps(message, routing) && !options?.hasImages && options?.action?.kind === 'none') return [];
+
+  const steps: ExecutionStep[] = [
+    {
+      title: 'Understanding request',
+      detail: options?.hasImages
+        ? 'Kivo reads your message and attached image.'
+        : 'Kivo identifies the goal and chooses the right context.',
+      status: 'done',
+      kind: 'think',
+    },
+  ];
+
+  if (options?.hasImages) {
+    steps.push({
+      title: 'Reading image',
+      detail: 'Kivo analyzes the visible content in the attached image.',
+      status: 'done',
+      kind: 'tool',
+    });
+  }
+
+  if (routing.useGmail) {
+    steps.push({
+      title: options?.gmailConnected ? 'Reading Gmail context' : 'Checking Gmail connection',
+      detail: options?.gmailConnected
+        ? 'Kivo reviews relevant email signals, bills, and action items.'
+        : 'Gmail context was requested but may not be connected.',
+      status: 'done',
+      kind: 'tool',
+    });
+  }
+
+  if (routing.useOutlook) {
+    steps.push({
+      title: options?.outlookConnected ? 'Reading Outlook Smart context' : 'Checking Outlook connection',
+      detail: options?.outlookConnected
+        ? 'Kivo reviews Outlook emails, calendar events, and priority signals.'
+        : 'Outlook context was requested but may not be connected.',
+      status: 'done',
+      kind: 'tool',
+    });
+  }
+
+  if (routing.useCalendar) {
+    steps.push({
+      title: options?.calendarConnected ? 'Reading calendar context' : 'Checking calendar connection',
+      detail: options?.calendarConnected
+        ? 'Kivo reviews schedule context and upcoming events.'
+        : 'Calendar context was requested but may not be connected.',
+      status: 'done',
+      kind: 'tool',
+    });
+  }
+
+  const actionExecutionStep = options?.action ? actionStep(options.action, options.actionResult) : null;
+  if (actionExecutionStep) steps.push(actionExecutionStep);
+
+  if (routing.useWebSearch) {
+    steps.push({
+      title: options?.fallback ? 'Web search unavailable' : 'Checking current information',
+      detail: options?.fallback
+        ? 'Kivo continues safely without pretending to have live sources.'
+        : 'Kivo uses current information when needed.',
+      status: 'done',
+      kind: 'search',
+    });
+  }
+
+  steps.push({
+    title: 'Building response',
+    detail: 'Kivo turns the available context into a clear answer.',
+    status: 'done',
+    kind: 'plan',
+  });
+
+  return steps.slice(0, 7);
 }
 
 async function buildClarifyingAnswer(req: AgentRequest, memoryBrief?: string) {
@@ -208,7 +345,14 @@ async function buildClarifyingAnswer(req: AgentRequest, memoryBrief?: string) {
       maxTokens: 260,
       temperature: 0.2,
       messages: [
-        { role: 'system', content: [KIVO_SYSTEM_PROMPT, memoryBrief ? `\n${memoryBrief}` : '', 'The user request is missing important details. Ask 1-3 specific clarifying questions. Use the same language as the user.'].join('\n') },
+        {
+          role: 'system',
+          content: [
+            KIVO_SYSTEM_PROMPT,
+            memoryBrief ? `\n${memoryBrief}` : '',
+            'The user request is missing important details. Ask 1-3 specific clarifying questions. Use the same language as the user.',
+          ].join('\n'),
+        },
         { role: 'user', content: safeUserMessage(req.message) },
       ],
     });
@@ -249,17 +393,44 @@ function formatGmailForPrompt(result: GmailToolResult) {
   return lines.join('\n');
 }
 
-function buildPrivateContext(options: { memoryBrief?: string; calendarContext?: string; gmailContext?: string; outlookContext?: string }) {
-  const sections = [options.memoryBrief, options.calendarContext, options.gmailContext, options.outlookContext].filter(Boolean);
+function buildPrivateContext(options: {
+  memoryBrief?: string;
+  calendarContext?: string;
+  gmailContext?: string;
+  outlookContext?: string;
+  actionContext?: string;
+}) {
+  const sections = [
+    options.memoryBrief,
+    options.calendarContext,
+    options.gmailContext,
+    options.outlookContext,
+    options.actionContext,
+  ].filter(Boolean);
+
   if (!sections.length) return '';
-  return ['Private context for the assistant:', 'Use this context only when relevant to the current request.', 'Do not reveal internal tool details, raw tokens, IDs, or implementation details.', '', ...sections].join('\n\n');
+
+  return [
+    'Private context for the assistant:',
+    'Use this context only when relevant to the current request.',
+    'Do not reveal internal tool details, raw tokens, IDs, or implementation details.',
+    '',
+    ...sections,
+  ].join('\n\n');
 }
 
 function withStructuredData(base: Omit<AgentResult, 'structuredData'>, structuredData: any): AgentResult {
   return { ...base, structuredData } as AgentResult;
 }
 
-async function runModelWithContext(req: AgentRequest, options: { useWebSearch: boolean; privateContext?: string; images?: { url?: string; base64?: string; mimeType?: string }[] }) {
+async function runModelWithContext(
+  req: AgentRequest,
+  options: {
+    useWebSearch: boolean;
+    privateContext?: string;
+    images?: ImageModelAttachment[];
+  },
+) {
   const safeMessage = safeUserMessage(req.message);
   const messages = [
     { role: 'system' as const, content: KIVO_SYSTEM_PROMPT },
@@ -273,7 +444,7 @@ async function runModelWithContext(req: AgentRequest, options: { useWebSearch: b
       agent: req.agent,
       mode: req.mode,
       context: req.context,
-      forceModel: hasImages ? 'groq:vision' : options.useWebSearch ? 'groq:compound' : undefined,
+      forceModel: hasImages ? 'groq:vision' : options.useWebSearch ? 'groq:search' : undefined,
       maxTokens: hasImages ? 900 : options.useWebSearch ? 1000 : 900,
       messages,
       images: options.images,
@@ -309,6 +480,27 @@ async function persistRunAndMemories(req: AgentRequest, answer: string, result: 
   } catch {}
 }
 
+function hasConfirmedAction(req: AgentRequest, action: AgentAction) {
+  const metadata = req.metadata ?? {};
+  const confirmed = metadata.confirmed === true || metadata.confirmedAction === true;
+  const confirmedActionId = toText(metadata.confirmedActionId);
+  const confirmedActionKind = toText(metadata.confirmedActionKind);
+
+  return Boolean(
+    confirmed ||
+      (confirmedActionId && confirmedActionId === action.id) ||
+      (confirmedActionKind && confirmedActionKind === action.kind),
+  );
+}
+
+function shouldExecuteAction(action: AgentAction) {
+  return action.kind !== 'none' && action.status !== 'unsafe' && action.status !== 'blocked';
+}
+
+function shouldUseActionToolContext(action: AgentAction) {
+  return action.kind === 'gmail.scan' || action.kind === 'outlook.scan' || action.kind === 'calendar.read_today';
+}
+
 export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
   const intent = routeIntent(req.message);
   const plan = createPlan(intent, req.message);
@@ -318,37 +510,76 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
     ? { needsClarification: false, useWebSearch: false, useCalendar: false, useGmail: false, useOutlook: false, reason: 'image-attachment' }
     : await classifyToolRouting(req);
 
+  const action = hasImages ? EMPTY_AGENT_ACTION : await routeAgentAction(req);
+  const actionResult = shouldExecuteAction(action)
+    ? await executeAgentAction(action, {
+        userId: req.userId,
+        timezone: req.timezone,
+        locale: req.locale,
+        conversationId: req.conversationId,
+      }, {
+        confirmed: hasConfirmedAction(req, action),
+      })
+    : null;
+  const actionVerification = verifyAgentActionResult(action, actionResult);
+
   const memory = await getMemoryContext(req.userId, req.message);
   const memoryBrief = shouldUseMemory(memory) ? buildMemoryBrief(memory, intent) : '';
 
-  if (routing.needsClarification) {
+  if (routing.needsClarification && action.kind === 'none') {
     const answer = await buildClarifyingAnswer(req, memoryBrief);
-    const steps = buildExecutionSteps(req.message, routing, { hasImages });
-    return withStructuredData({ answer, steps, intent }, { clarification: { required: true, reason: routing.reason || 'Missing context.' }, memory: shouldUseMemory(memory) ? { used: true } : { used: false } });
+    const steps = buildExecutionSteps(req.message, routing, { hasImages, action, actionResult });
+    return withStructuredData({ answer, steps, intent }, { clarification: { required: true, reason: routing.reason || 'Missing context.' }, memory: shouldUseMemory(memory) ? { used: true } : { used: false }, action, actionResult, actionVerification });
   }
+
+  const actionProvidesGmailContext = action.kind === 'gmail.scan' && actionResult?.success;
+  const actionProvidesOutlookContext = action.kind === 'outlook.scan' && actionResult?.success;
+  const actionProvidesCalendarContext = action.kind === 'calendar.read_today' && actionResult?.success;
 
   const emptyGmail: GmailToolResult = { connected: false, messages: [], important: [], bills: [], lowPriority: [], actions: [] };
   const emptyOutlook: OutlookToolResult = { connected: false, messages: [], events: [], important: [], bills: [], lowPriority: [], actions: [] };
   const [calendar, gmail, outlook] = await Promise.all([
-    routing.useCalendar ? runCalendarTodayTool(req.userId) : Promise.resolve({ connected: false, events: [] }),
-    routing.useGmail ? runGmailTool(req.userId) : Promise.resolve(emptyGmail),
-    routing.useOutlook ? runOutlookTool(req.userId) : Promise.resolve(emptyOutlook),
+    routing.useCalendar && !actionProvidesCalendarContext
+      ? runCalendarTodayTool(req.userId)
+      : Promise.resolve({ connected: false, events: [] }),
+    routing.useGmail && !actionProvidesGmailContext
+      ? runGmailTool(req.userId)
+      : Promise.resolve(emptyGmail),
+    routing.useOutlook && !actionProvidesOutlookContext
+      ? runOutlookTool(req.userId)
+      : Promise.resolve(emptyOutlook),
   ]);
+
+  const actionContext = action.kind !== 'none'
+    ? [
+        actionResultForPrompt(actionResult),
+        buildActionVerificationPrompt(actionVerification),
+      ].join('\n\n')
+    : '';
 
   const privateContext = buildPrivateContext({
     memoryBrief,
     calendarContext: routing.useCalendar ? formatCalendarTodayForPrompt(calendar) : '',
     gmailContext: routing.useGmail ? formatGmailForPrompt(gmail) : '',
     outlookContext: routing.useOutlook ? formatOutlookForPrompt(outlook) : '',
+    actionContext,
   });
 
-  const response = await runModelWithContext(req, { useWebSearch: routing.useWebSearch, privateContext, images: imageAttachments });
+  const forceNoWebSearch = action.kind !== 'none' && !actionVerification.canClaimCompleted && actionVerification.status !== 'not_applicable';
+  const response = await runModelWithContext(req, {
+    useWebSearch: forceNoWebSearch ? false : routing.useWebSearch,
+    privateContext,
+    images: imageAttachments,
+  });
   const fallbackUsed = Boolean((response.raw as any)?.fallback);
   const sources = response.sources ?? [];
   const sourceText = sources.length ? ['', '### Sources', ...sources.slice(0, 3).map((source, index) => `${index + 1}. ${source.title ?? 'Source'}${source.url ? ` — ${source.url}` : ''}`)].join('\n') : '';
-  const answer = response.content + sourceText;
+  const rawAnswer = response.content + sourceText;
+  const answer = action.kind !== 'none'
+    ? guardAgainstFalseActionClaim(rawAnswer, actionVerification)
+    : rawAnswer;
   const documentCard = shouldCreateDocumentCard(req.message, answer) ? buildDocumentCard(answer) : null;
-  const steps = buildExecutionSteps(req.message, routing, { calendarConnected: Boolean((calendar as any)?.connected), gmailConnected: Boolean((gmail as any)?.connected), outlookConnected: Boolean((outlook as any)?.connected), fallback: fallbackUsed, hasImages }) || [];
+  const steps = buildExecutionSteps(req.message, routing, { calendarConnected: Boolean((calendar as any)?.connected || actionProvidesCalendarContext), gmailConnected: Boolean((gmail as any)?.connected || actionProvidesGmailContext), outlookConnected: Boolean((outlook as any)?.connected || actionProvidesOutlookContext), fallback: fallbackUsed, hasImages, action, actionResult }) || [];
 
   const finalResult = withStructuredData(
     { answer, steps: steps.length ? steps : plan.steps.map((step) => ({ ...step, status: 'done' })), intent, model: response.model, provider: response.provider },
@@ -357,11 +588,30 @@ export async function runKivoAgent(req: AgentRequest): Promise<AgentResult> {
       gmail: routing.useGmail ? gmail : null,
       calendar: routing.useCalendar ? calendar : null,
       outlook: routing.useOutlook ? outlook : null,
+      action,
+      actionResult,
+      actionVerification,
+      actions: action.kind !== 'none'
+        ? [
+            {
+              action: action.kind,
+              success: actionVerification.canClaimCompleted,
+              tool: action.tool === 'none' ? undefined : action.tool,
+              label: action.userVisibleLabel,
+              error: actionVerification.problems[0],
+              metadata: {
+                status: actionVerification.status,
+                verified: actionVerification.verified,
+              },
+            },
+          ]
+        : [],
       documentCard,
       sources,
       imageAttachments: hasImages ? { used: true, count: imageAttachments.length } : { used: false },
-      webSearch: routing.useWebSearch ? { used: !fallbackUsed, fallback: fallbackUsed } : { used: false },
+      webSearch: routing.useWebSearch ? { used: !fallbackUsed && !forceNoWebSearch, fallback: fallbackUsed } : { used: false },
       routing,
+      actionToolContext: shouldUseActionToolContext(action),
     },
   );
 
