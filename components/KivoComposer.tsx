@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUp, MessageCircleMore, Mic, Plus } from 'lucide-react';
-import { KivoPlusSheet } from './KivoPlusSheet';
+import { KivoPlusSheet, type ConnectorId } from './KivoPlusSheet';
 import { KivoConnectorsSheet } from './KivoConnectorsSheet';
 import { KivoModePopover } from './KivoModePopover';
 import { KivoVoiceRecorderBar } from './KivoVoiceRecorderBar';
@@ -120,6 +120,52 @@ function readImageAttachment(file: File): Promise<KivoAttachment | null> {
   });
 }
 
+function connectorFromUrlParams(params: URLSearchParams): ConnectorId | null {
+  const connector = params.get('connector') || params.get('connectorId');
+  if (
+    connector === 'google-drive' ||
+    connector === 'gmail' ||
+    connector === 'google-calendar' ||
+    connector === 'outlook-calendar' ||
+    connector === 'outlook-mail'
+  ) {
+    return connector;
+  }
+
+  const connected = params.get('connected');
+  if (connected === 'drive' || connected === 'google-drive') return 'google-drive';
+  if (connected === 'gmail') return 'gmail';
+  if (connected === 'calendar' || connected === 'google-calendar') return 'google-calendar';
+  if (connected === 'outlook-calendar') return 'outlook-calendar';
+  if (connected === 'outlook-mail') return 'outlook-mail';
+
+  if (params.has('drive')) return 'google-drive';
+  if (params.has('gmail')) return 'gmail';
+  if (params.has('calendar')) return 'google-calendar';
+  if (params.has('outlook-calendar')) return 'outlook-calendar';
+  if (params.has('outlook-mail') || params.has('outlook')) return 'outlook-mail';
+
+  return null;
+}
+
+function removeConnectorUrlParams() {
+  const url = new URL(window.location.href);
+  const keys = ['connected', 'connector', 'connectorId', 'drive', 'gmail', 'calendar', 'outlook', 'outlook-calendar', 'outlook-mail'];
+  let changed = false;
+
+  for (const key of keys) {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState({}, '', nextUrl);
+  }
+}
+
 export function KivoComposer({
   onFocusChange,
   onSubmitMessage,
@@ -133,6 +179,7 @@ export function KivoComposer({
   const [isPlusOpen, setIsPlusOpen] = useState(false);
   const [isConnectorsOpen, setIsConnectorsOpen] = useState(false);
   const [isModeOpen, setIsModeOpen] = useState(false);
+  const [pendingConnectorId, setPendingConnectorId] = useState<ConnectorId | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [visualViewportState, setVisualViewportState] = useState<VisualViewportState>({
@@ -153,6 +200,17 @@ export function KivoComposer({
     !isPlusOpen &&
     !isConnectorsOpen &&
     !isModeOpen;
+
+  useEffect(() => {
+    const connectorId = connectorFromUrlParams(new URLSearchParams(window.location.search));
+    if (!connectorId) return;
+
+    setPendingConnectorId(connectorId);
+    setIsConnectorsOpen(false);
+    setIsModeOpen(false);
+    setIsPlusOpen(true);
+    window.setTimeout(removeConnectorUrlParams, 350);
+  }, []);
 
   useEffect(() => {
     const nextConversationKey = conversationId ?? null;
@@ -375,7 +433,13 @@ export function KivoComposer({
       ) : null}
 
       <KivoVoiceRecorderBar open={isRecording} seconds={recordSeconds} onCancel={stopRecording} onConfirm={stopRecording} />
-      <KivoPlusSheet open={isPlusOpen} onClose={() => setIsPlusOpen(false)} onAddFiles={openImagePicker} />
+      <KivoPlusSheet
+        open={isPlusOpen}
+        onClose={() => setIsPlusOpen(false)}
+        onAddFiles={openImagePicker}
+        initialConnectorId={pendingConnectorId}
+        onInitialConnectorHandled={() => setPendingConnectorId(null)}
+      />
       <KivoConnectorsSheet open={isConnectorsOpen} onClose={() => setIsConnectorsOpen(false)} />
       <KivoModePopover open={isModeOpen} onClose={() => setIsModeOpen(false)} />
     </>
