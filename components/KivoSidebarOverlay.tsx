@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { CalendarDays, FileText, Home, SquarePen } from 'lucide-react';
+import { CalendarDays, FileText, Home, SquarePen, Trash2, PencilLine } from 'lucide-react';
 
 export type SidebarFilter = 'all' | 'favorites' | 'scheduled';
 
@@ -39,8 +39,16 @@ type MenuItemProps = {
   onClick?: () => void;
 };
 
+type RecentItemProps = {
+  title: string;
+  active?: boolean;
+  onClick?: () => void;
+  onLongPress?: () => void;
+};
+
 const DRAWER_CLOSE_TRANSLATE = -430;
 const DRAWER_ANIMATION_MS = 320;
+const LONG_PRESS_MS = 440;
 
 const fallbackRecent = [
   { id: 'fallback-weekly-planning', title: 'Weekly planning for Kivo' },
@@ -51,11 +59,11 @@ const fallbackRecent = [
   { id: 'fallback-memory', title: 'Memory system notes' },
 ];
 
-function triggerKivoHaptic(kind: 'open' | 'close') {
+function triggerKivoHaptic(kind: 'open' | 'close' | 'action') {
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
 
   try {
-    navigator.vibrate(kind === 'open' ? [10, 18, 10] : 14);
+    navigator.vibrate(kind === 'open' ? [10, 18, 10] : kind === 'action' ? 12 : 14);
   } catch {
     // Some browsers expose navigator.vibrate but block it. Ignore safely.
   }
@@ -90,11 +98,63 @@ function MenuItem({ icon, label, active = false, href, onClick }: MenuItemProps)
   );
 }
 
-function RecentItem({ title, active = false, onClick }: { title: string; active?: boolean; onClick?: () => void }) {
+function RecentItem({ title, active = false, onClick, onLongPress }: RecentItemProps) {
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressTriggeredRef = useRef(false);
+
+  function clearLongPressTimer() {
+    if (longPressTimerRef.current === null) return;
+    window.clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+  }
+
+  function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
+    if (!onLongPress) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    longPressTriggeredRef.current = false;
+    clearLongPressTimer();
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
+      longPressTriggeredRef.current = true;
+      triggerKivoHaptic('action');
+      onLongPress();
+    }, LONG_PRESS_MS);
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLButtonElement>) {
+    if (!onLongPress || longPressTimerRef.current === null) return;
+
+    const target = event.currentTarget;
+    const rect = target.getBoundingClientRect();
+    const isOutside = event.clientX < rect.left - 10 || event.clientX > rect.right + 10 || event.clientY < rect.top - 10 || event.clientY > rect.bottom + 10;
+    if (isOutside) clearLongPressTimer();
+  }
+
+  function handlePointerUp() {
+    clearLongPressTimer();
+  }
+
+  function handleClick() {
+    if (longPressTriggeredRef.current) {
+      longPressTriggeredRef.current = false;
+      return;
+    }
+
+    onClick?.();
+  }
+
+  useEffect(() => clearLongPressTimer, []);
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onContextMenu={(event) => event.preventDefault()}
+      onClick={handleClick}
       className={`block min-h-[48px] w-full rounded-[14px] px-[4px] py-[12px] text-left transition active:scale-[0.995] ${
         active ? 'bg-white/46' : 'hover:bg-white/34'
       }`}
@@ -106,6 +166,60 @@ function RecentItem({ title, active = false, onClick }: { title: string; active?
   );
 }
 
+function ConversationActionSheet({
+  conversation,
+  onClose,
+  onRename,
+  onDelete,
+}: {
+  conversation: KivoConversation;
+  onClose: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-30 flex items-end bg-black/[0.06] px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] backdrop-blur-[1px]">
+      <button type="button" aria-label="Close conversation menu" onClick={onClose} className="absolute inset-0" />
+
+      <div className="relative z-10 w-full overflow-hidden rounded-[28px] bg-[#fbfbfc]/96 p-[8px] shadow-[0_22px_70px_rgba(15,23,42,0.16)] ring-1 ring-black/[0.05] backdrop-blur-2xl">
+        <div className="px-[16px] pb-[8px] pt-[12px]">
+          <p className="truncate text-[14px] font-medium tracking-[-0.02em] text-[#777982]">
+            {conversation.title || 'Untitled conversation'}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onRename}
+          className="flex h-[54px] w-full items-center gap-[14px] rounded-[20px] px-[16px] text-left text-[17px] font-medium tracking-[-0.035em] text-[#17181b] transition active:scale-[0.99] active:bg-black/[0.035]"
+        >
+          <PencilLine size={20} strokeWidth={1.9} />
+          Rename
+        </button>
+
+        <button
+          type="button"
+          onClick={onDelete}
+          className="flex h-[54px] w-full items-center gap-[14px] rounded-[20px] px-[16px] text-left text-[17px] font-medium tracking-[-0.035em] text-[#d33a32] transition active:scale-[0.99] active:bg-[#d33a32]/[0.06]"
+        >
+          <Trash2 size={20} strokeWidth={1.9} />
+          Delete conversation
+        </button>
+
+        <div className="my-[6px] h-px bg-black/[0.06]" />
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-[54px] w-full items-center justify-center rounded-[20px] text-[17px] font-medium tracking-[-0.035em] text-[#17181b] transition active:scale-[0.99] active:bg-black/[0.035]"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function KivoSidebarOverlay({
   open,
   onClose,
@@ -113,10 +227,13 @@ export function KivoSidebarOverlay({
   activeConversationId,
   onNewChat,
   onOpenConversation,
+  onRenameConversation,
+  onDeleteConversation,
 }: KivoSidebarOverlayProps) {
   const [dragX, setDragX] = useState(DRAWER_CLOSE_TRANSLATE);
   const [isDragging, setIsDragging] = useState(false);
   const [isPresent, setIsPresent] = useState(open);
+  const [actionConversation, setActionConversation] = useState<KivoConversation | null>(null);
   const dragStartXRef = useRef(0);
   const dragStartYRef = useRef(0);
   const dragStartTimeRef = useRef(0);
@@ -124,8 +241,8 @@ export function KivoSidebarOverlay({
   const closeTimerRef = useRef<number | null>(null);
 
   const recentItems = conversations.length
-    ? conversations.slice(0, 12).map((conversation) => ({ id: conversation.id, title: conversation.title || 'Untitled conversation' }))
-    : fallbackRecent;
+    ? conversations.slice(0, 12).map((conversation) => ({ ...conversation, title: conversation.title || 'Untitled conversation' }))
+    : fallbackRecent.map((item) => ({ ...item, updated_at: '', is_favorite: null, status: null }));
 
   useEffect(() => {
     if (!isPresent && !open) return;
@@ -158,6 +275,7 @@ export function KivoSidebarOverlay({
 
     setIsPresent(true);
     setIsDragging(false);
+    setActionConversation(null);
     dragModeRef.current = 'idle';
     setDragX(DRAWER_CLOSE_TRANSLATE);
     triggerKivoHaptic('open');
@@ -173,6 +291,7 @@ export function KivoSidebarOverlay({
     if (open || !isPresent) return;
 
     setIsDragging(false);
+    setActionConversation(null);
     dragModeRef.current = 'idle';
     setDragX(DRAWER_CLOSE_TRANSLATE);
 
@@ -198,13 +317,14 @@ export function KivoSidebarOverlay({
 
     triggerKivoHaptic('close');
     setIsDragging(false);
+    setActionConversation(null);
     dragModeRef.current = 'idle';
     setDragX(DRAWER_CLOSE_TRANSLATE);
     onClose();
   }
 
   function handlePointerDown(event: PointerEvent<HTMLElement>) {
-    if (closeTimerRef.current !== null) return;
+    if (actionConversation || closeTimerRef.current !== null) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     dragStartXRef.current = event.clientX;
@@ -215,7 +335,7 @@ export function KivoSidebarOverlay({
   }
 
   function handlePointerMove(event: PointerEvent<HTMLElement>) {
-    if (!isDragging || closeTimerRef.current !== null) return;
+    if (actionConversation || !isDragging || closeTimerRef.current !== null) return;
 
     const deltaX = event.clientX - dragStartXRef.current;
     const deltaY = event.clientY - dragStartYRef.current;
@@ -241,7 +361,7 @@ export function KivoSidebarOverlay({
   }
 
   function handlePointerUp(event: PointerEvent<HTMLElement>) {
-    if (!isDragging || closeTimerRef.current !== null) return;
+    if (actionConversation || !isDragging || closeTimerRef.current !== null) return;
 
     const deltaX = event.clientX - dragStartXRef.current;
     const deltaY = event.clientY - dragStartYRef.current;
@@ -270,6 +390,29 @@ export function KivoSidebarOverlay({
   function startNewChatAndClose() {
     triggerKivoHaptic('close');
     onNewChat();
+  }
+
+  function renameActionConversation() {
+    if (!actionConversation) return;
+
+    const nextTitle = window.prompt('Rename conversation', actionConversation.title || 'Untitled conversation')?.trim();
+    if (!nextTitle || nextTitle === actionConversation.title) {
+      setActionConversation(null);
+      return;
+    }
+
+    onRenameConversation(actionConversation.id, nextTitle);
+    setActionConversation(null);
+  }
+
+  function deleteActionConversation() {
+    if (!actionConversation) return;
+
+    const confirmed = window.confirm(`Delete “${actionConversation.title || 'Untitled conversation'}”?`);
+    if (!confirmed) return;
+
+    onDeleteConversation(actionConversation.id);
+    setActionConversation(null);
   }
 
   if (!isPresent && !open) return null;
@@ -328,6 +471,7 @@ export function KivoSidebarOverlay({
                     title={item.title}
                     active={activeConversationId === item.id}
                     onClick={isRealConversation ? () => openConversationAndClose(item.id) : undefined}
+                    onLongPress={isRealConversation ? () => setActionConversation(item as KivoConversation) : undefined}
                   />
                 );
               })}
@@ -360,6 +504,15 @@ export function KivoSidebarOverlay({
           </footer>
         </div>
       </aside>
+
+      {actionConversation ? (
+        <ConversationActionSheet
+          conversation={actionConversation}
+          onClose={() => setActionConversation(null)}
+          onRename={renameActionConversation}
+          onDelete={deleteActionConversation}
+        />
+      ) : null}
     </div>
   );
 }
