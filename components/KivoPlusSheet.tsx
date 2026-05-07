@@ -168,6 +168,11 @@ function getConnectorButtonLabel(connected?: boolean) {
   return connected ? 'Connected' : 'Connect';
 }
 
+function getConnectorDetailButtonLabel(connected: boolean, loading: boolean) {
+  if (loading) return connected ? 'Disconnecting…' : 'Connecting…';
+  return connected ? 'Disconnect' : 'Connect';
+}
+
 function ConnectorRow({ item, onOpen, connected }: { item: ConnectorItem; onOpen: () => void; connected?: boolean }) {
   return (
     <div className="flex h-[50px] items-center gap-[18px]">
@@ -189,7 +194,21 @@ function DetailRow({ label, value, external = false }: { label: string; value?: 
   );
 }
 
-function ConnectorDetailView({ connector, connected, loading, onBack, onConnect }: { connector: ConnectorItem; connected: boolean; loading: boolean; onBack: () => void; onConnect: () => void }) {
+function ConnectorDetailView({
+  connector,
+  connected,
+  loading,
+  errorMessage,
+  onBack,
+  onPrimaryAction,
+}: {
+  connector: ConnectorItem;
+  connected: boolean;
+  loading: boolean;
+  errorMessage?: string | null;
+  onBack: () => void;
+  onPrimaryAction: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-[120] overflow-hidden bg-white px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] pt-[calc(env(safe-area-inset-top)+10px)] text-[#111113]">
       <header className="relative mb-[26px] flex h-[42px] items-center justify-center">
@@ -204,7 +223,19 @@ function ConnectorDetailView({ connector, connected, loading, onBack, onConnect 
         </div>
         <div className="min-w-0 pt-[1px]">
           <h1 className="mb-[16px] truncate text-[31px] font-semibold leading-none tracking-[-0.055em] text-[#111113]">{connector.title}</h1>
-          <button type="button" onClick={onConnect} disabled={loading || connected} className="h-[42px] rounded-full bg-black px-[31px] text-[16px] font-medium tracking-[-0.035em] text-white transition active:scale-[0.98]">{getConnectorButtonLabel(connected)}</button>
+          <button
+            type="button"
+            onClick={onPrimaryAction}
+            disabled={loading}
+            className="h-[42px] rounded-full bg-black px-[31px] text-[16px] font-medium tracking-[-0.035em] text-white transition active:scale-[0.98] disabled:opacity-60"
+          >
+            {getConnectorDetailButtonLabel(connected, loading)}
+          </button>
+          {errorMessage ? (
+            <p className="mt-[10px] max-w-[220px] text-[13px] font-medium leading-[1.25] tracking-[-0.025em] text-[#d33a32]">
+              {errorMessage}
+            </p>
+          ) : null}
         </div>
       </section>
 
@@ -230,42 +261,57 @@ export function KivoPlusSheet({ open, onClose, onAddFiles }: KivoPlusSheetProps)
   const [selectedConnector, setSelectedConnector] = useState<ConnectorItem | null>(null);
   const [connectedMap, setConnectedMap] = useState<Record<ConnectorId, boolean>>(emptyConnectedMap);
   const [loadingStatusMap, setLoadingStatusMap] = useState<Partial<Record<ConnectorId, boolean>>>({});
+  const [actionLoadingMap, setActionLoadingMap] = useState<Partial<Record<ConnectorId, boolean>>>({});
+  const [actionErrorMap, setActionErrorMap] = useState<Partial<Record<ConnectorId, string>>>({});
 
   useEffect(() => {
     if (!open) return;
     setIsVisible(false);
     setSelectedConnector(null);
+    setActionErrorMap({});
     const frame = requestAnimationFrame(() => setIsVisible(true));
     return () => cancelAnimationFrame(frame);
   }, [open]);
 
+  async function getCurrentUserId() {
+    const { data } = await supabase.auth.getUser();
+    return data.user?.id ?? null;
+  }
+
+  async function syncStatuses() {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      setConnectedMap(emptyConnectedMap);
+      setLoadingStatusMap({});
+      return;
+    }
+
+    setLoadingStatusMap(Object.fromEntries(connectors.map((connector) => [connector.id, true])) as Partial<Record<ConnectorId, boolean>>);
+    const results = await Promise.all(connectors.map(async (connector) => {
+      try {
+        const response = await fetch(statusEndpoints[connector.id](userId), { cache: 'no-store' });
+        if (!response.ok) return [connector.id, false] as const;
+        const payload = await response.json();
+        return [connector.id, Boolean(payload.connected)] as const;
+      } catch {
+        return [connector.id, false] as const;
+      }
+    }));
+
+    setConnectedMap((current) => ({ ...current, ...Object.fromEntries(results) } as Record<ConnectorId, boolean>));
+    setLoadingStatusMap({});
+  }
+
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    async function syncStatuses() {
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id;
-      if (!userId || cancelled) {
-        setConnectedMap(emptyConnectedMap);
-        setLoadingStatusMap({});
-        return;
-      }
-      setLoadingStatusMap(Object.fromEntries(connectors.map((connector) => [connector.id, true])) as Partial<Record<ConnectorId, boolean>>);
-      const results = await Promise.all(connectors.map(async (connector) => {
-        try {
-          const response = await fetch(statusEndpoints[connector.id](userId), { cache: 'no-store' });
-          if (!response.ok) return [connector.id, false] as const;
-          const payload = await response.json();
-          return [connector.id, Boolean(payload.connected)] as const;
-        } catch {
-          return [connector.id, false] as const;
-        }
-      }));
+
+    async function run() {
       if (cancelled) return;
-      setConnectedMap((current) => ({ ...current, ...Object.fromEntries(results) } as Record<ConnectorId, boolean>));
-      setLoadingStatusMap({});
+      await syncStatuses();
     }
-    syncStatuses();
+
+    run();
     return () => { cancelled = true; };
   }, [open]);
 
@@ -285,11 +331,57 @@ export function KivoPlusSheet({ open, onClose, onAddFiles }: KivoPlusSheetProps)
   if (!open) return null;
 
   async function connectConnector(connector: ConnectorItem) {
-    if (connectedMap[connector.id] || loadingStatusMap[connector.id]) return;
-    const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id;
-    if (!userId) return;
-    window.location.href = connectEndpoints[connector.id](userId);
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      setActionErrorMap((current) => ({ ...current, [connector.id]: 'Sign in again to connect this app.' }));
+      return;
+    }
+
+    setActionErrorMap((current) => ({ ...current, [connector.id]: '' }));
+    window.location.assign(connectEndpoints[connector.id](userId));
+  }
+
+  async function disconnectConnector(connector: ConnectorItem) {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      setActionErrorMap((current) => ({ ...current, [connector.id]: 'Sign in again to disconnect this app.' }));
+      return;
+    }
+
+    const confirmed = window.confirm(`Disconnect ${connector.title}?`);
+    if (!confirmed) return;
+
+    setActionLoadingMap((current) => ({ ...current, [connector.id]: true }));
+    setActionErrorMap((current) => ({ ...current, [connector.id]: '' }));
+
+    try {
+      const response = await fetch('/api/integrations/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, connectorId: connector.id }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || 'Disconnect failed');
+      }
+
+      setConnectedMap((current) => ({ ...current, [connector.id]: false }));
+      await syncStatuses();
+    } catch (error) {
+      setActionErrorMap((current) => ({ ...current, [connector.id]: error instanceof Error ? error.message : 'Disconnect failed' }));
+    } finally {
+      setActionLoadingMap((current) => ({ ...current, [connector.id]: false }));
+    }
+  }
+
+  async function handleConnectorPrimaryAction(connector: ConnectorItem) {
+    if (connectedMap[connector.id]) {
+      await disconnectConnector(connector);
+      return;
+    }
+
+    await connectConnector(connector);
   }
 
   return (
@@ -327,7 +419,14 @@ export function KivoPlusSheet({ open, onClose, onAddFiles }: KivoPlusSheetProps)
       </section>
 
       {selectedConnector ? (
-        <ConnectorDetailView connector={selectedConnector} connected={connectedMap[selectedConnector.id]} loading={Boolean(loadingStatusMap[selectedConnector.id])} onBack={() => setSelectedConnector(null)} onConnect={() => { void connectConnector(selectedConnector); }} />
+        <ConnectorDetailView
+          connector={selectedConnector}
+          connected={connectedMap[selectedConnector.id]}
+          loading={Boolean(loadingStatusMap[selectedConnector.id] || actionLoadingMap[selectedConnector.id])}
+          errorMessage={actionErrorMap[selectedConnector.id] || null}
+          onBack={() => setSelectedConnector(null)}
+          onPrimaryAction={() => { void handleConnectorPrimaryAction(selectedConnector); }}
+        />
       ) : null}
     </div>
   );
