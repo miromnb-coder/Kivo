@@ -178,10 +178,10 @@ function ConversationActionSheet({
   onDelete: () => void;
 }) {
   return (
-    <div className="absolute inset-0 z-30 flex items-end bg-black/[0.06] px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)] backdrop-blur-[1px]">
+    <div className="absolute inset-0 z-30 flex items-end bg-black/[0.16] px-[18px] pb-[calc(env(safe-area-inset-bottom)+18px)]">
       <button type="button" aria-label="Close conversation menu" onClick={onClose} className="absolute inset-0" />
 
-      <div className="relative z-10 w-full overflow-hidden rounded-[28px] bg-[#fbfbfc]/96 p-[8px] shadow-[0_22px_70px_rgba(15,23,42,0.16)] ring-1 ring-black/[0.05] backdrop-blur-2xl">
+      <div className="relative z-10 w-full overflow-hidden rounded-[28px] bg-[#fbfbfc] p-[8px] shadow-[0_22px_70px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.06]">
         <div className="px-[16px] pb-[8px] pt-[12px]">
           <p className="truncate text-[14px] font-medium tracking-[-0.02em] text-[#777982]">
             {conversation.title || 'Untitled conversation'}
