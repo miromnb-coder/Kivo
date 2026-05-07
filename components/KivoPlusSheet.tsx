@@ -16,10 +16,14 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import { useKivoSheetMotion } from './useKivoSheetMotion';
 
+export type ConnectorId = 'google-drive' | 'gmail' | 'google-calendar' | 'outlook-calendar' | 'outlook-mail';
+
 type KivoPlusSheetProps = {
   open: boolean;
   onClose: () => void;
   onAddFiles?: () => void;
+  initialConnectorId?: ConnectorId | null;
+  onInitialConnectorHandled?: () => void;
 };
 
 type ActionItem = {
@@ -28,8 +32,6 @@ type ActionItem = {
   badge?: string;
   action?: 'add-files';
 };
-
-type ConnectorId = 'google-drive' | 'gmail' | 'google-calendar' | 'outlook-calendar' | 'outlook-mail';
 
 type ConnectorItem = {
   id: ConnectorId;
@@ -117,9 +119,14 @@ const connectEndpoints: Record<ConnectorId, (userId: string) => string> = {
   'google-drive': (userId) => `/api/integrations/google/drive/connect?userId=${encodeURIComponent(userId)}`,
   gmail: (userId) => `/api/integrations/google/gmail/connect?userId=${encodeURIComponent(userId)}`,
   'google-calendar': (userId) => `/api/integrations/google/calendar/connect?userId=${encodeURIComponent(userId)}`,
-  'outlook-calendar': (userId) => `/api/integrations/microsoft/connect?userId=${encodeURIComponent(userId)}`,
-  'outlook-mail': (userId) => `/api/integrations/microsoft/connect?userId=${encodeURIComponent(userId)}`,
+  'outlook-calendar': (userId) => `/api/integrations/microsoft/connect?userId=${encodeURIComponent(userId)}&connectorId=outlook-calendar`,
+  'outlook-mail': (userId) => `/api/integrations/microsoft/connect?userId=${encodeURIComponent(userId)}&connectorId=outlook-mail`,
 };
+
+function findConnector(id?: ConnectorId | null) {
+  if (!id) return null;
+  return connectors.find((connector) => connector.id === id) ?? null;
+}
 
 function EmptyPreviewTile({ large = false, onClick }: { large?: boolean; onClick?: () => void }) {
   return (
@@ -256,7 +263,7 @@ function ConnectorDetailView({
   );
 }
 
-export function KivoPlusSheet({ open, onClose, onAddFiles }: KivoPlusSheetProps) {
+export function KivoPlusSheet({ open, onClose, onAddFiles, initialConnectorId = null, onInitialConnectorHandled }: KivoPlusSheetProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<ConnectorItem | null>(null);
   const [connectedMap, setConnectedMap] = useState<Record<ConnectorId, boolean>>(emptyConnectedMap);
@@ -267,11 +274,17 @@ export function KivoPlusSheet({ open, onClose, onAddFiles }: KivoPlusSheetProps)
   useEffect(() => {
     if (!open) return;
     setIsVisible(false);
-    setSelectedConnector(null);
+    setSelectedConnector(findConnector(initialConnectorId));
     setActionErrorMap({});
     const frame = requestAnimationFrame(() => setIsVisible(true));
+    onInitialConnectorHandled?.();
     return () => cancelAnimationFrame(frame);
-  }, [open]);
+  }, [open, initialConnectorId, onInitialConnectorHandled]);
+
+  useEffect(() => {
+    if (!open || !initialConnectorId) return;
+    setSelectedConnector(findConnector(initialConnectorId));
+  }, [open, initialConnectorId]);
 
   async function getCurrentUserId() {
     const { data } = await supabase.auth.getUser();
@@ -337,6 +350,7 @@ export function KivoPlusSheet({ open, onClose, onAddFiles }: KivoPlusSheetProps)
       return;
     }
 
+    setActionLoadingMap((current) => ({ ...current, [connector.id]: true }));
     setActionErrorMap((current) => ({ ...current, [connector.id]: '' }));
     window.location.assign(connectEndpoints[connector.id](userId));
   }
