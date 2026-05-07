@@ -145,6 +145,33 @@ function buildVisionMessages(messages: KivoModelMessage[], images: KivoModelImag
   });
 }
 
+async function fetchGroqChatCompletion(options: {
+  apiKey: string;
+  body: Record<string, unknown>;
+  isCompound: boolean;
+  signal: AbortSignal;
+}) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${options.apiKey}`,
+      ...(options.isCompound ? { 'Groq-Model-Version': '2025-07-23' } : {}),
+    },
+    body: JSON.stringify(options.body),
+    signal: options.signal,
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const message = data?.error?.message || data?.message || `Groq request failed (${res.status})`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
 export async function runGroq(input: KivoModelInput): Promise<KivoModelResult> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) throw new Error('Missing GROQ_API_KEY');
@@ -163,6 +190,7 @@ export async function runGroq(input: KivoModelInput): Promise<KivoModelResult> {
   };
 
   if (isCompound) {
+    body.tool_choice = 'auto';
     body.compound_custom = {
       tools: {
         enabled_tools: ['web_search'],
@@ -181,23 +209,12 @@ export async function runGroq(input: KivoModelInput): Promise<KivoModelResult> {
   }
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-        ...(isCompound ? { 'Groq-Model-Version': '2025-07-23' } : {}),
-      },
-      body: JSON.stringify(body),
+    const data = await fetchGroqChatCompletion({
+      apiKey,
+      body,
+      isCompound,
       signal: controller.signal,
     });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      const message = data?.error?.message || data?.message || `Groq request failed (${res.status})`;
-      throw new Error(message);
-    }
 
     const message = data?.choices?.[0]?.message;
     const content = message?.content ?? '';
