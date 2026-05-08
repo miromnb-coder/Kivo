@@ -60,14 +60,14 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
   const selectPrompt = (prompt: string) => onPromptSelect?.(prompt);
 
   return (
-    <section className={`absolute inset-x-0 top-[142px] bottom-[172px] z-20 overflow-y-auto px-[30px] pt-[4px] pb-[14px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`} aria-label="Today OS dashboard">
+    <section className={`absolute inset-x-0 top-[96px] bottom-[172px] z-20 overflow-y-auto px-[30px] pt-[4px] pb-[14px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`} aria-label="Today OS dashboard">
       <div className="mx-auto w-full max-w-[370px]">
         <div className="text-center">
           <h1 className="mx-auto whitespace-nowrap text-[29px] font-semibold leading-[1.08] tracking-[-0.064em] text-[#202024]">Good afternoon, Miro</h1>
           <p className="mt-[10px] text-[15px] font-normal leading-none tracking-[-0.035em] text-[#a4a5ab]">Your day at a glance</p>
         </div>
 
-        <SoftCard className="mt-[31px] px-[17px] pb-[12px] pt-[14px]">
+        <SoftCard className="mt-[24px] px-[17px] pb-[12px] pt-[14px]">
           <CardHeader icon={<Target size={15} strokeWidth={1.8} />} title="Top priorities" />
           <div className="mt-[13px]">
             {priorities.map(([title, subtitle], index) => (
