@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import { KivoComposer } from './KivoComposer';
 import { KivoTopBar } from './KivoTopBar';
+import { KivoTodayDashboard } from './KivoTodayDashboard';
 import { KivoChatMessages, type KivoChatMessage } from './KivoChatMessages';
 import { KivoSidebarOverlay, type KivoConversation, type SidebarFilter } from './KivoSidebarOverlay';
 import { type KivoAttachment } from './KivoAttachments';
@@ -406,6 +407,9 @@ export function KivoStartScreen() {
     }
   }
 
+  const showTodayDashboard = !isKeyboardMode && messages.length === 0 && !loading;
+  const composerMessageCount = showTodayDashboard ? 1 : messages.length;
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f3f3f5]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,#ffffff_0%,#f5f5f6_60%,#f0f0f2_100%)]" />
@@ -424,14 +428,11 @@ export function KivoStartScreen() {
 
           <KivoChatMessages messages={messages} loading={loading} />
 
-          <section className={`absolute left-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-[36px] text-center transition-all duration-300 ease-out ${isKeyboardMode || messages.length > 0 ? 'top-[20%] scale-[0.9] opacity-0 pointer-events-none' : 'top-[51%] scale-100 opacity-100'}`}>
-            <h1 className="mx-auto max-w-[320px] text-[32px] leading-[1.2] tracking-[-0.04em] text-[#202024]">How can I help you today?</h1>
-            <p className="mt-[18px] text-[17px] tracking-[-0.02em] text-[#b2b2b7]">Your personal AI assistant</p>
-          </section>
+          {showTodayDashboard ? <KivoTodayDashboard /> : null}
 
           <KivoComposer
             conversationId={activeConversationId}
-            messageCount={messages.length}
+            messageCount={composerMessageCount}
             onFocusChange={setIsKeyboardMode}
             onSubmitMessage={handleSend}
             disabled={loading}
