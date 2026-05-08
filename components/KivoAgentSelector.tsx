@@ -42,13 +42,13 @@ export function KivoAgentSelector({ open, onClose }: Props) {
       />
 
       <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top)+52px)] flex justify-center px-[20px]">
-        <div className="relative w-[208px] max-w-[calc(100vw-96px)] overflow-hidden rounded-[13px] bg-white/92 shadow-[0_18px_54px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.045] backdrop-blur-2xl">
+        <div className="relative w-[208px] max-w-[calc(100vw-96px)] overflow-hidden rounded-[13px] bg-white shadow-[0_18px_54px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.055]">
           {kivoModes.map((mode, index) => (
             <button
               key={mode.title}
               type="button"
               onClick={onClose}
-              className="grid w-full grid-cols-[26px_1fr] gap-[9px] px-[13px] py-[11px] text-left transition hover:bg-black/[0.018] active:scale-[0.995]"
+              className="grid w-full grid-cols-[26px_1fr] gap-[9px] bg-white px-[13px] py-[11px] text-left transition hover:bg-[#f7f7f8] active:scale-[0.995]"
             >
               <span className="flex h-[21px] items-center justify-center pt-[1px] text-[#202024]">
                 {mode.selected ? <Check size={14} strokeWidth={2.15} /> : null}
