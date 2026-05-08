@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   CalendarDays,
   ChevronRight,
@@ -13,6 +13,7 @@ import {
   Target,
   Zap,
 } from 'lucide-react';
+import { createSupabaseBrowser } from '@/lib/supabase/client';
 
 type KivoTodayDashboardProps = {
   className?: string;
@@ -22,6 +23,11 @@ type KivoTodayDashboardProps = {
 type CardHeaderProps = {
   icon: ReactNode;
   title: string;
+};
+
+type LivingHeadlineProps = {
+  phrases: string[];
+  firstName: string;
 };
 
 const priorities = [
@@ -56,14 +62,149 @@ function CardHeader({ icon, title }: CardHeaderProps) {
   );
 }
 
+function getFirstName(value?: string | null) {
+  const clean = value?.replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+  return clean.split(' ')[0]?.slice(0, 24) ?? '';
+}
+
+function LivingHeadline({ phrases, firstName }: LivingHeadlineProps) {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const phrase = phrases[phraseIndex % phrases.length] ?? phrases[0] ?? 'Here’s your day';
+  const letters = Array.from(phrase);
+  const nameStartIndex = firstName && phrase.endsWith(`, ${firstName}`) ? phrase.length - firstName.length : -1;
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setPhraseIndex((current) => current + 1);
+    }, 6200);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return (
+    <h1
+      key={phrase}
+      className="kivo-living-headline mx-auto h-[34px] whitespace-nowrap text-[30px] font-semibold leading-[1.08] tracking-[-0.064em] text-[#202024]"
+      aria-label={phrase}
+    >
+      {letters.map((letter, index) => {
+        const isSpace = letter === ' ';
+        const isName = nameStartIndex >= 0 && index >= nameStartIndex;
+        const shouldHop = !isSpace && (isName || (index + phraseIndex) % 5 === 0);
+        const delay = 28 + index * 22;
+        const hopDelay = delay + 190;
+
+        return (
+          <span
+            key={`${phrase}-${letter}-${index}`}
+            aria-hidden="true"
+            className={`kivo-living-letter ${isName ? 'kivo-living-name' : ''}`}
+            style={{
+              animationDelay: shouldHop ? `${delay}ms, ${hopDelay}ms` : `${delay}ms`,
+              animationName: shouldHop ? 'kivoLetterReveal, kivoLetterHop' : 'kivoLetterReveal',
+              animationDuration: shouldHop ? '620ms, 520ms' : '620ms',
+              animationTimingFunction: shouldHop
+                ? 'cubic-bezier(0.16,1,0.3,1), cubic-bezier(0.34,1.56,0.64,1)'
+                : 'cubic-bezier(0.16,1,0.3,1)',
+              animationFillMode: 'both',
+            }}
+          >
+            {isSpace ? '\u00A0' : letter}
+          </span>
+        );
+      })}
+    </h1>
+  );
+}
+
 export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoTodayDashboardProps) {
+  const [firstName, setFirstName] = useState('');
   const selectPrompt = (prompt: string) => onPromptSelect?.(prompt);
+
+  const headlinePhrases = useMemo(
+    () => [
+      firstName ? `Here’s your day, ${firstName}` : 'Here’s your day',
+      'Your next step is clear',
+      'Kivo is ready',
+      '3 things need your focus',
+    ],
+    [firstName],
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUserName() {
+      try {
+        const supabase = createSupabaseBrowser();
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData.user;
+        if (!user) return;
+
+        const metadata = user.user_metadata ?? {};
+        const metadataName =
+          typeof metadata.full_name === 'string'
+            ? metadata.full_name
+            : typeof metadata.name === 'string'
+              ? metadata.name
+              : typeof metadata.display_name === 'string'
+                ? metadata.display_name
+                : '';
+
+        const { data: profile } = await supabase
+          .from('kivo_profiles')
+          .select('display_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const resolvedName = getFirstName(profile?.display_name) || getFirstName(metadataName) || getFirstName(user.email?.split('@')[0]);
+        if (mounted && resolvedName) setFirstName(resolvedName);
+      } catch {
+        // The headline still works without a profile name.
+      }
+    }
+
+    loadUserName();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <section className={`absolute inset-x-0 top-[88px] bottom-[170px] z-20 overflow-y-auto px-[22px] pt-[4px] pb-[12px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`} aria-label="Today OS dashboard">
+      <style>{`
+        @keyframes kivoLetterReveal {
+          0% { opacity: 0; filter: blur(7px); transform: translate3d(0, 9px, 0) scale(0.985); }
+          64% { opacity: 1; filter: blur(0px); transform: translate3d(0, -1px, 0) scale(1.004); }
+          100% { opacity: 1; filter: blur(0px); transform: translate3d(0, 0, 0) scale(1); }
+        }
+
+        @keyframes kivoLetterHop {
+          0%, 100% { transform: translate3d(0, 0, 0); }
+          45% { transform: translate3d(0, -3px, 0); }
+        }
+
+        .kivo-living-headline {
+          text-rendering: geometricPrecision;
+        }
+
+        .kivo-living-letter {
+          display: inline-block;
+          opacity: 0;
+          will-change: transform, opacity, filter;
+        }
+
+        .kivo-living-name {
+          color: #18181b;
+          text-shadow: 0 10px 28px rgba(124, 140, 255, 0.12);
+        }
+      `}</style>
+
       <div className="mx-auto w-full max-w-[384px]">
         <div className="text-center">
-          <h1 className="mx-auto whitespace-nowrap text-[30px] font-semibold leading-[1.08] tracking-[-0.064em] text-[#202024]">Good afternoon, Miro</h1>
+          <LivingHeadline phrases={headlinePhrases} firstName={firstName} />
           <p className="mt-[10px] text-[15.5px] font-normal leading-none tracking-[-0.035em] text-[#a4a5ab]">Your day at a glance</p>
         </div>
 
