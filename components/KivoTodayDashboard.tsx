@@ -60,14 +60,14 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
   const selectPrompt = (prompt: string) => onPromptSelect?.(prompt);
 
   return (
-    <section className={`absolute inset-x-0 top-[90px] bottom-[170px] z-20 overflow-y-auto px-[22px] pt-[4px] pb-[12px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`} aria-label="Today OS dashboard">
+    <section className={`absolute inset-x-0 top-[88px] bottom-[170px] z-20 overflow-y-auto px-[22px] pt-[4px] pb-[12px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`} aria-label="Today OS dashboard">
       <div className="mx-auto w-full max-w-[384px]">
         <div className="text-center">
           <h1 className="mx-auto whitespace-nowrap text-[30px] font-semibold leading-[1.08] tracking-[-0.064em] text-[#202024]">Good afternoon, Miro</h1>
           <p className="mt-[10px] text-[15.5px] font-normal leading-none tracking-[-0.035em] text-[#a4a5ab]">Your day at a glance</p>
         </div>
 
-        <SoftCard className="mt-[22px] px-[17px] pb-[12px] pt-[14px]">
+        <SoftCard className="mt-[21px] px-[17px] pb-[12px] pt-[14px]">
           <CardHeader icon={<Target size={15} strokeWidth={1.8} />} title="Top priorities" />
           <div className="mt-[12px]">
             {priorities.map(([title, subtitle], index) => (
@@ -91,7 +91,7 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
             <InnerPanel className="mt-[11px] flex h-[50px] flex-col justify-center px-[11px]">
               <div className="flex items-center gap-[9px]">
                 <EmptyCheck />
-                <p className="min-w-0 truncate text-[12.5px] font-normal leading-none tracking-[-0.032em] text-[#202024]">User research analysis</p>
+                <p className="min-w-0 truncate text-[12.5px] font-normal leading-none tracking-[-0.032em] text-[#202024]">Research analysis</p>
               </div>
               <div className="ml-[26px] mt-[8px] flex items-center gap-[5px] text-[#a3a4ab]">
                 <Clock3 size={11} strokeWidth={1.7} />
@@ -101,17 +101,15 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
           </SoftCard>
 
           <SoftCard className="h-[105px] px-[12px] py-[13px]">
-            <CardHeader icon={<CalendarDays size={15} strokeWidth={1.75} />} title="Today calendar" />
-            <div className="mt-[13px] grid grid-cols-[17px_1fr] gap-x-[7px] pl-[1px]">
-              <div className="relative row-span-3 flex flex-col items-center">
+            <CardHeader icon={<CalendarDays size={15} strokeWidth={1.75} />} title="Calendar" />
+            <div className="mt-[14px] grid grid-cols-[17px_1fr] gap-x-[7px] pl-[1px]">
+              <div className="relative row-span-2 flex flex-col items-center">
                 <span className="absolute bottom-[6px] top-[6px] w-px bg-[#dadbe0]" />
-                <span className="relative z-10 mt-[1px] h-[5.5px] w-[5.5px] rounded-full bg-[#c9cad0]" />
-                <span className="relative z-10 mt-[17px] h-[5.5px] w-[5.5px] rounded-full bg-[#c9cad0]" />
-                <span className="relative z-10 mt-[17px] h-[5.5px] w-[5.5px] rounded-full bg-[#c9cad0]" />
+                <span className="relative z-10 mt-[2px] h-[5.5px] w-[5.5px] rounded-full bg-[#c9cad0]" />
+                <span className="relative z-10 mt-[21px] h-[5.5px] w-[5.5px] rounded-full bg-[#c9cad0]" />
               </div>
-              <p className="h-[23px] truncate text-[11.5px] leading-none tracking-[-0.022em] text-[#202024]"><span className="mr-[7px] text-[#92939a]">10:00</span>Team stand-up</p>
-              <p className="h-[23px] truncate text-[11.5px] leading-none tracking-[-0.022em] text-[#202024]"><span className="mr-[7px] text-[#92939a]">13:00</span>Product review</p>
-              <p className="h-[23px] truncate text-[11.5px] leading-none tracking-[-0.022em] text-[#202024]"><span className="mr-[7px] text-[#92939a]">16:00</span>Design sync</p>
+              <p className="h-[27px] truncate text-[12px] leading-none tracking-[-0.022em] text-[#202024]"><span className="mr-[8px] text-[#92939a]">10:00</span>Stand-up</p>
+              <p className="h-[27px] truncate text-[12px] leading-none tracking-[-0.022em] text-[#202024]"><span className="mr-[8px] text-[#92939a]">13:00</span>Review</p>
             </div>
           </SoftCard>
         </div>
@@ -124,8 +122,8 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
                 <div className="flex gap-[7px]">
                   <Sparkles size={12} strokeWidth={1.65} className="mt-[1px] shrink-0 text-[#7C8CFF]" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-normal leading-[1.11] tracking-[-0.034em] text-[#202024]">Start Kivo redesign<br />for 25 min now</p>
-                    <p className="mt-[5px] truncate text-[11.5px] leading-none tracking-[-0.018em] text-[#96979f]">Focus window available</p>
+                    <p className="truncate text-[12.5px] font-normal leading-[1.11] tracking-[-0.034em] text-[#202024]">Start redesign</p>
+                    <p className="mt-[7px] truncate text-[11.5px] leading-none tracking-[-0.018em] text-[#96979f]">25 min focus window</p>
                   </div>
                 </div>
               </InnerPanel>
@@ -137,12 +135,12 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
             <div className="mt-[11px] space-y-[5px]">
               <div className="flex h-[26px] items-center gap-[7px] rounded-[11px] border border-black/[0.035] bg-[#f7f7f8]/70 px-[8px]">
                 <Mail size={12} strokeWidth={1.7} className="shrink-0 text-[#202024]" />
-                <span className="min-w-0 flex-1 truncate text-[11.5px] tracking-[-0.025em] text-[#202024]">2 pending replies</span>
+                <span className="min-w-0 flex-1 truncate text-[11.5px] tracking-[-0.025em] text-[#202024]">2 replies</span>
                 <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#eeeeef] px-[5px] text-[10.5px] tracking-[-0.02em] text-[#202024]">2</span>
               </div>
               <div className="flex h-[26px] items-center gap-[7px] rounded-[11px] border border-black/[0.035] bg-[#f7f7f8]/70 px-[8px]">
                 <CircleDollarSign size={12} strokeWidth={1.7} className="shrink-0 text-[#202024]" />
-                <span className="min-w-0 flex-1 truncate text-[11.5px] tracking-[-0.025em] text-[#202024]">1 bill due soon</span>
+                <span className="min-w-0 flex-1 truncate text-[11.5px] tracking-[-0.025em] text-[#202024]">1 bill due</span>
                 <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#eeeeef] px-[5px] text-[10.5px] tracking-[-0.02em] text-[#202024]">1</span>
               </div>
             </div>
