@@ -35,6 +35,17 @@ function toText(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function compactText(value: unknown, max = 260) {
+  return toText(value)
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
 function hasUser(context: AgentActionExecutionContext) {
   return Boolean(toText(context.userId));
 }
@@ -345,6 +356,85 @@ export async function executeAgentAction(
   }
 }
 
+function getMessagesFromActionData(data: unknown) {
+  if (!isRecord(data) || !Array.isArray(data.messages)) return [];
+  return data.messages.filter(isRecord);
+}
+
+function getEventsFromActionData(data: unknown) {
+  if (!isRecord(data) || !Array.isArray(data.events)) return [];
+  return data.events.filter(isRecord);
+}
+
+function formatVerifiedEmailMessagesForPrompt(result: AgentActionResult) {
+  const messages = getMessagesFromActionData(result.data);
+  if (!messages.length) return '';
+
+  const provider = result.kind === 'outlook.scan' ? 'Outlook' : 'Gmail';
+
+  return [
+    `Verified ${provider} message details returned by the tool:`,
+    'Important: These message fields are available. If the user asks to show email, use these exact fields and do not say you lack access.',
+    ...messages.slice(0, 10).map((message, index) => {
+      const subject = compactText(message.subject, 160) || '(No subject)';
+      const from = compactText(message.from, 160) || 'Unknown sender';
+      const date = compactText(message.date, 120) || 'Unknown date';
+      const snippet = compactText(message.snippet, 260);
+      const importance = compactText(message.importance, 80);
+
+      return [
+        `${index + 1}. Subject: ${subject}`,
+        `From: ${from}`,
+        `Date: ${date}`,
+        importance ? `Importance: ${importance}` : '',
+        snippet ? `Snippet: ${snippet}` : '',
+      ].filter(Boolean).join(' | ');
+    }),
+  ].join('\n');
+}
+
+function formatVerifiedCalendarEventsForPrompt(result: AgentActionResult) {
+  const events = getEventsFromActionData(result.data);
+  if (!events.length) return '';
+
+  return [
+    'Verified calendar event details returned by the tool:',
+    'Important: These calendar fields are available. Use them directly when relevant.',
+    ...events.slice(0, 10).map((event, index) => {
+      const title = compactText(event.summary ?? event.subject, 160) || '(No title)';
+      const start = compactText(event.start, 120) || 'Unknown start';
+      const end = compactText(event.end, 120) || 'Unknown end';
+      const location = compactText(event.location, 160);
+
+      return [
+        `${index + 1}. ${title}`,
+        `Start: ${start}`,
+        `End: ${end}`,
+        location ? `Location: ${location}` : '',
+      ].filter(Boolean).join(' | ');
+    }),
+  ].join('\n');
+}
+
+function formatActionDataForPrompt(result: AgentActionResult) {
+  if (!result.success || !result.verified) return '';
+
+  switch (result.kind) {
+    case 'gmail.scan':
+    case 'outlook.scan':
+      return [
+        formatVerifiedEmailMessagesForPrompt(result),
+        formatVerifiedCalendarEventsForPrompt(result),
+      ].filter(Boolean).join('\n\n');
+
+    case 'calendar.read_today':
+      return formatVerifiedCalendarEventsForPrompt(result);
+
+    default:
+      return '';
+  }
+}
+
 export function actionResultForPrompt(result: AgentActionResult | null | undefined) {
   if (!result) {
     return [
@@ -354,13 +444,19 @@ export function actionResultForPrompt(result: AgentActionResult | null | undefin
   }
 
   if (result.success && result.verified) {
+    const verifiedData = formatActionDataForPrompt(result);
+
     return [
       'Action result: Success.',
       `Action: ${result.kind}`,
       `Tool: ${result.tool}`,
       `Message: ${result.message}`,
+      verifiedData,
       'Important: You may accurately say the action was completed.',
-    ].join('\n');
+      'Important: If verified tool data is listed above, answer from that data instead of saying you do not have access.',
+    ]
+      .filter(Boolean)
+      .join('\n');
   }
 
   return [
