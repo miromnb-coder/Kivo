@@ -70,17 +70,41 @@ function getFirstName(value?: string | null) {
 
 function LivingHeadline({ phrases, firstName }: LivingHeadlineProps) {
   const [phraseIndex, setPhraseIndex] = useState(0);
+  const [isThinking, setIsThinking] = useState(true);
   const phrase = phrases[phraseIndex % phrases.length] ?? phrases[0] ?? 'Here’s your day';
   const letters = Array.from(phrase);
   const nameStartIndex = firstName && phrase.endsWith(`, ${firstName}`) ? phrase.length - firstName.length : -1;
 
   useEffect(() => {
+    const thinkingTimer = window.setTimeout(() => {
+      setIsThinking(false);
+    }, 980);
+
     const interval = window.setInterval(() => {
       setPhraseIndex((current) => current + 1);
-    }, 6200);
+    }, 7800);
 
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearTimeout(thinkingTimer);
+      window.clearInterval(interval);
+    };
   }, []);
+
+  if (isThinking) {
+    return (
+      <h1
+        className="kivo-living-headline mx-auto flex h-[34px] items-center justify-center whitespace-nowrap text-[30px] font-semibold leading-[1.08] tracking-[-0.064em] text-[#202024]"
+        aria-label="Kivo is organizing your day"
+      >
+        <span className="kivo-thinking-cluster" aria-hidden="true">
+          <span className="kivo-thinking-dot" />
+          <span className="kivo-thinking-dot [animation-delay:140ms]" />
+          <span className="kivo-thinking-dot [animation-delay:280ms]" />
+          <span className="kivo-thinking-shimmer" />
+        </span>
+      </h1>
+    );
+  }
 
   return (
     <h1
@@ -92,8 +116,8 @@ function LivingHeadline({ phrases, firstName }: LivingHeadlineProps) {
         const isSpace = letter === ' ';
         const isName = nameStartIndex >= 0 && index >= nameStartIndex;
         const shouldHop = !isSpace && (isName || (index + phraseIndex) % 5 === 0);
-        const delay = 28 + index * 22;
-        const hopDelay = delay + 190;
+        const delay = 42 + index * 31;
+        const hopDelay = delay + 270;
 
         return (
           <span
@@ -103,7 +127,7 @@ function LivingHeadline({ phrases, firstName }: LivingHeadlineProps) {
             style={{
               animationDelay: shouldHop ? `${delay}ms, ${hopDelay}ms` : `${delay}ms`,
               animationName: shouldHop ? 'kivoLetterReveal, kivoLetterHop' : 'kivoLetterReveal',
-              animationDuration: shouldHop ? '620ms, 520ms' : '620ms',
+              animationDuration: shouldHop ? '820ms, 640ms' : '820ms',
               animationTimingFunction: shouldHop
                 ? 'cubic-bezier(0.16,1,0.3,1), cubic-bezier(0.34,1.56,0.64,1)'
                 : 'cubic-bezier(0.16,1,0.3,1)',
@@ -175,9 +199,20 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
   return (
     <section className={`absolute inset-x-0 top-[88px] bottom-[170px] z-20 overflow-y-auto px-[22px] pt-[4px] pb-[12px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`} aria-label="Today OS dashboard">
       <style>{`
+        @keyframes kivoThinkingDot {
+          0%, 100% { opacity: 0.35; transform: translate3d(0, 0, 0) scale(0.86); }
+          45% { opacity: 1; transform: translate3d(0, -4px, 0) scale(1); }
+        }
+
+        @keyframes kivoThinkingShimmer {
+          0% { opacity: 0; transform: translate3d(-34px, 0, 0) scaleX(0.6); }
+          38% { opacity: 0.85; }
+          100% { opacity: 0; transform: translate3d(34px, 0, 0) scaleX(1); }
+        }
+
         @keyframes kivoLetterReveal {
-          0% { opacity: 0; filter: blur(7px); transform: translate3d(0, 9px, 0) scale(0.985); }
-          64% { opacity: 1; filter: blur(0px); transform: translate3d(0, -1px, 0) scale(1.004); }
+          0% { opacity: 0; filter: blur(8px); transform: translate3d(0, 10px, 0) scale(0.982); }
+          62% { opacity: 1; filter: blur(0px); transform: translate3d(0, -1px, 0) scale(1.004); }
           100% { opacity: 1; filter: blur(0px); transform: translate3d(0, 0, 0) scale(1); }
         }
 
@@ -190,6 +225,36 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
           text-rendering: geometricPrecision;
         }
 
+        .kivo-thinking-cluster {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          min-width: 74px;
+          height: 24px;
+        }
+
+        .kivo-thinking-dot {
+          display: block;
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          background: #202024;
+          box-shadow: 0 10px 26px rgba(124, 140, 255, 0.16);
+          animation: kivoThinkingDot 920ms cubic-bezier(0.34,1.56,0.64,1) infinite;
+        }
+
+        .kivo-thinking-shimmer {
+          position: absolute;
+          inset: -7px 4px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, transparent 0%, rgba(124,140,255,0.16) 48%, transparent 100%);
+          filter: blur(4px);
+          animation: kivoThinkingShimmer 980ms cubic-bezier(0.16,1,0.3,1) both;
+          pointer-events: none;
+        }
+
         .kivo-living-letter {
           display: inline-block;
           opacity: 0;
@@ -199,6 +264,17 @@ export function KivoTodayDashboard({ className = '', onPromptSelect }: KivoToday
         .kivo-living-name {
           color: #18181b;
           text-shadow: 0 10px 28px rgba(124, 140, 255, 0.12);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .kivo-living-letter,
+          .kivo-thinking-dot,
+          .kivo-thinking-shimmer {
+            animation: none !important;
+            opacity: 1 !important;
+            filter: none !important;
+            transform: none !important;
+          }
         }
       `}</style>
 
